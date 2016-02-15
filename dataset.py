@@ -12,7 +12,7 @@ import numpy as np
 
 
 class Dataset(object):
-    
+
     def __init__(self, filename=None, scale=False, normalize=False, sep=";"):
         self.genes = None
         self.samples = None
@@ -25,7 +25,7 @@ class Dataset(object):
             self.__load(filename, sep=sep)
         else:
             self.name = ""
-        
+
         self.scale = scale
         self.normalize = normalize
         self.complete_dataset = None
@@ -36,16 +36,16 @@ class Dataset(object):
 
     def __load(self, filename, sep=";"):
         self.complete_dataset = []
-        
+
         with open(filename, 'rb') as csv_file:
             reader = csv.reader(csv_file, delimiter=sep)
             for row in reader:
                 for i in range(len(row)):
                     row[i] = row[i].replace(' ','')
                 self.complete_dataset.append(row)
-                                    
+
         self.complete_dataset = np.matrix(self.complete_dataset)
-        self.matrix = self.complete_dataset[2:, 1:].astype(float).transpose()
+        self.matrix = np.matrix(self.complete_dataset[2:, 1:]).astype(float).transpose()
         self.genes = list(np.array(self.complete_dataset[2:, 0].transpose())[0])
         self.samples = list(np.array(self.complete_dataset[1, 1:])[0])
         self.labels = list(np.array(self.complete_dataset[0, 1:])[0])
@@ -53,22 +53,25 @@ class Dataset(object):
     def __normalize(self):
         """ Normalize into range 0-1
         """
-        self.matrix = preprocessing.normalize(self.matrix)
-        
+        self.matrix = np.matrix(preprocessing.normalize(self.matrix))
+
     def get_normalized_data(self):
         return preprocessing.normalize(self.matrix)
 
     def __scale(self):
         """ Scale using z-score
         """
-        self.matrix = preprocessing.scale(self.matrix)
+        self.matrix = np.matrix(preprocessing.scale(self.matrix))
 
     def get_scaled_data(self)    :
         return preprocessing.scale(self.matrix)
 
+    def nRow(self):
+        return len(np.matrix(self.matrix))
+
     def get_sub_dataset(self, genes):
         """ Returns a sub dataset containing only the given genes.
-        
+
         Parameters:
             genes: the genes will appear in the returned dataset.
         """

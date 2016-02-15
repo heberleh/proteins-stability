@@ -16,12 +16,14 @@ Usual parameters to change:
 
 from wilcoxon import WilcoxonRankSumTest
 import time
+import sys
 import multiprocessing
 import pandas as pd
 import matplotlib.pyplot as plt
 from scipy.stats import pearsonr
 from sklearn.metrics import pairwise_distances
 from sklearn import manifold
+import sklearn
 import pylab
 import numpy as np
 from classifier import *
@@ -89,12 +91,17 @@ def calc_stuff(args):
     global globalN
     classifier_type, dataset = args[0], args[1]
     methods_acc = {}
+
+
+    #print scale, normalize, globalN, globalK, classifier_type
+    #print dataset.labels
+
     for method in list_of_selected_genes:
+        #print method
         start_time = time.time()
         cross_validation = CrossValidation(
                                   classifier_type=classifier_type,
-                                  x=dataset.get_sub_dataset(method['genes']),
-                                  genes=method['genes'],
+                                  x=dataset.get_sub_dataset(method['genes']).matrix,
                                   y=dataset.labels,
                                   k=globalK, n=globalN,
                                   scale=scale,
@@ -106,6 +113,10 @@ def calc_stuff(args):
         methods_acc[method['id']] = l
     return methods_acc
 
+
+
+
+
 # =================== Global variables, change as you want =====================
 box_plot_file_name = "teste_milti_processos_zscore_3rep_10-foldcross.PNG"
 globalN = 5
@@ -115,8 +126,12 @@ normalize = False # apply normalization (0-1) to attributes in the cross-validat
 classifiers_types = [SVM_linear,SVM_poly, SVM_rbf, NSC, LinearDA, GaussianNaiveBayes]  # DecisionTree,
 # RandomForest, AdaBoost]  #MultinomialNaiveBayes, (non-negative...)
 
+
+
+
 # =========== Loading list os biomarkers candidates to test ====================
 # load selected genes from files ... TODO
+list_of_complete_genes_rankings = []
 list_of_selected_genes = [svmrfe, ttest, nsc, wilcoxon_genes, little1, little2]
 # ==============================================================================
 
@@ -146,9 +161,12 @@ if __name__ == '__main__':  # freeze_support()
             "differential expression genes with p < 0.05 for Wilcoxon test.\n\n\n"
     # ==============================================================================
 
+
+
+
     # =========== Computing the tests ==============================================
 
-    global_start_time = time.time()     
+    global_start_time = time.time()
     acc_list = {}
     for dataset in datasets:
         classifiers_acc = {}
@@ -161,8 +179,14 @@ if __name__ == '__main__':  # freeze_support()
             classifiers_acc[classifier_type.name] = out[i]
         acc_list[dataset.name] = classifiers_acc
 
+        #to-do save each dataset results
+
     # ==============================================================================
     print "\n\nTime to finish the complete test:", time.time()-global_start_time, "seconds.\n\n"
+
+
+
+
 
     # ====================== Creating Box plots =====================================
 
@@ -170,7 +194,7 @@ if __name__ == '__main__':  # freeze_support()
     classifiers_names = []
     for classif in classifiers_types:
         classifiers_names.append(classif.name)
-    
+
     methods_label = []
     for dataset in datasets:
         current_classifier_res = acc_list[dataset.name]
@@ -180,22 +204,22 @@ if __name__ == '__main__':  # freeze_support()
             current_methods_res = current_classifier_res[classifier_type.name]
             values = []
             for method in list_of_selected_genes:
-                l = current_methods_res[method['id']]             
+                l = current_methods_res[method['id']]
                 size = len(l)
                 values += l
                 if not label_ready:
                     methods_label += size*[method['id']]
             label_ready = True
             values_matrix.append(values)
-                    
+
         box_plot_matrix = np.matrix(values_matrix).transpose()
         y_min = np.min(box_plot_matrix) - 0.02
         df = pd.DataFrame(box_plot_matrix, columns=classifiers_names)
         df['Genes List'] = pd.Series(methods_label)
         pd.options.display.mpl_style = 'default'
-        
-        df.boxplot(by='Genes List', showmeans=True)   
-        
+
+        df.boxplot(by='Genes List')
+
         fig = plt.gcf()
         plt.ylim(y_min, 1.02)
         fig.set_size_inches(15,15)
@@ -204,40 +228,61 @@ if __name__ == '__main__':  # freeze_support()
 
     # todo
     # embaralhar as classes
-    # 
-    
+    #
+
     # todo
     # criar listas de genes aleatórios e de mesmo tamanho das listas encontradas por cada método
     # plotar de cada método a comparação
-    
+
+
+    # todo
+    # gráfico em linha mostrando a acurácia média conforme aumenta o valor de N em cada ranking
+    # atribuir valor a variável ja criada list_of_complete_genes_rankings
+
+
+
+
+
     # ============== Multidimensional Projection Overview ==========================
     # t-sne projection of samples
+    metrics = ["euclidean", "pearson", "pearson_squared"]
     for dataset in datasets:
-        # distances = pearson_distance(dataset.matrix)
-    
-        # distances = pearson_squared_distance(dataset.matrix)
-        distances = pairwise_distances(dataset.matrix, metric="euclidean")
-        t_sne = manifold.TSNE(n_components=2, perplexity=20, init='random',
-                              metric="precomputed",
-                              random_state=7, n_iter=200, early_exaggeration=6,
-                              learning_rate=1000)
-        coordinates = t_sne.fit_transform(distances)
-        
-        c = pd.factorize(dataset.labels)[0]
-        categories = np.unique(c)
-    
-        x = [e[0] for e in coordinates]
-        y = [e[1] for e in coordinates]
-        
-        fig = pylab.figure(figsize=(20,20))
-        ax = fig.add_subplot(111)
-        ax.set_title("TSNE projection using euclidean distance",fontsize=12)
-        ax.grid(True,linestyle='-',color='0.75')
-        scatter = ax.scatter(x, y, c=c, marker = 'o', 
-                             cmap=plt.get_cmap('Set1', len(categories)),s=200)
-        plt.savefig("prostatic_samples_projection_t-sne_euclidean_distance.pdf")
-        # tooltip = mpld3.plugins.PointLabelTooltip(scatter, labels=[ids[i] for i in unknown_index])
-        # mpld3.plugins.connect(fig, tooltip)
+        for method in list_of_selected_genes:
+            for metric in metrics:
+                cmatrix = dataset.get_sub_dataset(method['genes']).matrix
+                distances = []
+                try:
+                    if metric == "pearson":
+                        distances = pearson_distance(cmatrix)
+                    elif metric == "pearson_squared":
+                        distances = pearson_squared_distance(cmatrix)
+                    else:
+                        distances = pairwise_distances(cmatrix, metric=metric)
+
+
+                    t_sne = sklearn.manifold.TSNE(n_components=2, perplexity=20, init='random',
+                                          metric="precomputed",
+                                          random_state=7, n_iter=200, early_exaggeration=6,
+                                          learning_rate=1000)
+                    coordinates = t_sne.fit_transform(distances)
+
+                    c = pd.factorize(dataset.labels)[0]
+                    categories = np.unique(c)
+
+                    x = [e[0] for e in coordinates]
+                    y = [e[1] for e in coordinates]
+
+                    fig = pylab.figure(figsize=(20,20))
+                    ax = fig.add_subplot(111)
+                    ax.set_title("TSNE projection using euclidean distance",fontsize=12)
+                    ax.grid(True,linestyle='-',color='0.75')
+                    scatter = ax.scatter(x, y, c=c, marker = 'o',
+                                         cmap=plt.get_cmap('Set1', len(categories)),s=200)
+                    plt.savefig("samples_projection_t-sne_with_"+metric+"_dist_and_"+method["id"]+"_selected_proteins.pdf")
+                except:
+                    print "Unexpected error:", sys.exc_info()[0]
+                # tooltip = mpld3.plugins.PointLabelTooltip(scatter, labels=[ids[i] for i in unknown_index])
+                # mpld3.plugins.connect(fig, tooltip)
 
 # global_start_time = time.time()
 # acc_list = {}
