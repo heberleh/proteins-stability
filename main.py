@@ -44,9 +44,11 @@ def pearson(matrix):
     :param matrix: numeric matrix, each line correspond to a sample
     :return: a distance matrix of n samples per n samples
     """
+
     rows, cols = matrix.shape[0], matrix.shape[1]
     r = np.ones(shape=(rows, rows))
     p = np.ones(shape=(rows, rows))
+    matrix = matrix.tolist()
     for i in range(rows):
         for j in range(i+1, rows):
             r_, p_ = pearsonr(matrix[i], matrix[j])
@@ -245,42 +247,48 @@ if __name__ == '__main__':  # freeze_support()
 
     # ============== Multidimensional Projection Overview ==========================
     # t-sne projection of samples
-    metrics = ["euclidean", "pearson", "pearson_squared"]
+    metrics = ["pearson","euclidean", "pearson_squared"]
     for dataset in datasets:
         for method in list_of_selected_genes:
             for metric in metrics:
                 cmatrix = dataset.get_sub_dataset(method['genes']).matrix
+                print cmatrix
+                print
+                print cmatrix[0]
+                print
+                print cmatrix[0,1]
                 distances = []
-                try:
-                    if metric == "pearson":
-                        distances = pearson_distance(cmatrix)
-                    elif metric == "pearson_squared":
-                        distances = pearson_squared_distance(cmatrix)
-                    else:
-                        distances = pairwise_distances(cmatrix, metric=metric)
+                #try:
+                if metric == "pearson":
+                    distances = pearson_distance(cmatrix)
+                elif metric == "pearson_squared":
+                    distances = pearson_squared_distance(cmatrix)
+                else:
+                    distances = pairwise_distances(cmatrix.tolist(), metric=metric)
 
+                #print distances
 
-                    t_sne = sklearn.manifold.TSNE(n_components=2, perplexity=20, init='random',
-                                          metric="precomputed",
-                                          random_state=7, n_iter=200, early_exaggeration=6,
-                                          learning_rate=1000)
-                    coordinates = t_sne.fit_transform(distances)
+                t_sne = sklearn.manifold.TSNE(n_components=2, perplexity=20, init='random',
+                                      metric="precomputed",
+                                      random_state=7, n_iter=200, early_exaggeration=6,
+                                      learning_rate=1000)
+                coordinates = t_sne.fit_transform(distances)
 
-                    c = pd.factorize(dataset.labels)[0]
-                    categories = np.unique(c)
+                c = pd.factorize(dataset.labels)[0]
+                categories = np.unique(c)
 
-                    x = [e[0] for e in coordinates]
-                    y = [e[1] for e in coordinates]
+                x = [e[0] for e in coordinates]
+                y = [e[1] for e in coordinates]
 
-                    fig = pylab.figure(figsize=(20,20))
-                    ax = fig.add_subplot(111)
-                    ax.set_title("TSNE projection using euclidean distance",fontsize=12)
-                    ax.grid(True,linestyle='-',color='0.75')
-                    scatter = ax.scatter(x, y, c=c, marker = 'o',
-                                         cmap=plt.get_cmap('Set1', len(categories)),s=200)
-                    plt.savefig("samples_projection_t-sne_with_"+metric+"_dist_and_"+method["id"]+"_selected_proteins.pdf")
-                except:
-                    print "Unexpected error:", sys.exc_info()[0]
+                fig = pylab.figure(figsize=(20,20))
+                ax = fig.add_subplot(111)
+                ax.set_title("TSNE projection using "+method["id"]+" selected proteins and "+metric+" distance",fontsize=12)
+                ax.grid(True,linestyle='-',color='0.75')
+                scatter = ax.scatter(x, y, c=c, marker = 'o',
+                                     cmap=plt.get_cmap('Set1', len(categories)),s=200)
+                plt.savefig("samples_projection_t-sne_with_"+metric+"_dist_and_"+method["id"]+"_selected_proteins.pdf")
+                #except:
+                #    print "Unexpected error:", sys.exc_info()[0]
                 # tooltip = mpld3.plugins.PointLabelTooltip(scatter, labels=[ids[i] for i in unknown_index])
                 # mpld3.plugins.connect(fig, tooltip)
 
