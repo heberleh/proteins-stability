@@ -90,7 +90,7 @@ class CrossValidation(object):
 
 
 
-        print complete_y_true, complete_y_pred
+        #print complete_y_true, complete_y_pred
         precision = 0.0
         recall = 0.0
         f1 = 0.0

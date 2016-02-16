@@ -4,7 +4,8 @@ Created on Sat Nov 14 13:22:02 2015
 
 @author: Henry
 
-This script can be adapted to your problem.
+This script can be adapted to your problem. It is not ready for multiple datasets. Use only one dataset.
+
 It will run the following main procedures:
 
     1. N repetition of K-fold Cross validation for M classifiers
@@ -48,6 +49,7 @@ from classifier import *
 from crossvalidation import CrossValidation
 from dataset import Dataset
 import csv
+from numpy import mean, std
 
 
 def pearson(matrix):
@@ -104,7 +106,7 @@ def calc_stuff(args):
     global globalK
     global globalN
     classifier_type, dataset = args[0], args[1]
-    methods_acc = {}
+    methods_metrics = {}
 
 
     #print scale, normalize, globalN, globalK, classifier_type
@@ -123,22 +125,25 @@ def calc_stuff(args):
         cross_validation.run()
         print "Execution time of", dataset.name,",", classifier_type.name, ",",method['id'], ":",\
             time.time() - start_time, "seconds"
-        l = cross_validation.get_list(metric=cross_validation.ACCURACY)
-        methods_acc[method['id']] = l
-    return methods_acc
+        methods_metrics[method['id']] = {"accuracy": cross_validation.get_list(metric=cross_validation.ACCURACY),
+                                         "precision": cross_validation.get_list(metric=cross_validation.PRECISION),
+                                         "f1": cross_validation.get_list(metric=cross_validation.F1),
+                                         "recall": cross_validation.get_list(metric=cross_validation.RECALL)}
+    return methods_metrics
 
 
 
 
 
 # =================== Global variables, change as you want =====================
-box_plot_file_name = "./results/crossvalidation/teste_multi_processos_zscore_3rep_10-foldcross.PNG"
 globalN = 5
 globalK = 10
 scale = True # apply z-score to attributes in the cross-validation class?
 normalize = False # apply normalization (0-1) to attributes in the cross-validation class?
-classifiers_types = [SVM_linear,SVM_poly, SVM_rbf, NSC,  GaussianNaiveBayes]  # DecisionTree, LinearDA,
+classifiers_types = [SVM_linear,SVM_poly, SVM_rbf, NSC, GaussianNaiveBayes, RandomForest, DecisionTree]  # DecisionTree, LinearDA,
 # RandomForest, AdaBoost]  #MultinomialNaiveBayes, (non-negative...)
+
+
 
 
 
@@ -162,6 +167,8 @@ if __name__ == '__main__':  # freeze_support()
     # datasets/breast_cancer/selected_genes/svm-rfe_wang.csv
     # datasets/breast_cancer/selected_genes/nsc_wang.csv
 
+
+    #IMPORTANT: this script is not ready for more than 1 dataset.
     datasets_names = ["./dataset/current/train.txt"]
     datasets = []
     for name in datasets_names:
@@ -173,7 +180,6 @@ if __name__ == '__main__':  # freeze_support()
             print "\n\n\nThe dataset", name, "has", len([i for i in range(len(p)) if p[i] < 0.05]), \
                 "differential expression genes with p < 0.05 for Wilcoxon test.\n\n\n"
     # ==============================================================================
-
 
     # ============ Reading rankings =================================================
     rankings = []
@@ -202,20 +208,23 @@ if __name__ == '__main__':  # freeze_support()
 
 
 
+
+
+
     # =========== Computing the tests ==============================================
 
     global_start_time = time.time()
-    acc_list = {}
+    dataset_res = {}
     for dataset in datasets:
-        classifiers_acc = {}
+        classifiers_res = {}
         pool = multiprocessing.Pool()
         args = [(c, dataset) for c in classifiers_types]
         for r in args:
             print r
         out = pool.map(calc_stuff, args)
         for i, classifier_type in enumerate(classifiers_types):
-            classifiers_acc[classifier_type.name] = out[i]
-        acc_list[dataset.name] = classifiers_acc
+            classifiers_res[classifier_type.name] = out[i]
+        dataset_res[dataset.name] = classifiers_res
 
         #to-do save each dataset results
 
@@ -225,44 +234,126 @@ if __name__ == '__main__':  # freeze_support()
 
 
 
+    # ===================== Saving classifiers results ==============================
+    metrics_list = ["accuracy", "f1", "precision", "recall"]
+
+    for dataset in datasets:
+        current_dataset_res = dataset_res[dataset.name]
+        header = ["classifier"]
+        for method in list_of_ranking_genes:
+            header.append(method["id"]+"-mean")
+            header.append(method["id"]+"-std")
+
+        for metric in metrics_list:
+            matrix = []
+            matrix.append(header)
+            for classifier_type in classifiers_types:
+                c_res = current_dataset_res[classifier_type.name]
+                line = [classifier_type.name]
+                for method in list_of_ranking_genes:
+                    l = c_res[method["id"]][metric]
+                    line.append(mean(l))
+                    line.append(std(l))
+                matrix.append(line)
+            matrix = np.array(matrix)
+            np.savetxt("./results/crossvalidation/"+metric+"_metric_mean_std_of_"+str(globalN)+"repetitions.csv",np.array(matrix),delimiter=";", fmt="%s")
+
+
+    # ===============================================================================
+
+
+
+
+
 
     # ====================== Creating Box plots =====================================
 
     # creates matrix for panda box plot
+    metrics_list = ["accuracy", "f1", "precision", "recall"]
     classifiers_names = []
     for classif in classifiers_types:
         classifiers_names.append(classif.name)
 
     methods_label = []
     for dataset in datasets:
-        current_classifier_res = acc_list[dataset.name]
-        label_ready = False
-        values_matrix = []
-        for classifier_type in classifiers_types:
-            current_methods_res = current_classifier_res[classifier_type.name]
-            values = []
-            for method in list_of_ranking_genes:
-                l = current_methods_res[method['id']]
-                size = len(l)
-                values += l
-                if not label_ready:
-                    methods_label += size*[method['id']]
-            label_ready = True
-            values_matrix.append(values)
+        for metric in metrics_list:
+            current_classifier_res = dataset_res[dataset.name]
+            label_ready = False
+            values_matrix = []
+            for classifier_type in classifiers_types:
+                current_methods_res = current_classifier_res[classifier_type.name]
+                values = []
+                for method in list_of_ranking_genes:
+                    dict_res = current_methods_res[method['id']]
+                    l = dict_res[metric]
+                    size = len(l)
+                    values += l
+                    if not label_ready:
+                        methods_label += size*[method['id']]
+                label_ready = True
+                values_matrix.append(values)
 
-        box_plot_matrix = np.matrix(values_matrix).transpose()
-        y_min = np.min(box_plot_matrix) - 0.02
-        df = pd.DataFrame(box_plot_matrix, columns=classifiers_names)
-        df['Genes List'] = pd.Series(methods_label)
-        pd.options.display.mpl_style = 'default'
+            box_plot_matrix = np.matrix(values_matrix).transpose()
+            y_min = np.min(box_plot_matrix) - 0.02
+            df = pd.DataFrame(box_plot_matrix, columns=classifiers_names)
+            df['Genes List'] = pd.Series(methods_label)
+            pd.options.display.mpl_style = 'default'
 
-        df.boxplot(by='Genes List')
+            df.boxplot(by='Genes List')
 
-        fig = plt.gcf()
-        plt.ylim(y_min, 1.02)
-        fig.set_size_inches(15,15)
-        plt.savefig(box_plot_file_name,dpi=400)
+            fig = plt.gcf()
+            plt.ylim(y_min, 1.02)
+            fig.set_size_inches(15,15)
+            plt.savefig("./results/crossvalidation/"+metric+"_mean_std_metric_of_"+str(globalN)+"_repetitions.PNG",dpi=400)
+            plt.cla()
+            plt.clf()
     # ==============================================================================
+
+
+
+
+
+    # ========== Running crossvalidation for top-i proteins ========================
+    localN = 3
+    x_size = 0
+    max_f1_score_index = {}
+    for classifier_type in classifiers_types:
+        for method in list_of_ranking_genes:
+            start_time = time.time()
+            methods_metrics = {}
+            x_size = len(method['complete_ranking'])
+            x_a = range(2,x_size)
+            y_v = []
+            for topN in range(2,x_size):
+                cross_validation = CrossValidation(
+                                          classifier_type=classifier_type,
+                                          x=dataset.get_sub_dataset(method['complete_ranking'][0:topN]).matrix,
+                                          y=dataset.labels,
+                                          k=globalK, n=localN,
+                                          scale=scale,
+                                          normalize=normalize)
+                cross_validation.run()
+                y_v.append(mean(cross_validation.get_list(metric=cross_validation.F1)))
+            print "Execution time of", dataset.name,",", classifier_type.name, ",",method['id'], ":",\
+                    time.time() - start_time, "seconds"
+            max_f1_score_index[method["id"]] = y_v.index(np.max(y_v))
+            plt.plot(x_a, y_v, marker='o', linestyle='--', label=method["id"])
+
+        fname = "./results/crossvalidation/"+classifier_type.name + "_f1_mean_in_"+str(localN)+"_repetitions_for_each_ranking.PNG"
+        plt.xlabel('Top-N proteins')
+        plt.ylabel('F1 mean')
+        plt.title('F1 mean values of '+str(localN)+' repetitions for each ranking using '+classifier_type.name+' classifier')
+        plt.legend()
+        plt.savefig(fname,dpi=400)
+        plt.clf()
+
+    # ==============================================================================
+
+
+
+
+
+
 
     # todo
     # embaralhar as classes
@@ -279,15 +370,15 @@ if __name__ == '__main__':  # freeze_support()
 
 
 
-
-
     # ============== Multidimensional Projection Overview ==========================
     # t-sne projection of samples
+
     metrics = ["pearson","euclidean", "pearson_squared"]
     for dataset in datasets:
         for method in list_of_ranking_genes:
             for metric in metrics:
-                cmatrix = dataset.get_sub_dataset(method['genes']).matrix
+                max = max_f1_score_index[method["id"]]
+                cmatrix = dataset.get_sub_dataset(method['complete_ranking'][0:max]).matrix
                 print cmatrix
                 print
                 print cmatrix[0]
@@ -316,13 +407,15 @@ if __name__ == '__main__':  # freeze_support()
                 x = [e[0] for e in coordinates]
                 y = [e[1] for e in coordinates]
 
+
                 fig = pylab.figure(figsize=(20,20))
                 ax = fig.add_subplot(111)
-                ax.set_title("TSNE projection using "+method["id"]+" selected proteins and "+metric+" distance",fontsize=12)
+                ax.set_title("TSNE projection using "+method["id"]+" top-"+str(max)+" proteins and "+metric+" distance",fontsize=12)
                 ax.grid(True,linestyle='-',color='0.75')
                 scatter = ax.scatter(x, y, c=c, marker = 'o',
                                      cmap=plt.get_cmap('Set1', len(categories)),s=200)
-                plt.savefig("./results/t-sne_projection/samples_projection_t-sne_with_"+metric+"_dist_and_"+method["id"]+"_selected_proteins.pdf")
+                plt.savefig("./results/t-sne_projection/samples_projection_t-sne_with_"+metric+"_dist_and_"+method["id"]+"_top-"+str(max)+"_proteins.pdf")
+                plt.clf()
                 #except:
                 #    print "Unexpected error:", sys.exc_info()[0]
                 # tooltip = mpld3.plugins.PointLabelTooltip(scatter, labels=[ids[i] for i in unknown_index])
