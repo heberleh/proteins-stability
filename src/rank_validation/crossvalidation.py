@@ -9,6 +9,9 @@ from sklearn.cross_validation import KFold
 from sklearn import preprocessing
 import numpy as np
 import pandas
+from sklearn.metrics import accuracy_score
+from sklearn import metrics
+import itertools
 
 class CrossValidation(object):
     """Executes a cross-validation.
@@ -25,14 +28,11 @@ class CrossValidation(object):
         repetitions_metrics_list: list of retuls (metrics) from N validations
                                                                 (repetitions)
     """
-    ACURACY_MEAN = 'accuracy_mean'
-    ACURACY_STD = 'accuracy_std'
-    PRECISION_MEAN = 'precision_mean'
-    PRECISION_STD = 'precision_std'
-    RECALL_MEAN = 'recall_mean'
-    RECALL_STD = 'recall_std'
-    F1_MEAN = 'f1_mean'
-    F1_STD = 'f1_std'
+    ACCURACY = 'accuracy'
+    PRECISION = 'precision'
+    RECALL = 'recall'
+    F1 = 'f1'
+
 
     def __init__(self, classifier_type, x, y, scale=False, normalize=False, k=5, n=3):
         self.classifier_init = classifier_type
@@ -60,6 +60,8 @@ class CrossValidation(object):
 
         accuracy_list, precision_list, recall_list, f1_list = [], [], [], []
 
+        complete_y_true = []
+        complete_y_pred = []
         for train_index, test_index in folds:
             #print "train index", train_index
             #print "test index", test_index
@@ -81,22 +83,37 @@ class CrossValidation(object):
 
             classifier = self.classifier_init(x_train, y_train, x_test, y_test)
             classifier.fit()
-            metrics = classifier.test()
+            ypred = classifier.test()
 
-            accuracy_list.append(metrics['accuracy'])
-            precision_list.append(metrics['precision'])
-            recall_list.append(metrics['recall'])
-            f1_list.append(metrics['f1'])
+            complete_y_pred = list(itertools.chain(complete_y_pred, ypred))
+            complete_y_true = list(itertools.chain(complete_y_true, y_test))
+
+
+
+        print complete_y_true, complete_y_pred
+        precision = 0.0
+        recall = 0.0
+        f1 = 0.0
+        accuracy = 0.0
+
+        #print complete_y_true, complete_y_pred
+
+        if len(np.unique(complete_y_true)) == 2:
+            precision = metrics.precision_score(complete_y_true, complete_y_pred)
+            recall = metrics.recall_score(complete_y_true, complete_y_pred)
+            f1 = metrics.f1_score(complete_y_true, complete_y_pred)
+            accuracy = accuracy_score(complete_y_true, complete_y_pred)
+        else:
+            precision = metrics.precision_score(complete_y_true, complete_y_pred, average="macro")
+            recall = metrics.recall_score(complete_y_true, complete_y_pred, average="macro")
+            f1 = metrics.f1_score(complete_y_true, complete_y_pred, average="macro")
+            accuracy = accuracy_score(complete_y_true, complete_y_pred)
 
         return {
-            'accuracy_mean': np.mean(accuracy_list),
-            'accuracy_std': np.std(accuracy_list),
-            'precision_mean': np.mean(precision_list),
-            'precision_std': np.std(precision_list),
-            'recall_mean': np.mean(recall_list),
-            'recall_std': np.std(recall_list),
-            'f1_mean': np.mean(f1_list),
-            'f1_std': np.std(f1_list)
+            'accuracy': accuracy,
+            'precision': precision,
+            'recall': recall,
+            'f1': f1
             }
 
 
@@ -116,7 +133,7 @@ class CrossValidation(object):
     def get_list(self, metric):
         """ Returns the list values of required metric based on the N repetitions.
         Parameters:
-            metric: 'accuracy_mean', 'accuracy_std'... precision_... recall_...
+            metric: 'accuracy', 'accuracy'... precision_... recall_...
             f1_...
         """
         l = []
@@ -128,7 +145,7 @@ class CrossValidation(object):
     def get_mean(self, metric):
         """ Returns the mean of required metric based on the N repetitions.
         Parameters:
-            metric: 'accuracy_mean', 'accuracy_std'... precision_... recall_...
+            metric: 'accuracy', ... precision_... recall_...
             f1_...
         """
         l = []
@@ -142,7 +159,7 @@ class CrossValidation(object):
     def get_std(self, metric):
         """ Returns the std of required metric based on the N repetitions.
         Parameters:
-            metric: 'accuracy_mean', 'accuracy_std'... precision_... recall_...
+            metric: 'accuracy', ... precision_... recall_...
             f1_...
         """
         l = []

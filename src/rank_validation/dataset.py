@@ -45,10 +45,10 @@ class Dataset(object):
                 self.complete_dataset.append(row)
 
         self.complete_dataset = np.matrix(self.complete_dataset)
-        self.matrix = np.matrix(self.complete_dataset[2:, 1:]).astype(float).transpose()
+        self.matrix = np.matrix(self.complete_dataset[2:, 2:]).astype(float).transpose()
         self.genes = list(np.array(self.complete_dataset[2:, 0].transpose())[0])
-        self.samples = list(np.array(self.complete_dataset[1, 1:])[0])
-        self.labels = list(np.array(self.complete_dataset[0, 1:])[0])
+        self.samples = list(np.array(self.complete_dataset[0, 2:])[0])
+        self.labels = list(np.array(self.complete_dataset[1, 2:])[0])
 
     def __normalize(self):
         """ Normalize into range 0-1
@@ -57,6 +57,9 @@ class Dataset(object):
 
     def get_normalized_data(self):
         return preprocessing.normalize(self.matrix)
+
+    def levels(self):
+        return np.unique(self.labels)
 
     def __scale(self):
         """ Scale using z-score

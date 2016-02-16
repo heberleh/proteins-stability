@@ -1,0 +1,46 @@
+Average accuracy of double cross-validation repetitions: 0.5490208
+
+Maximum accuracy between repetitions: 0.6625
+
+Minimum accuracy between repetitions: 0.4791667
+
+Best model index: 1
+
+Selected final N: 297
+
+Double-Cross-Validation Accuracy: 0.50625
+
+Confusion Matrix and Statistics
+
+          Reference
+Prediction 12.5fmol 25fmol 50fmol  100fmol 
+  12.5fmol        6      2       2        2
+  25fmol          0      4       2        2
+  50fmol          1      2       3        1
+  100fmol         1      1       1        4
+
+Overall Statistics
+                                          
+               Accuracy : 0.5             
+                 95% CI : (0.3243, 0.6757)
+    No Information Rate : 0.2647          
+    P-Value [Acc > NIR] : 0.00285         
+                                          
+                  Kappa : 0.3349          
+ Mcnemar's Test P-Value : 0.80885         
+
+Statistics by Class:
+
+                     Class: 12.5fmol Class: 25fmol Class: 50fmol  Class: 100fmol 
+Sensitivity                   0.7500        0.4444        0.37500          0.4444
+Specificity                   0.7692        0.8400        0.84615          0.8800
+Pos Pred Value                0.5000        0.5000        0.42857          0.5714
+Neg Pred Value                0.9091        0.8077        0.81481          0.8148
+Prevalence                    0.2353        0.2647        0.23529          0.2647
+Detection Rate                0.1765        0.1176        0.08824          0.1176
+Detection Prevalence          0.3529        0.2353        0.20588          0.2059
+Balanced Accuracy             0.7596        0.6422        0.61058          0.6622
+ [1] 25fmol   12.5fmol 12.5fmol 25fmol   50fmol   50fmol   12.5fmol 25fmol   100fmol  100fmol  25fmol   50fmol   12.5fmol 12.5fmol 25fmol   100fmol  25fmol   12.5fmol 25fmol   12.5fmol 100fmol  12.5fmol 50fmol   50fmol   100fmol  12.5fmol 50fmol   25fmol   50fmol   12.5fmol 100fmol  12.5fmol 100fmol  12.5fmol
+Levels: 12.5fmol 25fmol 50fmol  100fmol 
+ [1] 100fmol  12.5fmol 25fmol   50fmol   100fmol  12.5fmol 25fmol   50fmol   100fmol  12.5fmol 25fmol   50fmol   100fmol  12.5fmol 25fmol   50fmol   100fmol  12.5fmol 25fmol   50fmol   100fmol  12.5fmol 25fmol   50fmol   100fmol  12.5fmol 25fmol   25fmol   50fmol   100fmol  100fmol  12.5fmol 25fmol   50fmol  
+Levels: 12.5fmol 25fmol 50fmol  100fmol 
