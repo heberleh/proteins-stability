@@ -50,6 +50,8 @@ from crossvalidation import CrossValidation
 from dataset import Dataset
 import csv
 from numpy import mean, std
+import itertools
+import matplotlib.lines as mlines
 
 
 def pearson(matrix):
@@ -313,109 +315,184 @@ if __name__ == '__main__':  # freeze_support()
 
 
 
-    # ========== Running crossvalidation for top-i proteins ========================
-    localN = 3
-    x_size = 0
-    max_f1_score_index = {}
-    for classifier_type in classifiers_types:
-        for method in list_of_ranking_genes:
-            start_time = time.time()
-            methods_metrics = {}
-            x_size = len(method['complete_ranking'])
-            x_a = range(2,x_size)
-            y_v = []
-            for topN in range(2,x_size):
-                cross_validation = CrossValidation(
-                                          classifier_type=classifier_type,
-                                          x=dataset.get_sub_dataset(method['complete_ranking'][0:topN]).matrix,
-                                          y=dataset.labels,
-                                          k=globalK, n=localN,
-                                          scale=scale,
-                                          normalize=normalize)
-                cross_validation.run()
-                y_v.append(mean(cross_validation.get_list(metric=cross_validation.F1)))
-            print "Execution time of", dataset.name,",", classifier_type.name, ",",method['id'], ":",\
-                    time.time() - start_time, "seconds"
-            max_f1_score_index[method["id"]] = y_v.index(np.max(y_v))
-            plt.plot(x_a, y_v, marker='o', linestyle='--', label=method["id"])
+    # # ========== Running crossvalidation for top-i proteins ========================
+    # localN = 3
+    # x_size = 0
+    # max_f1_score_N = {}
+    # colors = itertools.cycle(['b', 'g', 'r', 'c', 'm', 'y', 'k'])
+    # fill_style = itertools.cycle(itertools.cycle(mlines.Line2D.fillStyles))
+    # for classifier_type in classifiers_types:
+    #     for method in list_of_ranking_genes:
+    #         start_time = time.time()
+    #         methods_metrics = {}
+    #         x_size = len(method['complete_ranking'])
+    #         x_a = range(2,x_size)
+    #         y_v = []
+    #         for topN in range(2,x_size):
+    #             cross_validation = CrossValidation(
+    #                                       classifier_type=classifier_type,
+    #                                       x=dataset.get_sub_dataset(method['complete_ranking'][0:topN]).matrix,
+    #                                       y=dataset.labels,
+    #                                       k=globalK, n=localN,
+    #                                       scale=scale,
+    #                                       normalize=normalize)
+    #             cross_validation.run()
+    #             y_v.append(mean(cross_validation.get_list(metric=cross_validation.F1)))
+    #         print "Execution time of", dataset.name,",", classifier_type.name, ",",method['id'], ":",\
+    #                 time.time() - start_time, "seconds"
 
-        fname = "./results/crossvalidation/"+classifier_type.name + "_f1_mean_in_"+str(localN)+"_repetitions_for_each_ranking.PNG"
-        plt.xlabel('Top-N proteins')
-        plt.ylabel('F1 mean')
-        plt.title('F1 mean values of '+str(localN)+' repetitions for each ranking using '+classifier_type.name+' classifier')
-        plt.legend()
-        plt.savefig(fname,dpi=400)
-        plt.clf()
+    #         max_f1_score_N[method["id"]] = y_v.index(np.max(y_v))+2
 
-    # ==============================================================================
+    #         plt.plot(x_a, y_v, marker='o',markersize=3, markerfacecoloralt='lightgray',linestyle='--', c=colors.next(),fillstyle=fill_style.next(), label=method["id"])
 
+    #     fname = "./results/crossvalidation/"+classifier_type.name + "_f1_mean_in_"+str(localN)+"_repetitions_for_each_ranking.PNG"
+    #     plt.xlabel('Top-N proteins')
+    #     plt.ylabel('F1 mean')
+    #     plt.title('F1 mean values of '+str(localN)+' repetitions for each ranking using '+classifier_type.name+' classifier')
+    #     plt.legend()
+    #     plt.savefig(fname,dpi=400)
+    #     plt.clf()
 
-
-
-
-
-
-    # todo
-    # embaralhar as classes
-    #
-
-    # todo
-    # criar listas de genes aleatórios e de mesmo tamanho das listas encontradas por cada método
-    # plotar de cada método a comparação
-
-
-    # todo
-    # gráfico em linha mostrando a acurácia média conforme aumenta o valor de N em cada ranking
-    # atribuir valor a variável ja criada list_of_complete_genes_rankings
+    # # ==============================================================================
 
 
 
-    # ============== Multidimensional Projection Overview ==========================
-    # t-sne projection of samples
 
-    metrics = ["pearson","euclidean", "pearson_squared"]
+
+
+
+    # # todo
+    # # embaralhar as classes
+    # #
+
+    # # todo
+    # # criar listas de genes aleatórios e de mesmo tamanho das listas encontradas por cada método
+    # # plotar de cada método a comparação
+
+
+    # # todo
+    # # gráfico em linha mostrando a acurácia média conforme aumenta o valor de N em cada ranking
+    # # atribuir valor a variável ja criada list_of_complete_genes_rankings
+
+
+
+    # # ============== Multidimensional Projection Overview ==========================
+    # # t-sne projection of samples
+
+    # metrics = ["pearson","euclidean", "pearson_squared"]
+    # for dataset in datasets:
+    #     for method in list_of_ranking_genes:
+    #         for metric in metrics:
+    #             max = max_f1_score_N[method["id"]]
+    #             cmatrix = dataset.get_sub_dataset(method['complete_ranking'][0:max]).matrix
+    #             #print cmatrix
+    #             #print
+    #             #print cmatrix[0]
+    #             #print
+    #             #print cmatrix[0,1]
+    #             distances = []
+    #             #try:
+    #             if metric == "pearson":
+    #                 distances = pearson_distance(cmatrix)
+    #             elif metric == "pearson_squared":
+    #                 distances = pearson_squared_distance(cmatrix)
+    #             else:
+    #                 distances = pairwise_distances(cmatrix.tolist(), metric=metric)
+
+    #             #print distances
+
+    #             t_sne = sklearn.manifold.TSNE(n_components=2, perplexity=20, init='random',
+    #                                   metric="precomputed",
+    #                                   random_state=7, n_iter=200, early_exaggeration=6,
+    #                                   learning_rate=1000)
+    #             coordinates = t_sne.fit_transform(distances)
+
+    #             c = pd.factorize(dataset.labels)[0]
+    #             categories = np.unique(c)
+
+    #             x = [e[0] for e in coordinates]
+    #             y = [e[1] for e in coordinates]
+
+
+    #             fig = pylab.figure(figsize=(20,20))
+    #             ax = fig.add_subplot(111)
+    #             ax.set_title("TSNE projection using "+method["id"]+" top-"+str(max)+" proteins and "+metric+" distance",fontsize=12)
+    #             ax.grid(True,linestyle='-',color='0.75')
+    #             scatter = ax.scatter(x, y, c=c, marker = 'o',
+    #                                  cmap=plt.get_cmap('Set1', len(categories)),s=200)
+    #             plt.savefig("./results/t-sne_projection/samples_projection_t-sne_with_"+metric+"_dist_and_"+method["id"]+"_top-"+str(max)+"_proteins.pdf")
+    #             plt.clf()
+
+
+    # ============== Multidimensional Projection by best Silhouette score ===================
+
+    # Find the best Silhouette_score of distance matrix to define a the best N value
+    metrics = ["euclidean","pearson","pearson_squared"]
     for dataset in datasets:
         for method in list_of_ranking_genes:
             for metric in metrics:
-                max = max_f1_score_index[method["id"]]
-                cmatrix = dataset.get_sub_dataset(method['complete_ranking'][0:max]).matrix
-                print cmatrix
-                print
-                print cmatrix[0]
-                print
-                print cmatrix[0,1]
+                print "Silhouette score for metric ", metric
+                max_silhouette_N = 0
+                max_silhouette_score = -1
+                selected_dist_matrix = []
+                n_silhouette_aux = 0
                 distances = []
-                #try:
-                if metric == "pearson":
-                    distances = pearson_distance(cmatrix)
-                elif metric == "pearson_squared":
-                    distances = pearson_squared_distance(cmatrix)
-                else:
-                    distances = pairwise_distances(cmatrix.tolist(), metric=metric)
+                for n_silhouette in range(2,len(method['complete_ranking'])):
+                    n_silhouette_aux = n_silhouette
+                    #print "n_silhouette=", n_silhouette
+                    # get submatrix with top-n proteins
+                    cmatrix = dataset.get_sub_dataset(method['complete_ranking'][0:n_silhouette]).matrix
 
-                #print distances
+                    # computes distance matrix
+                    distances = []
 
-                t_sne = sklearn.manifold.TSNE(n_components=2, perplexity=20, init='random',
-                                      metric="precomputed",
-                                      random_state=7, n_iter=200, early_exaggeration=6,
-                                      learning_rate=1000)
-                coordinates = t_sne.fit_transform(distances)
+                    if metric == "pearson":
+                        distances = pearson_distance(cmatrix)
+                    elif metric == "pearson_squared":
+                        distances = pearson_squared_distance(cmatrix)
+                    else:
+                        distances = pairwise_distances(cmatrix.tolist(), metric=metric)
+                    #print "Calculating silhuette"
+                    # computes silhouette score
 
-                c = pd.factorize(dataset.labels)[0]
-                categories = np.unique(c)
+                    distances = np.array(distances)
+                    labels = np.array(dataset.labels)
+                    #print distances.shape
+                    #print
+                    if (not np.any(np.isnan(distances))):
+                        sil_score = sklearn.metrics.silhouette_score(distances, labels=labels, metric="precomputed")
+                        if sil_score > max_silhouette_score:
+                            max_silhouette_N = n_silhouette
+                            max_silhouette_score = sil_score
+                            selected_dist_matrix = distances
+                    else:
+                        print "Error: NAN found in distance matrix of size",n_silhouette
 
-                x = [e[0] for e in coordinates]
-                y = [e[1] for e in coordinates]
+                if max_silhouette_N > 0:
+                    t_sne = sklearn.manifold.TSNE(n_components=2, perplexity=20, init='random',
+                                          metric="precomputed",
+                                          random_state=7, n_iter=200, early_exaggeration=6,
+                                          learning_rate=1000)
+                    coordinates = t_sne.fit_transform(distances)
+
+                    c = pd.factorize(dataset.labels)[0]
+                    categories = np.unique(c)
+
+                    x = [e[0] for e in coordinates]
+                    y = [e[1] for e in coordinates]
 
 
-                fig = pylab.figure(figsize=(20,20))
-                ax = fig.add_subplot(111)
-                ax.set_title("TSNE projection using "+method["id"]+" top-"+str(max)+" proteins and "+metric+" distance",fontsize=12)
-                ax.grid(True,linestyle='-',color='0.75')
-                scatter = ax.scatter(x, y, c=c, marker = 'o',
-                                     cmap=plt.get_cmap('Set1', len(categories)),s=200)
-                plt.savefig("./results/t-sne_projection/samples_projection_t-sne_with_"+metric+"_dist_and_"+method["id"]+"_top-"+str(max)+"_proteins.pdf")
-                plt.clf()
+                    fig = pylab.figure(figsize=(20,20))
+                    ax = fig.add_subplot(111)
+                    ax.set_title("TSNE projection using "+method["id"]+" top-"+str(max_silhouette_N)+" proteins and "+metric+" distance. Selected by max shilhouette score, equal to "+str(max_silhouette_score),fontsize=12)
+                    ax.grid(True,linestyle='-',color='0.75')
+                    scatter = ax.scatter(x, y, c=c, marker = 'o',
+                                         cmap=plt.get_cmap('Set1', len(categories)),s=200)
+                    plt.savefig("./results/t-sne_projection/silhouette_samples_projection_t-sne_with_"+metric+"_dist_and_"+method["id"]+"_top-"+str(max_silhouette_N)+"_proteins_silhouette_"+str(max_silhouette_score)+".pdf")
+                    plt.clf()
+
+
+
                 #except:
                 #    print "Unexpected error:", sys.exc_info()[0]
                 # tooltip = mpld3.plugins.PointLabelTooltip(scatter, labels=[ids[i] for i in unknown_index])
