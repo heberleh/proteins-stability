@@ -148,7 +148,10 @@ getDoParWorkers()
 
 
 # global genes frequency
-global_genes_freq = rep(0,ncol(dataset.x))
+global_genes_freq <- rep(0, nrow(dataset.x))
+global_genes_freqs <- vector("list", nfold)
+global_genes_random_freqs <- vector("list", nfold)
+
 
 #=========================== =============================== ==============================
 #=========================== ========= OUTER LOOP ========== ==============================
@@ -207,19 +210,28 @@ for (i in 1:nfold){ #non-parallel test
     dataset3.n_samples <- nrow(dataset3.x)
     dataset3.n_genes <- ncol(dataset3.x)
 
-    # Kruskal-test for each gene
-    for (g in 1:dataset3.n_genes){
-        ktest <- kruskal.test(x, g)
-        if (ktest.p_value < 0.05){
-          genes_freq[g] <- genes_freq[g] + 1
-        }
+    for (c in unique(dataset3.y)){
+      if(matrix(dataset3.class_count[c])[1,1] < 3){
+        stop("Error: number os samples per class in inner-loop must be > 2.")
+      }
+    }
+
+    if (error == 0){
+      # Kruskal-test for each gene
+      for (g in 1:dataset3.n_genes){
+          ktest <- kruskal.test(x=dataset3.x[g,], g=dataset3.y)
+          if (as.numeric(ktest[3][1]) < 0.05){
+            genes_freq[g] <- genes_freq[g] + 1
+          }
+      }
     }
   }
 
+  # Store genes freq
+  write.matrix(genes_freq, file ="./results/kruskal_permuted_rank/genes_freq_fold_"+i+".csv", sep=",")
 
   # Update global_genes_freq
-  global_genes_freq = global_genes_freq + genes_freq
-
+  global_genes_freq <- global_genes_freq + genes_freq
 
   #===========================
   # Permutate class labels for gene's frequency distribution in randomized data
@@ -243,8 +255,8 @@ for (i in 1:nfold){ #non-parallel test
 
     # Kruskal-test for each gene
     for (g in 1:permuted_dataset2.n_genes){
-        ktest <- kruskal.test(x, g)
-        if (ktest.p_value < 0.05){
+        ktest <- kruskal.test(x=permuted_dataset2.x[g,], g=permuted_dataset2.y)
+        if (as.numeric(ktest[3][1]) < 0.05){
           genes_freq_at_random[g] <- genes_freq_at_random[g] + 1
         }
     }
@@ -252,20 +264,29 @@ for (i in 1:nfold){ #non-parallel test
   #===========================
   # end permuted dataset
 
+  # Store genes freq
+  write.matrix(genes_freq_at_random, file ="./results/kruskal_permuted_rank/genes_freq_at_random_fold_"+i+".csv", sep=",")
+
+  # Organize genes' freq of each fold
+  for (g in 1:dataset3.n_genes){
+    global_genes_freqs <- append(global_genes_freqs, genes_freq[g])
+    global_genes_random_freqs <- append(global_genes_random_freqs, genes_freq_at_random[g])
+  }
 
 
+  # Compute new rank for this fold
+  # genes_freq -> rank
 
-  # Compute t-statiscs/ANOVA? to get which genes has frequency higher than random case
-  # Create rank and save it with correspondent p-values/z-scores, freq and name
-  # for each gene, if   (z-score < 0.05)   and   (freq > random-freq)
+  # Create classifier model for all possible sets with N first genes
+  # Test them with the reserved test set (not used in parameters calculation)
+  # Store the F1 curve for further creation of folds comparison of accuracies
+  # Do the same for random permutated data
+  # for (N in i: max...)
 
 
   # Compute new rank based on frequency of genes with p-value <0.05 in all created combinations
 
-
-
   # Plot the gene's frequency distribution from each fold, versus random frequencies
-
 
   #sink()
 }#
@@ -274,6 +295,18 @@ stopCluster(cl)
 stime
 # end K-Fold
 
+
+# Compute Wilcoxon rank sum test for freq of each gene compared to permuted data
+gene_p_value <- rep(-1,nrow(dataset.x))
+for (g in 1:nrow(dataset.x)){
+  wtest <- wilcoxon.test(global_genes_freqs[g], global_genes_random_freqs[g])
+  gene_p_value[g] <- as.numeric(wteste[3][1])
+}
+
+# Store genes freq, freq at random, and p-values
+p_matrix <- cbind(global_genes_freqs,global_genes_random_freqs)
+colnames(p_matrix) <- append(append(rep('original',nfold),rep('random',nfold)),"p-value")
+write.matrix(p_matrix, file ="./results/kruskal_permuted_rank/genes_freq_fold_"+i+".csv", sep=",")
 
 # Plot the global gene's frequency distribution versus random freq distr.
 
