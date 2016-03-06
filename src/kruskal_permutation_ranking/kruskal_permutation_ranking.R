@@ -311,6 +311,15 @@ write.matrix(p_matrix, file ="./results/kruskal_permuted_rank/genes_freq_fold_"+
 # Plot the global gene's frequency distribution versus random freq distr.
 
 
+# Scaterplot de  ranks finais de cada fold 2 a 2, quanto mais na diagonal, melhor.. como no trbaalho de ideker.
+# Definir forma de verificar estabilidade das listas... como quantificar? como dizer se é alta ou baixa?
+# Gerar permutações de dados, várias, e calcular estabilidade... como referência de baixa estbailidade.... verificar quão diferente é? vai ser mto diferente, não? -.- hum... q mais?
+
+# !!!!!!!!!!! Comparar estabilidade de Kruskal normal com a nova proposta.. via frqueências!!!!
+
+
+
+
 
 
 
