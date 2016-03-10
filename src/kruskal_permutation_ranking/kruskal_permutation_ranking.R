@@ -288,7 +288,7 @@ cat("Number of folds: ",nfold,"\n")
 
   }
 
-  print(genes_freq)
+  #print(genes_freq)
 
   # Store genes freq
   genes_freq_matrix <- cbind(cbind(colnames(dataset.x),genes_freq),t(dataset.x))
@@ -306,7 +306,7 @@ cat("Number of folds: ",nfold,"\n")
   genes_freq_at_random <- rep.int(0,dataset2.n_genes)
 
   # Compute p-values for each gene of each combination
-  for (j in 1:ncol(combinations)){
+  for (j in 1:nrow(indexes_combinations)){
     combination_indexes <- as.vector(as.matrix(indexes_combinations[j,]))
     current_combination <- c()
     ci <- 1
@@ -333,7 +333,7 @@ cat("Number of folds: ",nfold,"\n")
         }
     }
   }
-  print(genes_freq_at_random)
+  #print(genes_freq_at_random)
   #===========================
   # end permuted dataset
 
