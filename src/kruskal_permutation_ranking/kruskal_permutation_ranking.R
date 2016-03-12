@@ -1,6 +1,6 @@
 
 #Installing required packages
-list.of.packages <- c("combinat", "doSNOW","snow", "rpart", "parallel", "MASS")
+list.of.packages <- c("combinat", "doSNOW","snow", "rpart", "parallel", "MASS", "e1071")
 new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
 
 if(length(new.packages)) install.packages(new.packages,repos="http://brieger.esalq.usp.br/CRAN/")
@@ -8,7 +8,7 @@ if(length(new.packages)) install.packages(new.packages,repos="http://brieger.esa
 library("rpart")
 library("MASS")
 #library("class")
-#library("e1071")
+library("e1071")
 #library("dismo")
 #library("caret")
 library("parallel")
@@ -88,9 +88,16 @@ nCluster <- detectCores()    # AUTOMATICALLY SELECT ALL POSSIBLE CORES FOR PARAL
 #nCluster <- 8               # MANUALLY SET THE NUMBER OF CORES/NUCLEUS FOR PARALLEL PROCESSING.
 
 class_delta <- 1
+
+TUNE <- FALSE
 #=========================== =============================== ==============================
 #=========================== =============================== ==============================
 #=========================== =============================== ==============================
+
+
+
+fileConn<-file("log.txt")
+
 
 
 
@@ -102,8 +109,16 @@ db2 <-t(db)
 dataset.x <- as.matrix(db2[3:nrow(db2),2:(ncol(db2))])
 class(dataset.x) <- "numeric"
 colnames(dataset.x)<-db2[2,2:ncol(db2)]
+
+writeLines(paste(rownames(dataset.x)), fileConn)
+writeLines("\n\n", fileConn)
+
+# first line of original matrix is already col/rownames
+#print(db2[3:nrow(db2),1]) -> classes
+#print(db2[3:nrow(db2),2]) -> values
 dataset.y <- as.factor(db2[3:nrow(db2),1])
 
+writeLines(paste(table(dataset.y)), fileConn)
 
 # z-score? Models like SVM have padronization by z-score by default.
 # Do not use this z-score code, unless you really want and know what
@@ -143,6 +158,11 @@ folds <- balanced.folds(y=dataset.y)
 nfold <- length(folds)
 allrep <- list()
 
+cat("Number of folds", nfold,"\n")
+
+writeLines(paste("Number of folds: ",nfold), fileConn)
+
+
 # Set up parallel computing of K-Fold cross-validation
 cl <- makeCluster(nCluster,type="SOCK")
 registerDoSNOW(cl)
@@ -162,8 +182,6 @@ global_genes_freq <- rep(0, ncol(dataset.x))
 
 
 
-
-cat("Number of folds: ",nfold,"\n")
 #for (i in 1:nfold){ #non-parallel test
 
   # selected_inner = list()
@@ -174,6 +192,9 @@ cat("Number of folds: ",nfold,"\n")
   # outer_N = vector()
 
   # Define ith train and test set
+  fold_snames_train <-  rownames(dataset.x[-folds[[i]], ,drop=FALSE])
+  fold_snames_test <- rownames(dataset.x[folds[[i]], ,drop=FALSE])
+
   dataset2.x <- dataset.x[-folds[[i]], ,drop=FALSE]
   dataset2.y <- dataset.y[-folds[[i]]]
   dataset2.testX <- dataset.x[folds[[i]], ,drop=FALSE]
@@ -344,20 +365,59 @@ cat("Number of folds: ",nfold,"\n")
   write.matrix(rand_freq_matrix, file =paste("./results/kruskal_permuted_rank/genes_freq_at_random_fold_",i,".csv",collapse=""), sep=",")
 
 
-  result <- list(g_freqs = genes_freq, g_freq_at_random = genes_freq_at_random)
+  # Rank the proteins by higher frequency
+  ranking_index <- order(genes_freq, decreasing=T)
+  rank_accuracy <- {}
+  bestN <- 1
+  bestAcc <- 0
+
+  # Test accuracy of ranking using test set for N first proteins in ranking
+  best <- list(parameters=list(2))
+  tuned <- list(best=best)
+  tuned$best.parameters[1] = 10^(-4)
+  tuned$best.parameters[2] = 10
+  for(nfeatures in 1:ncol(dataset.x)){
+    # Choose best parameters for svm model
+    if (TUNE){
+      tuned <- tune.svm(x=dataset2.x[,ranking_index[1:nfeatures]], y=dataset2.y, gamma = 10^(-6:-1), cost = 10^(1:2))
+    }
+
+    # Create svm model
+    svmModel <- svm(x=dataset2.x[,ranking_index[1:nfeatures]], y=dataset2.y, cost = tuned$best.parameters[2], gamma=tuned$best.parameters[1], cachesize=100,  scale=T, type="C-classification", kernel="linear")
+
+    # Test the model
+    pred <- predict(svmModel, dataset2.testX[,ranking_index[1:nfeatures]])
+
+    exp_pred <- factor(dataset2.testY, levels=levels(pred))
+
+    # Calculate accuracy
+    accuracy <- (length(which(as.logical(pred == exp_pred)))/length(dataset2.testY))
+
+    rank_accuracy<-rbind(rank_accuracy,accuracy)
+
+    # If it is the best accuracy, select N
+    if (rank_accuracy[bestN] < accuracy){
+      bestN <- nfeatures
+      bestAcc <- accuracy
+    }
+
+  }
+
+  accuracy_by_genes_original_position <- rep(0.0,ncol(dataset.x))
+  for (g in 1:ncol(dataset.x)){
+    acc <- rank_accuracy[g]
+    index <- ranking_index[g]
+    accuracy_by_genes_original_position[index] <- acc
+  }
+
+
+
+
+  result <- list(fold=i, g_freqs = genes_freq, g_freq_at_random = genes_freq_at_random, N = bestN, bestAccuracy = bestAcc, accuracy_by_org_g_pos = accuracy_by_genes_original_position, train_names = fold_snames_train, test_names= fold_snames_test)
 
   result
   # Compute new rank for this fold
   # genes_freq -> rank
-
-  # Create classifier model for all possible sets with N first genes
-  # Test them with the reserved test set (not used in parameters calculation)
-  # Store the F1 curve for further creation of folds comparison of accuracies
-  # Do the same for random permutated data
-  # for (N in i: max...)
-
-
-  # Compute new rank based on frequency of genes with p-value <0.05 in all created combinations
 
   # Plot the gene's frequency distribution from each fold, versus random frequencies
 
@@ -371,10 +431,25 @@ stime
 
 global_genes_random_freqs <- c()
 global_genes_freqs <- c()
+global_rank_accuracy <- {}
+global_n_values <- {}
+train_names <- {}
+test_names <- {}
+i_order <- c()
+bestAcc <- {}
 for (k in 1:nfold){
-  global_genes_freqs <- cbind(global_genes_freqs, allrep[[1,k]])
-  global_genes_random_freqs <- cbind(global_genes_random_freqs, allrep[[2,k]])
+  i <- allrep[[1,k]]
+  i_order <- c(i_order,i)
+  global_genes_freqs <- cbind(global_genes_freqs, allrep[[2,i]])
+  global_genes_random_freqs <- cbind(global_genes_random_freqs, allrep[[3,i]])
+  global_n_values <- cbind(global_n_values, allrep[[4,i]] )
+  bestAcc <- cbind(bestAcc, allrep[[5,i]])
+  global_rank_accuracy <- cbind(global_rank_accuracy, allrep[[6,i]])
+  train_names <- cbind(train_names, allrep[[7,i]])
+  test_names <- cbind(test_names, allrep[[8,i]])
 }
+
+print(i_order)
 
 print(global_genes_random_freqs[1:5,])
 print(global_genes_freqs[1:5,])
@@ -411,11 +486,26 @@ total_freq_genes <- colSums(global_genes_freqs)
 print(dim(total_freq_genes))
 print(dim(gene_p_value))
 # Store genes freq, freq at random, and p-values
-p_matrix <- cbind(cbind(cbind(cbind(colnames(dataset.x),complete_train_p_value),total_freq_genes),gene_p_value),cbind(t(global_genes_freqs),t(global_genes_random_freqs)))
+p_matrix <- cbind(cbind(cbind(cbind(colnames(dataset.x),complete_train_p_value),total_freq_genes),gene_p_value),cbind(cbind(t(global_genes_freqs),t(global_genes_random_freqs)), global_rank_accuracy))
 
-colnames(p_matrix) <- c("protein",c("complete_train_p_value",c("total_freq",c("p-value_orig_vs_random",append(rep('original',nfold),rep('permuted',nfold))))))
+colnames(p_matrix) <- c("protein",c("complete_train_p_value",c("total_freq",c("p-value_orig_vs_random",append(append(i_order,rep('permuted',nfold)),i_order)))))
 
 write.matrix(p_matrix, file =paste("./results/kruskal_permuted_rank/genes_freq_all_folds.csv",collapse=""), sep=",")
+
+
+global_n_values <- as.matrix(global_n_values)
+colnames(global_n_values) <- i_order
+write.matrix(rbind(global_n_values, bestAcc), file =paste("./results/kruskal_permuted_rank/selected_N_acc_each_folder.csv",collapse=""), sep=",")
+
+colnames(train_names) <- i_order
+write.matrix(train_names, file =paste("./results/kruskal_permuted_rank/sample_names_train_k-fold.csv",collapse=""), sep=",")
+
+colnames(test_names) <- i_order
+write.matrix(test_names, file =paste("./results/kruskal_permuted_rank/sample_names_test_k-fold.csv",collapse=""), sep=",")
+
+
+writeLines("\n", fileConn)
+close(fileConn)
 
 # Plot the global gene's frequency distribution versus random freq distr.
 
