@@ -1,6 +1,5 @@
 1,2,3,4,5,6,7,8,9
-X100fmol_T3T4T5    ,X100fmol_T3T4S45   ,X100fmol_T3T4T9    ,X100fmol_T3T4T65   ,X100fmol_T3T4T13   ,X100fmol_T3T4S82   ,X100fmol_T3T4T2    ,X100fmol_T3T4S32   ,X100fmol_T3T4S44   
-X12.5fmol_C9       ,X12.5fmol_C3       ,X12.5fmol_C10      ,X12.5fmol_C1       ,X100fmol_T3T4S81   ,X12.5fmol_C4       ,X12.5fmol_C8       ,X12.5fmol_Ro       ,X12.5fmol_C5       
-X25fmol_semtumorS40,X25fmol_semtumorS57,X25fmol_semtumorS61,X25fmol_semtumorS49,X12.5fmol_C2       ,X25fmol_semtumorT16,X25fmol_semtumorS64,X25fmol_semtumorS36,X25fmol_semtumorS55
-X25fmol_semtumorS09,X50fmol_T1T2S57    ,X50fmol_T1T2S77    ,X50fmol_T1T2T23    ,X25fmol_semtumorS68,X50fmol_T1T2T12    ,X50fmol_T1T2S78    ,X50fmol_T1T2T20    ,X50fmol_T1T2S79    
-X50fmol_T1T2T22    ,X100fmol_T3T4S45   ,X100fmol_T3T4T9    ,X100fmol_T3T4T65   ,X50fmol_T1T2S17    ,X100fmol_T3T4S82   ,X100fmol_T3T4T2    ,X100fmol_T3T4S32   ,X100fmol_T3T4S44   
+X100fmol_T3T4T2    ,X100fmol_T3T4T65   ,X100fmol_T3T4S45   ,X100fmol_T3T4S32   ,X100fmol_T3T4T9    ,X100fmol_T3T4T13   ,X100fmol_T3T4S82   ,X100fmol_T3T4S44   ,X100fmol_T3T4S81   
+X12.5fmol_C8       ,X12.5fmol_C4       ,X12.5fmol_C9       ,X12.5fmol_C1       ,X12.5fmol_C3       ,X12.5fmol_C5       ,X100fmol_T3T4T5    ,X12.5fmol_C2       ,X12.5fmol_Ro       
+X25fmol_semtumorS49,X25fmol_semtumorS40,X25fmol_semtumorS36,X25fmol_semtumorS64,X25fmol_semtumorS57,X25fmol_semtumorS61,X12.5fmol_C10      ,X25fmol_semtumorS09,X25fmol_semtumorT16
+X50fmol_T1T2T20    ,X50fmol_T1T2T22    ,X50fmol_T1T2T23    ,X50fmol_T1T2S78    ,X50fmol_T1T2S17    ,X25fmol_semtumorS68,X25fmol_semtumorS55,X50fmol_T1T2S79    ,X50fmol_T1T2S57    

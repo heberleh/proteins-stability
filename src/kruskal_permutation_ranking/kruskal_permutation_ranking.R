@@ -176,13 +176,11 @@ getDoParWorkers()
 # Run parallel computing of K-Fold
 stime <- system.time({
 allrep <- foreach (i = 1:nfold, .combine="cbind", .packages = c("e1071","dismo","class","rpart","MASS")) %dopar%{
+#for (i in 1:nfold){ #non-parallel test
+
 
 # global genes frequency
 global_genes_freq <- rep(0, ncol(dataset.x))
-
-
-
-#for (i in 1:nfold){ #non-parallel test
 
   # selected_inner = list()
   # outer_error = vector()
@@ -207,9 +205,13 @@ global_genes_freq <- rep(0, ncol(dataset.x))
 
   genes_freq <- rep.int(0,dataset2.n_genes)
 
+  # Tune variable is used when CV and when classify the independent test of each loop
+  tuned <- tune.svm(x=dataset2.x, y=dataset2.y, gamma = 2^(-4:2), cost = 2^(1:4))
+
+
 
   #=========================== ===============================
-  #=========================== ========= INNER LOOP ==========
+  #=========================== ======== INNER LOOP 1 =========
   # For each train set we will compute all combinations of samples, removing 1 sample of each class/condition
   # For example: if we have 10 samples per class, the new train set will have 9 samples per class
   #              The new train set is used to calculate 1 rank
@@ -373,13 +375,13 @@ global_genes_freq <- rep(0, ncol(dataset.x))
 
   # Test accuracy of ranking using test set for N first proteins in ranking
   best <- list(parameters=list(2))
-  tuned <- list(best=best)
-  tuned$best.parameters[1] = 10^(-4)
-  tuned$best.parameters[2] = 10
+  # tuned <- list(best=best)
+  # tuned$best.parameters[1] = 10^(-4)
+  # tuned$best.parameters[2] = 10
   for(nfeatures in 1:ncol(dataset.x)){
     # Choose best parameters for svm model
     if (TUNE){
-      tuned <- tune.svm(x=dataset2.x[,ranking_index[1:nfeatures]], y=dataset2.y, gamma = 10^(-6:-1), cost = 10^(1:2))
+      tuned <- tune.svm(x=dataset2.x[,ranking_index[1:nfeatures]], y=dataset2.y, gamma = 2^(-4:2), cost = 2^(1:5))
     }
 
     # Create svm model
@@ -396,7 +398,7 @@ global_genes_freq <- rep(0, ncol(dataset.x))
     rank_accuracy<-rbind(rank_accuracy,accuracy)
 
     # If it is the best accuracy, select N
-    if (rank_accuracy[bestN] < accuracy){
+    if (bestAcc < accuracy){
       bestN <- nfeatures
       bestAcc <- accuracy
     }
@@ -412,8 +414,39 @@ global_genes_freq <- rep(0, ncol(dataset.x))
 
 
 
+  #=========================== ===============================
+  #=========================== ======== INNER LOOP 2 =========
+  # K-fold inner for mean max. accuracy calculation
+  folds_inner <- balanced.folds(y=dataset.y)
+  nfold_inner <- length(folds_inner)
 
-  result <- list(fold=i, g_freqs = genes_freq, g_freq_at_random = genes_freq_at_random, N = bestN, bestAccuracy = bestAcc, accuracy_by_org_g_pos = accuracy_by_genes_original_position, train_names = fold_snames_train, test_names= fold_snames_test)
+  cv_bestN <- 1
+  cv_bestAcc <- 0
+  cross_acc_by_N_rank <- c()
+  for(nfeatures in 1:ncol(dataset.x)){
+
+    model <- svm(x=dataset2.x[,ranking_index[1:nfeatures]], y=dataset2.y, data=trainingtemp, method="C-classification", kernel="sigmoid", cost = tuned$best.parameters[2], gamma=tuned$best.parameters[1], cross=nfold_inner)
+
+    cross_acc_by_N_rank <- c(cross_acc_by_N_rank, model$tot.accuracy)
+
+    if (cv_bestAcc < model$tot.accuracy){
+      cv_bestN <- nfeatures
+      cv_bestAcc <- model$tot.accuracy
+    }
+  }
+
+
+  cv_accuracy_by_genes_original_position <- rep(0.0,ncol(dataset.x))
+  for (g in 1:ncol(dataset.x)){
+    cvacc <- cross_acc_by_N_rank[g]
+    index <- ranking_index[g]
+    cv_accuracy_by_genes_original_position[index] <- cvacc
+  }
+
+
+
+
+  result <- list(fold=i, g_freqs = genes_freq, g_freq_at_random = genes_freq_at_random, N = bestN, bestAccuracy = bestAcc, accuracy_by_org_g_pos = accuracy_by_genes_original_position, train_names = fold_snames_train, test_names= fold_snames_test, cv_acc=cv_accuracy_by_genes_original_position, cvN = cv_bestN, cvAcc = cv_bestAcc)
 
   result
   # Compute new rank for this fold
@@ -437,16 +470,22 @@ train_names <- {}
 test_names <- {}
 i_order <- c()
 bestAcc <- {}
+cross_acc <- {}
+cv_bestN <- {}
+cv_bestAcc <- {}
 for (k in 1:nfold){
   i <- allrep[[1,k]]
   i_order <- c(i_order,i)
   global_genes_freqs <- cbind(global_genes_freqs, allrep[[2,i]])
   global_genes_random_freqs <- cbind(global_genes_random_freqs, allrep[[3,i]])
-  global_n_values <- cbind(global_n_values, allrep[[4,i]] )
+  global_n_values <- cbind(global_n_values, allrep[[4,i]])
   bestAcc <- cbind(bestAcc, allrep[[5,i]])
   global_rank_accuracy <- cbind(global_rank_accuracy, allrep[[6,i]])
   train_names <- cbind(train_names, allrep[[7,i]])
   test_names <- cbind(test_names, allrep[[8,i]])
+  cross_acc <- cbind(cross_acc, allrep[[9,i]])
+  cv_bestN <- cbind(cv_bestN, allrep[[10,i]])
+  cv_bestAcc <- cbind(cv_bestAcc, allrep[[11,i]])
 }
 
 print(i_order)
@@ -486,9 +525,9 @@ total_freq_genes <- colSums(global_genes_freqs)
 print(dim(total_freq_genes))
 print(dim(gene_p_value))
 # Store genes freq, freq at random, and p-values
-p_matrix <- cbind(cbind(cbind(cbind(colnames(dataset.x),complete_train_p_value),total_freq_genes),gene_p_value),cbind(cbind(t(global_genes_freqs),t(global_genes_random_freqs)), global_rank_accuracy))
+p_matrix <- cbind(cbind(cbind(cbind(colnames(dataset.x),complete_train_p_value),total_freq_genes),gene_p_value),cbind(cbind(cbind(t(global_genes_freqs),t(global_genes_random_freqs)), global_rank_accuracy),cross_acc))
 
-colnames(p_matrix) <- c("protein",c("complete_train_p_value",c("total_freq",c("p-value_orig_vs_random",append(append(i_order,rep('permuted',nfold)),i_order)))))
+colnames(p_matrix) <- c("protein",c("complete_train_p_value",c("total_freq",c("p-value_orig_vs_random",append(append(append(i_order,rep('permuted',nfold)),i_order),rep('cv_inner',nfold))))))
 
 write.matrix(p_matrix, file =paste("./results/kruskal_permuted_rank/genes_freq_all_folds.csv",collapse=""), sep=",")
 
@@ -496,6 +535,9 @@ write.matrix(p_matrix, file =paste("./results/kruskal_permuted_rank/genes_freq_a
 global_n_values <- as.matrix(global_n_values)
 colnames(global_n_values) <- i_order
 write.matrix(rbind(global_n_values, bestAcc), file =paste("./results/kruskal_permuted_rank/selected_N_acc_each_folder.csv",collapse=""), sep=",")
+
+colnames(cv_bestN) <- i_order
+write.matrix(rbind(cv_bestN, cv_bestAcc), file =paste("./results/kruskal_permuted_rank/selected_N_acc_each_folder_CV.csv",collapse=""), sep=",")
 
 colnames(train_names) <- i_order
 write.matrix(train_names, file =paste("./results/kruskal_permuted_rank/sample_names_train_k-fold.csv",collapse=""), sep=",")
