@@ -154,7 +154,7 @@ writeLines(paste(table(dataset.y)), fileConn)
 # Doing that we can analyse the stability of accuracy of the new ranking method
 # and the stability of new rankings generated as well
 
-folds <- balanced.folds(y=dataset.y)
+folds <- balanced.folds(y=dataset.y,5)
 nfold <- length(folds)
 allrep <- list()
 
