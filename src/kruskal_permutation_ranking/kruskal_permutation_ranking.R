@@ -103,6 +103,8 @@ fileConn<-file("log.txt")
 
 
 
+
+
 #=========================== =============================== ==============================
 #=========================== ===== PRE-PROCESSING DATA ===== ==============================
 db2 <-t(db)
@@ -117,6 +119,12 @@ writeLines("\n\n", fileConn)
 #print(db2[3:nrow(db2),1]) -> classes
 #print(db2[3:nrow(db2),2]) -> values
 dataset.y <- as.factor(db2[3:nrow(db2),1])
+
+writeLines("teste", fileConn)
+writeLines(paste("Classes: ", dataset.y), fileConn)
+
+
+
 
 writeLines(paste(table(dataset.y)), fileConn)
 
@@ -154,7 +162,7 @@ writeLines(paste(table(dataset.y)), fileConn)
 # Doing that we can analyse the stability of accuracy of the new ranking method
 # and the stability of new rankings generated as well
 
-folds <- balanced.folds(y=dataset.y,5)
+folds <- balanced.folds(y=dataset.y)
 nfold <- length(folds)
 allrep <- list()
 
