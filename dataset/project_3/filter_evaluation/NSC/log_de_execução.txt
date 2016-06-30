@@ -1,0 +1,127 @@
+Number of classes:  3
+Number of calculated p-values 281
+
+
+Testing filter: Kruskal , p-value: 0.01
+Number of genes: 16
+Testing lists of 2 genes.
+There are  120 lists to be tested. Estimated time to complete: 0 minutes.
+Accuracy 0.99  implies in  0 sets of genes.
+Accuracy 0.97  implies in  0 sets of genes.
+Accuracy 0.95  implies in  0 sets of genes.
+Accuracy 0.9  implies in  0 sets of genes.
+Accuracy 0.85  implies in  4 sets of genes.
+Accuracy 0.8  implies in  5 sets of genes.
+The pool of processes took  0.00205955108007 minutes to finish the job.
+
+Testing lists of 3 genes.
+There are  560 lists to be tested. Estimated time to complete: 0.00961123837365 minutes.
+Accuracy 0.99  implies in  0 sets of genes.
+Accuracy 0.97  implies in  0 sets of genes.
+Accuracy 0.95  implies in  0 sets of genes.
+Accuracy 0.9  implies in  2 sets of genes.
+Accuracy 0.85  implies in  18 sets of genes.
+Accuracy 0.8  implies in  29 sets of genes.
+The pool of processes took  0.00735333363215 minutes to finish the job.
+
+
+
+Testing filter: Kruskal , p-value: 0.05
+Number of genes: 49
+Testing lists of 2 genes.
+There are  1176 lists to be tested. Estimated time to complete: 0 minutes.
+Accuracy 0.99  implies in  0 sets of genes.
+Accuracy 0.97  implies in  0 sets of genes.
+Accuracy 0.95  implies in  0 sets of genes.
+Accuracy 0.9  implies in  0 sets of genes.
+Accuracy 0.85  implies in  6 sets of genes.
+Accuracy 0.8  implies in  8 sets of genes.
+The pool of processes took  0.0112489302953 minutes to finish the job.
+
+Testing lists of 3 genes.
+There are  18424 lists to be tested. Estimated time to complete: 0.176233241293 minutes.
+Accuracy 0.99  implies in  0 sets of genes.
+Accuracy 0.97  implies in  0 sets of genes.
+Accuracy 0.95  implies in  0 sets of genes.
+Accuracy 0.9  implies in  6 sets of genes.
+Accuracy 0.85  implies in  67 sets of genes.
+Accuracy 0.8  implies in  115 sets of genes.
+The pool of processes took  0.166449753443 minutes to finish the job.
+
+
+
+Testing filter: Kruskal , p-value: 0.1
+Number of genes: 75
+Testing lists of 2 genes.
+There are  2775 lists to be tested. Estimated time to complete: 0 minutes.
+Accuracy 0.99  implies in  0 sets of genes.
+Accuracy 0.97  implies in  0 sets of genes.
+Accuracy 0.95  implies in  0 sets of genes.
+Accuracy 0.9  implies in  0 sets of genes.
+Accuracy 0.85  implies in  8 sets of genes.
+Accuracy 0.8  implies in  10 sets of genes.
+The pool of processes took  0.0223682522774 minutes to finish the job.
+
+Testing lists of 3 genes.
+There are  67525 lists to be tested. Estimated time to complete: 0.544294138749 minutes.
+Accuracy 0.99  implies in  0 sets of genes.
+Accuracy 0.97  implies in  0 sets of genes.
+Accuracy 0.95  implies in  0 sets of genes.
+Accuracy 0.9  implies in  7 sets of genes.
+Accuracy 0.85  implies in  115 sets of genes.
+Accuracy 0.8  implies in  231 sets of genes.
+The pool of processes took  0.561086630821 minutes to finish the job.
+
+
+
+Testing filter: Kruskal , p-value: 0.5
+Number of genes: 176
+Testing lists of 2 genes.
+There are  15400 lists to be tested. Estimated time to complete: 0 minutes.
+Accuracy 0.99  implies in  0 sets of genes.
+Accuracy 0.97  implies in  0 sets of genes.
+Accuracy 0.95  implies in  0 sets of genes.
+Accuracy 0.9  implies in  0 sets of genes.
+Accuracy 0.85  implies in  8 sets of genes.
+Accuracy 0.8  implies in  14 sets of genes.
+The pool of processes took  0.0990296681722 minutes to finish the job.
+
+Testing lists of 3 genes.
+There are  893200 lists to be tested. Estimated time to complete: 5.74372075399 minutes.
+Accuracy 0.99  implies in  0 sets of genes.
+Accuracy 0.97  implies in  0 sets of genes.
+Accuracy 0.95  implies in  0 sets of genes.
+Accuracy 0.9  implies in  7 sets of genes.
+Accuracy 0.85  implies in  294 sets of genes.
+Accuracy 0.8  implies in  625 sets of genes.
+The pool of processes took  5.89719958305 minutes to finish the job.
+
+
+
+Testing filter: Kruskal , p-value: 1.1
+Number of genes: 281
+Testing lists of 2 genes.
+There are  39340 lists to be tested. Estimated time to complete: 0 minutes.
+Accuracy 0.99  implies in  0 sets of genes.
+Accuracy 0.97  implies in  0 sets of genes.
+Accuracy 0.95  implies in  0 sets of genes.
+Accuracy 0.9  implies in  0 sets of genes.
+Accuracy 0.85  implies in  10 sets of genes.
+Accuracy 0.8  implies in  24 sets of genes.
+The pool of processes took  0.216320697467 minutes to finish the job.
+
+Testing lists of 3 genes.
+There are  3658620 lists to be tested. Estimated time to complete: 20.1178248644 minutes.
+Accuracy 0.99  implies in  0 sets of genes.
+Accuracy 0.97  implies in  0 sets of genes.
+Accuracy 0.95  implies in  0 sets of genes.
+Accuracy 0.9  implies in  9 sets of genes.
+Accuracy 0.85  implies in  495 sets of genes.
+Accuracy 0.8  implies in  1090 sets of genes.
+The pool of processes took  20.5055157502 minutes to finish the job.
+
+
+
+
+ Time to complete the algorithm 27.5682437658 minutes.
+

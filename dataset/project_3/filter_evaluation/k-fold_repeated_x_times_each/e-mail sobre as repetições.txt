@@ -1,0 +1,33 @@
+Pelo o que me disse, você estava usando o método KW como selecionador de proteínas.
+
+Depois usava um modelo classificador com essas proteínas selecionadas, por p<0.05 e p<0.01 e p <= 1.00. Certo?
+
+
+Pois bem, há um problema: um K-fold pode te dar um resultado errado, por conta do número de amostras. Por isso é interessante repetir o processo....
+
+No Weka seria a mesma coisa que ir lá, fazer um K-fold. Anotar a acurácia.
+Ir de novo... fazer outro... anotar a acurácia...
+e repetir isso 10 vezes ou 100 vezes.
+Daí anotar a média e o desvio padrão.
+
+Ah, só pra lembrar o valor de acurácia de cada K-fold já é uma média (média de acurácia de cada fold).
+
+Moral da história, criei planilhas variando os seguintes pontos:
+
+    Valor de K de K-Fold:  5, 9 e 10;
+    Valor de p (cutoff): de 0.01 até 1.00 (com passos de 0.01)
+    Classificadores: NSC, Gaussian Naive Bayes, SVM-Linear, Decision Tree, Random Forest (todos com valores default... e normalizando com média 0 e desvio 1).
+
+Seguem planilhas em anexo.
+
+Eu não tirei a média das repetições nem o desvio padrão.
+
+Um gráfico que ficaria legal é aqueles que mostra uma curva sendo a média e uma curva superior e uma inferior a ela... mostrando o desvio pra + e pra menos.
+Eixo-y : valor de acurácia média, valor de acurácia máxima e valor de acurácia mínima
+Eixo-x: valor de cutoff
+
+
+Outra observação, em cada vez que o K-fold é executado ele divide as amostras em K conjuntos aleatórios (mantendo as classes corretas). Ou seja, se eu tenho 4 proteínas, executo um K-fold e dá acurácia 80%. Executo o K-Fold de novo com as mesmas 4 proteínas e obtenho acurácia 70%. Normal. Devido a aleatoriedade da "reamostragem". Além disso, não há garantias que uma fold contenha pelo menos 1 amostra de cada classe. Isso implica que pode haver conjunto de teste que tenha só amostras de 25, ou só de 50, por exemplo...  e imagina que as amostra de 25 são as mais difíceis de classificar, então o erro final vai ser maior. Mas é por isso que se tira a média das folds... e mesmo assim encontramos Acurácias muito variadas entre as 10 ou 100 repetições.
+
+Acho que os gráficos vão permitir a melhor análise dos resultados. Pense qual seria o melhor gráfico para visualizar o que quiser.
+

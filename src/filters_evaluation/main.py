@@ -8,6 +8,7 @@ from pandas import factorize
 from dataset import Dataset
 from sklearn import svm
 from wilcoxon import WilcoxonRankSumTest
+from kruskal import KruskalRankSumTest3Classes
 from numpy import min, unique
 import time
 import itertools
@@ -111,7 +112,7 @@ def evaluate_genes(dataset, p_values, accuracies, genes_by_filter, n, k, classif
         for accuracy in accuracies:
             header += ",acc>" + str(accuracy)
         f.write(header+"\n")
-        
+
         results = dict()
         for genes_dict in genes_by_filter:
             genes = genes_dict["genes"]  # attributes to be considered from x
@@ -204,61 +205,93 @@ def evaluate_genes(dataset, p_values, accuracies, genes_by_filter, n, k, classif
 if __name__ == '__main__':
     global x, y, n, k, ns, nk, max_len, min_acc, classifier_class, min_break_accuracy
 
-    dataset = Dataset("../spectral.csv", scale=True)
+    dataset = Dataset("../../dataset/current/train.csv", scale=True)
 
-    wil = WilcoxonRankSumTest(dataset)
-    wil_z, wil_p = wil.run()
+    n_classes = len(unique(dataset.labels))
+    print "Number of classes: ", n_classes
 
-    print "Number of calculated p-values", len(wil_p)
+    # classifier_class = svm.LinearSVC
 
-    # wil_genes = [dataset.genes[i] for i in range(len(wil_p)) if wil_p[i] < 0.05]
-    wilcoxon = {"filter": "Wilcoxon",
-                "genes": dataset.genes,
-                "p-value": wil_p}
+    #from sklearn.naive_bayes import GaussianNB
+    #classifier_class = GaussianNB
+
+    from sklearn.neighbors.nearest_centroid import NearestCentroid
+    classifier_class = NearestCentroid
+
+    #from sklearn import tree
+    #classifier_class = tree.DecisionTreeClassifier
+
+    # from sklearn.ensemble import RandomForestClassifier
+    # classifier_class = RandomForestClassifier
+
+    p_values = [0.01, 0.05, 0.1, 0.5, 1.1]
+    accuracies = [0.99, 0.97, 0.95, 0.90, 0.85, 0.8]
 
     n = 1  # n repetitions of k-fold cross validation
+    k = 9  # k-fold cross validations
 
-    k = 10  # k-fold cross validations
-
-    min_break_accuracy = 0.6  # if any loop of a k-fold returns acc < min_break_accuracy
+    min_break_accuracy = 0.4  # if any loop of a k-fold returns acc < min_break_accuracy
     # it will break computation for the correspondent subset of genes
 
-    classifier_class = svm.LinearSVC
+    if n_classes == 2:
+        wil = WilcoxonRankSumTest(dataset)
+        wil_z, wil_p = wil.run()
 
-    p_values = [0.01, 0.05, 0.1, 0.5, 0.7]
-    accuracies = [0.97, 0.95, 0.90, 0.85, 0.8]
-    genes_by_filter = [wilcoxon]
+        print "Number of calculated p-values", len(wil_p)
+
+        # wil_genes = [dataset.genes[i] for i in range(len(wil_p)) if wil_p[i] < 0.05]
+        wilcoxon = {"filter": "Wilcoxon",
+                    "genes": dataset.genes,
+                    "p-value": wil_p}
+
+        genes_by_filter = [wilcoxon]
+
+        start = time.time()
+        evaluate_genes(dataset, p_values, accuracies, genes_by_filter, n, k, classifier_class, min_break_accuracy)
+
+        # for size in d:
+        #     count = 0
+        #     for subset in size:
+        #         count += 1
+        #     print count
+        print ""
+        print "\n\n Time to complete the algorithm", (time.time() - start)/60, "minutes."
+
+        # max_acc = max(d.values())
+        # delta = 0.03
+        # print
+        # print
+        # print "Sets with accuracy [", max_acc-delta, ",", max_acc, "]"
+        # print
+        # print
+        # selected_sublists = []
+        # for key in d.keys():
+        #     if d[key] > max_acc-delta:
+        #         selected_sublists.append(key)
+        #
+        # import evaluation
+        # for key in selected_sublists:
+        #     index = evaluation.AccuracyHash.get_genes(key)
+        #     print [subdataset.genes[i] for i in index]
+    elif n_classes == 3:
+        krus = KruskalRankSumTest3Classes(dataset)
+        krus_h, krus_p = krus.run()
+
+        print "Number of calculated p-values", len(krus_p)
+
+        kruskal = {"filter": "Kruskal",
+                    "genes": dataset.genes,
+                    "p-value": krus_p}
 
 
-    start = time.time()
-    evaluate_genes(dataset, p_values, accuracies, genes_by_filter, n, k, classifier_class, min_break_accuracy)
+        genes_by_filter = [kruskal]
 
+        start = time.time()
+        evaluate_genes(dataset, p_values, accuracies, genes_by_filter, n, k, classifier_class, min_break_accuracy)
 
-    # for size in d:
-    #     count = 0
-    #     for subset in size:
-    #         count += 1
-    #     print count
+        print ""
+        print "\n\n Time to complete the algorithm", (time.time() - start)/60, "minutes."
 
-    print ""
-    print "\n\n Time to complete the algorithm", (time.time() - start)/60, "minutes."
-
-    # max_acc = max(d.values())
-    # delta = 0.03
-    # print
-    # print
-    # print "Sets with accuracy [", max_acc-delta, ",", max_acc, "]"
-    # print
-    # print
-    # selected_sublists = []
-    # for key in d.keys():
-    #     if d[key] > max_acc-delta:
-    #         selected_sublists.append(key)
-    #
-    # import evaluation
-    # for key in selected_sublists:
-    #     index = evaluation.AccuracyHash.get_genes(key)
-    #     print [subdataset.genes[i] for i in index]
 
 
 
