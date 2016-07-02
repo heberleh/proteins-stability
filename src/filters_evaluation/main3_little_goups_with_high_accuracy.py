@@ -156,7 +156,7 @@ def evaluate_genes(dataset, min_accuracy, n, k, max_group_size, classifiers_name
 
             #n_splits = int(n_possible_groups/40)#1000*(3/(sub_list_size*1.0)))
             n_cpu = cpu_count()
-            n_splits = n_cpu*100
+            n_splits = n_cpu*300
             start = time.time()
             pool = Pool(processes=n_cpu)
             hasnext = True
