@@ -6,7 +6,6 @@ Created on Sat Nov 20
 """
 from pandas import factorize
 from dataset import Dataset
-from sklearn import svm
 from wilcoxon import WilcoxonRankSumTest
 from kruskal import KruskalRankSumTest3Classes
 from numpy import min, unique
@@ -19,6 +18,12 @@ from numpy import mean, std, median
 from sklearn import metrics
 from datetime import datetime
 import gc
+
+import math
+
+def nCr(n,r):
+    f = math.factorial
+    return f(n) / f(r) / f(n-r)
 
 
 class CrossValidation():
@@ -47,12 +52,6 @@ class CrossValidation():
 
             classifier.fit(std_scale.transform(x_train), y_train)
             accuracy = metrics.accuracy_score(y_test, classifier.predict(std_scale.transform(x_test)))
-
-            del x_train
-            del x_test
-            del y_train
-            del y_test
-            del std_scale
 
             if accuracy > min_break_accuracy:
                 accuracy_list.append(accuracy)
@@ -85,8 +84,6 @@ class CrossValidation():
                 return mean_cross_acc
             else:
                 acc_list.append(mean_cross_acc)
-        del x_
-        del classifier
 
         return mean(acc_list)
 
@@ -97,10 +94,11 @@ def key(genes):
 
 
 def evaluate(args):
-    genes, n, x, y, classifiers_class, min_break_accuracy, k = args[0], args[1], \
+    genes, n, x, y, min_break_accuracy, k, classifiers_names = args[0], args[1], \
                                                               args[2], args[3], args[4], args[5], args[6]
     acc_list = []
-    for classifier_name in classifiers_class.keys():
+    classifiers_class = {"svm":svm.LinearSVC, "tree":tree.DecisionTreeClassifier, "nsc":NearestCentroid, "naive_bayes":GaussianNB}
+    for classifier_name in classifiers_names:
         acc_list.append(CrossValidation.run(genes, n, KFold(len(dataset.matrix), n_folds=k, shuffle=True), x, y, classifiers_class[classifier_name], min_break_accuracy))
     gc.collect()
 
@@ -111,7 +109,7 @@ def split(arr, count):
      return [arr[i::count] for i in range(count)]
 
 
-def evaluate_genes(dataset, min_accuracy, n, k, max_group_size, classifiers_class):
+def evaluate_genes(dataset, min_accuracy, n, k, max_group_size, classifiers_names):
 
     # breaks a k-fold if a minimum acc is not reached...
     # supose 5 folds, considering 4 folds with 100% acc, and we want min_accuracy of 95%
@@ -124,63 +122,64 @@ def evaluate_genes(dataset, min_accuracy, n, k, max_group_size, classifiers_clas
     # fixed folds to calculate accuracy and compare the results between different filters
     # if folds were shuffled every time k-folds runs, each time a 4-gene-set would give a different number of
     # lists of genes with accuracy > min_accuracy
+    header = "N"
+
+    for classifier_name in classifiers_names:
+        header = header + ",acc_" + classifier_name
+    header = header + ",groups"
+
+    genes_index = [i for i in range(len(dataset.genes))]
+
+    # calculate N value using number of samples and number of classes
+    x = dataset.matrix  # data matrix
+    y = factorize(dataset.labels)[0]  # classes/labels of each sample from matrix x
+
+    last_individual_time = 0   # log the time
+
+          # if a group is > min_accuracy in ANY classifier (k-fold) it will be stored in this dictionary:
+    high_acc_groups = {}
 
 
-    with open('groups_with_high_accuracy_'+time_now+'.csv', 'a') as f:
+    for sub_list_size in range(1, max_group_size):
+        genes_freq =[0 for i in range(len(dataset.genes))]
+        with open('groups_accuracy_higher_'+str(min_accuracy)+'_size_'+str(sub_list_size)+'__'+time_now+'.csv', 'a') as f:
 
-        header = "N"
-        for classifier_name in classifiers_class.keys():
-            header = header + ",acc_" + classifier_name
-        header = header + ",groups"
-        f.write(header+"\n")
+            f.write(header+"\n")
 
-        results = dict()
-
-
-        genes_index = [i for i in range(len(dataset.genes))]
-
-        # calculate N value using number of samples and number of classes
-        x = dataset.matrix  # data matrix
-        y = factorize(dataset.labels)[0]  # classes/labels of each sample from matrix x
-
-        last_individual_time = 0   # log the time
-
-              # if a group is > min_accuracy in ANY classifier (k-fold) it will be stored in this dictionary:
-        high_acc_groups = {}
-
-        print classifiers_class.keys()
-
-        for sub_list_size in range(2, max_group_size):
             print "Testing lists of", sub_list_size, "proteins."
 
             all_possible_groups = itertools.combinations(genes_index, sub_list_size)
-            lists = [(subgenes, n, x, y, classifiers_class, min_break_accuracy, k)
-                     for subgenes in all_possible_groups]
-            n_lists = len(lists)
-            print "There are ", n_lists, "lists to be tested. Estimated time to complete:",\
-                n_lists*last_individual_time/60, "minutes."
+            n_possible_groups = nCr(len(genes_index),sub_list_size)
 
-            pool = Pool(processes=cpu_count())
+            print "There are ", n_possible_groups, "lists to be tested. Estimated time to complete:",\
+                n_possible_groups*last_individual_time/60/60, "horas."
 
+            #n_splits = int(n_possible_groups/40)#1000*(3/(sub_list_size*1.0)))
+            n_cpu = cpu_count()-1
+            n_splits = n_cpu*200
             start = time.time()
+            pool = Pool(processes=n_cpu)
+            hasnext = True
+            executed = 0
+            groups_found_count = 0
+            while(hasnext):
+                current_args = []
+                for rep in range(n_splits):
+                    try:
+                        g = next(all_possible_groups)
+                        current_args.append((g, n, x, y, min_break_accuracy, k, classifiers_names))
+                    except:
+                        hasnext = False
+                        break
+                gc.collect()
 
-            n_splits = int(len(lists)/1000*(3/(sub_list_size*1.0)))
-            if n_splits == 0:
-                n_splits = 1
-
-            splited_lists = split(lists, n_splits)
-            del lists
-            gc.collect()
-
-            while len(splited_lists) > 0:
-                lists_part = splited_lists[len(splited_lists)-1] # [splited_lists)-1]  because in the end of the loop this element is removed from the list,
-                #so the position len(splited_lists)-1 will be associated to another element
-
-                acc_list_part = pool.map(evaluate, lists_part)
+                acc_list_part = pool.map(evaluate, current_args)
 
                 for i in range(len(acc_list_part)):
                     if max(acc_list_part[i]["accs"]) > min_accuracy:
                         result = acc_list_part[i]
+                        for protidx in result["group"]:
+                            genes_freq[protidx] += 1
                         group = [dataset.genes[i] for i in result["group"]]
                         accs = result["accs"]
                         line = str(len(group))
@@ -189,18 +188,26 @@ def evaluate_genes(dataset, min_accuracy, n, k, max_group_size, classifiers_clas
                         for protein in group:
                             line = line + "," + protein
                         f.write(line+"\n")
+                        groups_found_count += 1
 
-                del splited_lists[len(splited_lists)-1]
-                del acc_list_part
                 gc.collect()
+                executed = executed + len(current_args)
+                print "Restam ", n_possible_groups - executed, ". Grupos encontrados: ", groups_found_count
+            f.close()
+        with open('genes_freq_accuracy_higher_'+str(min_accuracy)+'_size_'+str(sub_list_size)+'__'+time_now+'.csv', 'a') as f2:
+            f2.write('protein, frequency\n')
+            for protidx in range(len(genes_freq)):
+                f2.write(dataset.genes[protidx] +','+str(genes_freq[protidx])+'\n')
+            f2.close()
 
-            delta = time.time()-start
-            last_individual_time = delta/float(n_lists)
-            print "The pool of processes took ", delta/60, "minutes to finish the job.\n"
+        delta = time.time()-start
+        last_individual_time = delta/float(n_possible_groups)
+        del all_possible_groups
+        print "The pool of processes took ", delta/60, "minutes to finish the job.\n"
+        pool.close()
+        pool.join()
+        gc.collect()
 
-            pool.close()
-            pool.join()
-        f.close()
 
 
 
@@ -216,28 +223,23 @@ if __name__ == '__main__':
     n_classes = len(unique(dataset.labels))
     print "Number of classes: ", n_classes
 
-    # classifier_class = svm.LinearSVC
-
+    # loading classifiers
     from sklearn.naive_bayes import GaussianNB
-    #classifier_class = GaussianNB
-
     from sklearn.neighbors.nearest_centroid import NearestCentroid
-    #classifier_class = NearestCentroid
-
     from sklearn import tree
-    #classifier_class = tree.DecisionTreeClassifier
+    from sklearn import svm
 
-    from sklearn.ensemble import RandomForestClassifier
-    # classifier_class = RandomForestClassifier
+    # classifiers that will be considered
+    classifiers_names = ["svm","tree","nsc","naive_bayes"]
 
-    classifiers_class = {"svm":svm.LinearSVC, "tree":tree.DecisionTreeClassifier, "nsc":NearestCentroid, "naive_bayes":GaussianNB}#, "random_forest":RandomForestClassifier}
-    min_accuracy = 0.929999
+    min_accuracy = 0.8999
+    #min_accuracy = 0.8
 
     n = 1  # n repetitions of k-fold cross validation
     k = 5  # k-fold cross validations
-    max_group_size = 3 # the script will test groups of size 2, 3, ..., max_group_size-1 = [2, max_group_size)
+    max_group_size = 10 # the script will test groups of size 2, 3, ..., max_group_size-1 = [2, max_group_size)
 
-    evaluate_genes(dataset, min_accuracy, n, k, max_group_size, classifiers_class)
+    evaluate_genes(dataset, min_accuracy, n, k, max_group_size, classifiers_names)
 
     print "\n\n Time to complete the algorithm", (time.time() - start)/60, "minutes."
 

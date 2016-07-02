@@ -133,7 +133,7 @@ def evaluate_genes(dataset, genes_rank_result, n, k):
             ns = len(x)  # number of samples
 
             line = str(p) + "," + str(len(filtered_genes))
-            for classifier_name in classifiers.keys():
+            for classifier_name in classifier_names:
                 for rep in range(n):
                     folds = KFold(len(dataset.matrix), n_folds=k, shuffle=True)
                     #print "P-value: "+str(p)+". Computing repetition " + str(rep) + " of classifier "+classifier_name+ ".\n"
