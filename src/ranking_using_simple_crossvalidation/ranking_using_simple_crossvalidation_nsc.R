@@ -4,7 +4,7 @@
 
 #Installing required packages
 
-list.of.packages <- c("combinat", "doSNOW","snow", "rpart", "parallel", "MASS", "e1071")
+list.of.packages <- c("combinat", "doSNOW","snow", "pamr", "rpart", "parallel", "MASS", "e1071")
 new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
 
 if(length(new.packages)) install.packages(new.packages,repos="http://brieger.esalq.usp.br/CRAN/")
@@ -14,6 +14,7 @@ library("MASS")
 #library("class")
 library("e1071")
 #library("dismo")
+library("pamr")
 library("caret")
 library("parallel")
 require(foreach)
@@ -106,124 +107,34 @@ stratified_balanced_cv <- function(y, nfolds = min(min(table(y)), 10)){
 }
 
 
-################################################
-# Feature Ranking with SVM-RFE   REFERENCE: http://www.uccor.edu.ar/paginas/seminarios/Software/SVM_RFE_R_implementation.pdf
-################################################
-svmrfeFeatureRanking = function(x,y){
-    n = ncol(x)
+getLowerErrorMaxThresholdMaxProbability <- function(errors, thresholds, probabilities){
+  min_error = min(errors)
+  higher_threshold = min(thresholds)
+  index = match(c(higher_threshold),thresholds)
 
-    survivingFeaturesIndexes = seq(1:n)
-    featureRankedList = vector(length=n)
-    rankedFeatureIndex = n
+  index_error = which(errors == min_error, arr.ind=TRUE)
 
-    while(length(survivingFeaturesIndexes)>0){
-        #train the support vector machine
-        svmModel = svm(x[, survivingFeaturesIndexes], y, cost = 10, cachesize=500,  scale=F, type="C-classification", kernel="linear" )
+  #entre os de erro m??nimo, qual o de max threshold
+  selected_thres = thresholds[index_error]
 
-        #compute the weight vector
-        w = t(svmModel$coefs)%*%svmModel$SV
+  max_threshold =  max(selected_thres)
 
-        #compute ranking criteria
-        rankingCriteria = w * w
+  index_threshold = which(thresholds == max_threshold, arr.ind=TRUE)
 
-        #rank the features
-        ranking = sort(rankingCriteria, index.return = TRUE)$ix
+  index_error_thres = intersect(index_threshold, index_error)
 
-        #update feature ranked list
-        featureRankedList[rankedFeatureIndex] = survivingFeaturesIndexes[ranking[1]]
-        rankedFeatureIndex = rankedFeatureIndex - 1
+  selected_probs = probabilities[index_error_thres]
 
-        #eliminate the feature with smallest ranking criterion
-        (survivingFeaturesIndexes = survivingFeaturesIndexes[-ranking[1]])
+  max_probability = max(selected_probs)
 
-    }
+  index_prob = which(probabilities == max_probability, arr.ind = TRUE)
 
-    return (featureRankedList)
-}
-################################################
-# Feature Ranking with Average Multiclass SVM-RFE
-################################################
+  index = intersect(index_prob, index_error_thres)[1]
 
-auxm <- list()
-svmrfeFeatureRankingForMulticlass = function(x,y,tuned){
-    n = ncol(x)
-
-    survivingFeaturesIndexes = seq(1:n)
-    featureRankedList = vector(length=n)
-    featureRankedListWeights = list()
-    rankedFeatureIndex = n
-    rankingCriteriaFull = vector()
-    while(length(survivingFeaturesIndexes)>0){
-        #train the support vector machine
-        svmModel = svm(x[, survivingFeaturesIndexes], y, tuned$best.parameters[2], gamma = tuned$best.parameters[1], scale=T, type="C-classification", kernel="linear" )
-
-        #compute the weight vector
-        multiclassWeights = svm.weights(svmModel)
-
-        #compute ranking criteria
-        multiclassWeights = multiclassWeights * multiclassWeights
-        rankingCriteria = 0
-
-        for(i in 1:ncol(multiclassWeights))rankingCriteria[i] = mean(multiclassWeights[,i])
-
-        #rank the features
-        (ranking = sort(rankingCriteria, index.return = TRUE)$ix)
-
-        #gene weight - which interaction
-        featureRankedListWeights[[survivingFeaturesIndexes[ranking[1]]]] = multiclassWeights[,ranking[1]]
-        rankingCriteriaFull[survivingFeaturesIndexes[ranking[1]]] = mean(multiclassWeights[,ranking[1]])
-
-    #ranking[i] é o index do index do atributo. em surviving pode ter restado o atributo de index 200 na posição 1. ou seja, surv[ranking[1]] = 200 -> atributo de index 200 da tabela original.
-
-        #update feature ranked list
-        (featureRankedList[rankedFeatureIndex] = survivingFeaturesIndexes[ranking[1]])
-        rankedFeatureIndex = rankedFeatureIndex - 1
-
-        #eliminate the feature with smallest ranking criterion
-        (survivingFeaturesIndexes = survivingFeaturesIndexes[-ranking[1]])
-        #cat(length(survivingFeaturesIndexes),"\n")
-    }
-
-    result = list(featureRankedList=featureRankedList, mean_weights = rankingCriteriaFull, weights=featureRankedListWeights)
-  return (result)
+  result = list(higher_threshold = max_threshold, error = min_error, probability = max_probability, index=index)
+  return(result)
 }
 
-################################################
-# This function gives the weights of the hiperplane
-################################################
-svm.weights<-function(model){
-w=0
-  if(model$nclasses==2){
-       w=t(model$coefs)%*%model$SV
-  }else{    #when we deal with OVO svm classification
-      ## compute start-index
-      start <- c(1, cumsum(model$nSV)+1)
-      start <- start[-length(start)]
-
-      calcw <- function (i,j) {
-        ## ranges for class i and j:
-        ri <- start[i] : (start[i] + model$nSV[i] - 1)
-        rj <- start[j] : (start[j] + model$nSV[j] - 1)
-
-      ## coefs for (i,j):
-        coef1 <- model$coefs[ri, j-1]
-        coef2 <- model$coefs[rj, i]
-        ## return w values:
-        w=t(coef1)%*%model$SV[ri,]+t(coef2)%*%model$SV[rj,]
-        return(w)
-      }
-
-      W=NULL
-      for (i in 1 : (model$nclasses - 1)){
-        for (j in (i + 1) : model$nclasses){
-          wi=calcw(i,j)
-          W=rbind(W,wi)
-        }
-      }
-      w=W
-  }
-  return(w)
-}
 #=========================== =============================== ==============================
 #=========================== =============================== ==============================
 
@@ -269,6 +180,8 @@ dataset.x <- as.matrix(db2[3:nrow(db2),2:(ncol(db2))])
 class(dataset.x) <- "numeric"
 colnames(dataset.x)<-db2[2,2:ncol(db2)]
 
+thresholds_number <- ncol(dataset.x)
+
 writeLines(paste(rownames(dataset.x)), fileConn)
 writeLines("\n\n", fileConn)
 
@@ -276,6 +189,8 @@ writeLines("\n\n", fileConn)
 #print(db2[3:nrow(db2),1]) -> classes
 #print(db2[3:nrow(db2),2]) -> values
 dataset.y <- as.factor(db2[3:nrow(db2),1])
+
+dataset.genesnames <- colnames(dataset.x)
 
 writeLines("teste", fileConn)
 writeLines(paste("Classes: ", dataset.y), fileConn)
@@ -297,10 +212,8 @@ nfold <- length(folds)
 cat("Number of folds", nfold,"\n")
 writeLines(paste("Number of folds: ",nfold), fileConn)
 
-
 global_genes_freq <- rep(0, ncol(dataset.x))
 avg_acc_by_rep <- rep(0,n_repetitions)
-stime <- system.time({
 for (rep in 1:n_repetitions){
   folds <- stratified_balanced_cv(y=dataset.y,nfolds=5)
   nfold <- length(folds)
@@ -310,9 +223,12 @@ for (rep in 1:n_repetitions){
   accs_kfold = rep(0,nfold)
   for (i in 1:nfold){
     # Define ith train and test set
-    dataset2.x <- dataset.x[-folds[[i]], ,drop=FALSE]
+    print(i)
+    print(i)
+
+    dataset2.x <- t(dataset.x[-folds[[i]], ,drop=FALSE])
     dataset2.y <- dataset.y[-folds[[i]]]
-    dataset2.testX <- dataset.x[folds[[i]], ,drop=FALSE]
+    dataset2.testX <- t(dataset.x[folds[[i]], ,drop=FALSE])
     dataset2.testY <- dataset.y[folds[[i]]]
     dataset2.class_count <- table(dataset2.y) #classes count
     dataset2.class_levels <- unique(dataset2.y)
@@ -320,40 +236,51 @@ for (rep in 1:n_repetitions){
     dataset2.n_samples <- nrow(dataset2.x)
     dataset2.n_genes <- ncol(dataset2.x)
 
-    tuned = NULL
-    if (TUNE == TRUE){
-      # Tune variable is used when CV and when classify the independent test of each loop
-      tuned <- tune.svm(x=dataset2.x, y=dataset2.y, gamma = 2^(-4:2), cost = 2^(1:4))
-    }else{
-      tuned$best.parameters[1] = 10^(-4)
-      tuned$best.parameters[2] = 10
-    }
+    nsc_data <- list(x=dataset2.x, y=factor(dataset2.y), genenames=dataset.genesnames, geneids=1:length(dataset.genesnames))
 
-    # rank the genes using SVM-RFE
-    rank_data <- svmrfeFeatureRankingForMulticlass(dataset2.x, dataset2.y, tuned)
-    rank = rank_data$featureRankedList
+    # select genes using NSC
+    nsc_train <- pamr.train(nsc_data)
+    nsc_scales <- pamr.adaptthresh(nsc_train)
+    nsc_train <- pamr.train(nsc_data, threshold.scale=nsc_scales, n.threshold=thresholds_number)
 
-    # testing N genes of rank
-    acc_by_n = rep(0,length(rank))
-    for(nfeatures in 1:length(rank)){
-      svmModel = svm(dataset2.x[, rank[1:nfeatures]], dataset2.y, cost = tuned$best.parameters[2], gamma = tuned$best.parameters[1], scale = T, type="C-classification", kernel="linear")
-      pred <- predict(svmModel, dataset2.testX[, rank[1:nfeatures]])
-      acc_by_n[nfeatures] = length(which(as.logical(pred == dataset2.testY)))/length(dataset2.testY)
-    }
+    #teste
+    nsc_prob <- pamr.predictmany(nsc_train, dataset2.testX)
 
-    # Select the smallest list of genes with max Accuracy
-    max_acc = max(acc_by_n)
-    best_n = length(acc_by_n)
-    for (j in length(acc_by_n):1){
-      if(acc_by_n[j] == max_acc){
-        best_n = j
-        break
+    preds = nsc_prob$predclass
+    thresholds = nsc_train$threshold
+    probabilities = vector()
+    nex=0
+    errors=vector()
+    for (iie in 1:ncol(preds)){
+      errors[iie] = length(which(!as.logical(preds[,iie] == dataset2.testY)))/length(dataset2.testY)
+      prob_matrix = nsc_prob$prob[,,iie,drop=FALSE]
+      total_probability = 0
+      if(ncol(prob_matrix)==1){
+          nex=1
+          total_probability = total_probability + max(prob_matrix[,1,,drop=FALSE])
+      }else{
+        nex = nrow(prob_matrix)
+        for (iiie in 1:nrow(prob_matrix)){
+          total_probability = total_probability + max(prob_matrix[iiie,,,drop=FALSE])
+        }
       }
+      probabilities[iie] = total_probability/nex
     }
-    accs_kfold[i] = max_acc
 
-    # Filter the selected genes (get it from rank)
-    selected_genes <- rank[1:best_n]
+    result_fold <- getLowerErrorMaxThresholdMaxProbability(errors,thresholds,probabilities)
+
+
+
+    accs_kfold[i] <- 1 - result_fold$error
+
+    threshold = result_fold$higher_threshold
+    sorted_thresholds = rev(sort(thresholds))
+    if (threshold == sorted_thresholds[1]){ #max threshold implies in zero genes
+      threshold = sorted_thresholds[2]
+    }
+
+    # Filter the selected genes  by min error, max threshold and max probability, in this order
+    selected_genes <- as.numeric(as.vector(pamr.listgenes(nsc_train, nsc_data, threshold)[,1])) #first column is gene names
 
     # If a gene is selected, than increment its global frequency
     for (j in 1:length(selected_genes)){
@@ -363,32 +290,33 @@ for (rep in 1:n_repetitions){
   # END - K-fold
 
   avg_acc_by_rep[rep] = mean(accs_kfold)
-}})
+}
 
 avg_acc = mean(avg_acc_by_rep)
 sd_acc = sd(avg_acc_by_rep)
 
 result <- cbind(data.frame(avg_acc),data.frame(sd_acc))
 colnames(result) <- c("avg acc","std acc")
-write.csv(result, file = "./results/ranking_using_simple_crossvalidation/cv_result_avg_repetitions.csv")
+write.csv(result, file = "./results/ranking_using_simple_crossvalidation/nsc/cv_result_avg_repetitions_nsc.csv")
 
 
 # sort genes by freq.
 rank_by_freq <- rev(sort(global_genes_freq, index.return = TRUE)$ix)
 
-acc_by_n_freq_rank = list()
+acc_by_n_freq_rank = rep(-1,length(rank_by_freq))
 n_values = list()
 #acc_by_n_freq_rank <- append(acc_by_n_freq_rank, 0)
 #n_values <- append(n_values,1)
-for(nfeatures in 1:length(rank_by_freq)){
+for(nfeatures in 2:length(rank_by_freq)){
   folds <- stratified_balanced_cv(y=dataset.y,nfolds=5)
   nfold <- length(folds)
   acc_kfold = list()
   for (i in 1:nfold){
         # Define ith train and test set
-    dataset2.x <- dataset.x[-folds[[i]], ,drop=FALSE]
+        i=1
+    dataset2.x <- t(dataset.x[-folds[[i]], ,drop=FALSE])
     dataset2.y <- dataset.y[-folds[[i]]]
-    dataset2.testX <- dataset.x[folds[[i]], ,drop=FALSE]
+    dataset2.testX <- t(dataset.x[folds[[i]], ,drop=FALSE])
     dataset2.testY <- dataset.y[folds[[i]]]
     dataset2.class_count <- table(dataset2.y) #classes count
     dataset2.class_levels <- unique(dataset2.y)
@@ -396,19 +324,17 @@ for(nfeatures in 1:length(rank_by_freq)){
     dataset2.n_samples <- nrow(dataset2.x)
     dataset2.n_genes <- ncol(dataset2.x)
 
-    tuned = NULL
-    if (TUNE == TRUE){
-      # Tune variable is used when CV and when classify the independent test of each loop
-      tuned <- tune.svm(x=dataset2.x, y=dataset2.y, gamma = 2^(-4:2), cost = 2^(1:4))
-    }else{
-      tuned$best.parameters[1] = 10^(-4)
-      tuned$best.parameters[2] = 10
-    }
-    svmModel = svm(dataset2.x[, rank_by_freq[1:nfeatures]], dataset2.y, cost = tuned$best.parameters[2], gamma = tuned$best.parameters[1], scale = T, type="C-classification", kernel="linear")
-    pred <- predict(svmModel, dataset2.testX[, rank_by_freq[1:nfeatures]])
-    acc_kfold <- append(acc_kfold, length(which(as.logical(pred == dataset2.testY)))/length(dataset2.testY))
+    nsc_data <- list(x=dataset2.x[rank_by_freq[1:nfeatures], ], y=factor(dataset2.y),genenames=dataset.genesnames[rank_by_freq[1:nfeatures]],geneids=rank_by_freq[1:nfeatures])
+
+    #  train NSC
+    nsc_train <- pamr.train(nsc_data)
+
+    #teste
+    pred = pamr.predict(nsc_train, dataset2.testX[rank_by_freq[1:nfeatures], ], 0.000, type=c("class")) #consider all selected proteins (n features of this loop)
+    acc = length(which(as.logical(pred == dataset2.testY)))/length(dataset2.testY)
+    acc_kfold <- append(acc_kfold, acc)
   }
-  acc_by_n_freq_rank <- append(acc_by_n_freq_rank, mean(unlist(acc_kfold)))
+  acc_by_n_freq_rank[nfeatures] <-  mean(unlist(acc_kfold))
   n_values <- append(n_values,nfeatures)
 }
 
@@ -416,16 +342,16 @@ for(nfeatures in 1:length(rank_by_freq)){
 print(length(rank_by_freq))
 print(length(acc_by_n_freq_rank))
 result <- cbind(data.frame(1:length(rank_by_freq)),data.frame(global_genes_freq[rank_by_freq]),data.frame(colnames(dataset.x)[rank_by_freq]),data.frame(unlist(acc_by_n_freq_rank)))
-colnames(result) <- c("rank","freq","gene","avg_cv_acc_after_svm-rfe")
+colnames(result) <- c("rank","freq","gene","avg_cv_acc_after_nsc")
 #write.matrix(merged, file = "big_matrix_svm-rfe.csv", sep = ",")
-write.csv(result, file = "./results/ranking_using_simple_crossvalidation/genes_freq_matrix_cv_whithout_repetition.csv")
+write.csv(result, file = "./results/ranking_using_simple_crossvalidation/nsc/genes_freq_matrix_cv_whithout_repetition.csv")
 
 
 
 
 # plot the cv result of rank by freq
-pdf("./results/ranking_using_simple_crossvalidation/freq_rank_cv_svm-rfe.pdf")
-plot(n_values,unlist(acc_by_n_freq_rank))
+pdf("./results/ranking_using_simple_crossvalidation/nsc/freq_rank_cv_nsc.pdf")
+plot(1:length(rank_by_freq),unlist(acc_by_n_freq_rank))
 dev.off()
 
 
@@ -447,36 +373,40 @@ for (pc in signature_heuristic){
     }
   }
   signature <- unlist(signature)
-  # make a CV using the signature
-  folds <- stratified_balanced_cv(y=dataset.y,nfolds=5)
-  nfold <- length(folds)
-  acc_kfold = list()
-  for (i in 1:nfold){
-        # Define ith train and test set
-    dataset2.x <- dataset.x[-folds[[i]], ,drop=FALSE]
-    dataset2.y <- dataset.y[-folds[[i]]]
-    dataset2.testX <- dataset.x[folds[[i]], ,drop=FALSE]
-    dataset2.testY <- dataset.y[folds[[i]]]
-    dataset2.class_count <- table(dataset2.y) #classes count
-    dataset2.class_levels <- unique(dataset2.y)
-    dataset2.n_classes <- length(dataset2.class_levels)
-    dataset2.n_samples <- nrow(dataset2.x)
-    dataset2.n_genes <- ncol(dataset2.x)
 
-    tuned = NULL
-    if (TUNE == TRUE){
-      # Tune variable is used when CV and when classify the independent test of each loop
-      tuned <- tune.svm(x=dataset2.x, y=dataset2.y, gamma = 2^(-4:2), cost = 2^(1:4))
-    }else{
-      tuned$best.parameters[1] = 10^(-4)
-      tuned$best.parameters[2] = 10
+  if (length(signature)>1){
+    # make a CV using the signature
+    folds <- stratified_balanced_cv(y=dataset.y,nfolds=5)
+    nfold <- length(folds)
+    acc_kfold = list()
+    for (i in 1:nfold){
+          # Define ith train and test set
+      dataset2.x <- t(dataset.x[-folds[[i]], ,drop=FALSE])
+      dataset2.y <- dataset.y[-folds[[i]]]
+      dataset2.testX <- t(dataset.x[folds[[i]], ,drop=FALSE])
+      dataset2.testY <- dataset.y[folds[[i]]]
+      dataset2.class_count <- table(dataset2.y) #classes count
+      dataset2.class_levels <- unique(dataset2.y)
+      dataset2.n_classes <- length(dataset2.class_levels)
+      dataset2.n_samples <- nrow(dataset2.x)
+      dataset2.n_genes <- ncol(dataset2.x)
+
+      nsc_data <- list(x=dataset2.x[signature, ], y=dataset2.y,genenames=dataset.genesnames[signature],geneids=signature)
+
+      #  train NSC
+      nsc_train <- pamr.train(nsc_data)
+
+      #teste
+      pred = pamr.predict(nsc_train, dataset2.testX[signature, ], 0.000, type=c("class")) #consider all selected proteins (n features of this loop)
+      acc = length(which(as.logical(pred == dataset2.testY)))/length(dataset2.testY)
+      acc_kfold <- append(acc_kfold, acc)
+      acc_by_signature[sig] <- mean(unlist(acc_kfold))
+
+
     }
-    svmModel = svm(dataset2.x[, signature], dataset2.y, cost = tuned$best.parameters[2], gamma = tuned$best.parameters[1], scale = T, type="C-classification", kernel="linear")
-    pred <- predict(svmModel, dataset2.testX[, signature])
-    acc_kfold<-append(acc_kfold, length(which(as.logical(pred == dataset2.testY)))/length(dataset2.testY))
+  }else{
+    acc_by_signature[sig] <- -1
   }
-
-  acc_by_signature[sig] <- mean(unlist(acc_kfold))
   signatures[sig] <- toString(colnames(dataset.x)[signature])
   sig = sig + 1
 }
@@ -486,7 +416,16 @@ for (pc in signature_heuristic){
 result <- cbind(data.frame(signature_heuristic), data.frame(unlist(acc_by_signature)), data.frame(unlist(signatures)))
 colnames(result) <- c("presence_in_folds_and_repetitions","acc","signature")
 #write.matrix(merged, file = "big_matrix_svm-rfe.csv", sep = ",")
-write.csv(result, file = "./results/ranking_using_simple_crossvalidation/potential_signatures_cv_svm-rfe.csv")
+write.csv(result, file = "./results/ranking_using_simple_crossvalidation/nsc/potential_signatures_cv_nsc.csv")
 
 
+# save the rank considering the entire dataset
+nsc_data <- list(x=t(dataset.x), y=factor(dataset.y), genenames=dataset.genesnames, geneids=dataset.genesnames)
+nsc_train <- pamr.train(nsc_data)
+nsc_scales <- pamr.adaptthresh(nsc_train)
+
+nsc_train <- pamr.train(nsc_data, threshold.scale=nsc_scales,n.threshold=thresholds_number, scale.sd=TRUE)
+
+complete_genes_list = pamr.listgenes(nsc_train, nsc_data, 0, genenames=TRUE)
+write.csv(complete_genes_list,"./results/ranking_using_simple_crossvalidation/nsc/rank_by_nsc_using_the_full_dataset.csv")
 #the end
