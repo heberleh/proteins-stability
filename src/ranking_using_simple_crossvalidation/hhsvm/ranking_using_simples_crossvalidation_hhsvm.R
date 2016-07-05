@@ -1,3 +1,4 @@
+###################### load R code #########################
 
 # Author: Henry Heberle
 # contact: henry at icmc usp br
@@ -8,7 +9,7 @@ list.of.packages <- c("combinat", "doSNOW","snow", "pamr", "rpart", "parallel", 
 new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
 
 if(length(new.packages)) install.packages(new.packages,repos="http://brieger.esalq.usp.br/CRAN/")
-
+source("hhsvm.r")
 library("rpart")
 library("MASS")
 #library("class")
@@ -18,9 +19,9 @@ library("pamr")
 library("caret")
 library("parallel")
 require(foreach)
+require(MASS)
 require(doSNOW)
 require(combinat)
-
 
 
 # ALGORITHM DESCRIPTION
@@ -106,34 +107,13 @@ stratified_balanced_cv <- function(y, nfolds = min(min(table(y)), 10)){
   return(res)
 }
 
-
-getLowerErrorMaxThresholdMaxProbability <- function(errors, thresholds, probabilities){
-  min_error = min(errors)
-  higher_threshold = min(thresholds)
-  index = match(c(higher_threshold),thresholds)
-
-  index_error = which(errors == min_error, arr.ind=TRUE)
-
-  #entre os de erro m??nimo, qual o de max threshold
-  selected_thres = thresholds[index_error]
-
-  max_threshold =  max(selected_thres)
-
-  index_threshold = which(thresholds == max_threshold, arr.ind=TRUE)
-
-  index_error_thres = intersect(index_threshold, index_error)
-
-  selected_probs = probabilities[index_error_thres]
-
-  max_probability = max(selected_probs)
-
-  index_prob = which(probabilities == max_probability, arr.ind = TRUE)
-
-  index = intersect(index_prob, index_error_thres)[1]
-
-  result = list(higher_threshold = max_threshold, error = min_error, probability = max_probability, index=index)
-  return(result)
+signature <- function(object, cutoff=1e-10){
+  coef <- object$beta
+  features <- drop(rep(1, nrow(coef)) %*% abs(coef))
+  sig <- features > cutoff
+  return(sig)
 }
+
 
 #=========================== =============================== ==============================
 #=========================== =============================== ==============================
@@ -153,9 +133,12 @@ getLowerErrorMaxThresholdMaxProbability <- function(errors, thresholds, probabil
 
 # PARAMETERS:    train.txt
 # SEE THE train.txt AND FOLLOW THE PATTERN
-input_file_name <- "./dataset/current/train.txt"
+input_file_name <- "../../../dataset/current/train.txt"
 db <- read.table(input_file_name, header=TRUE, sep="\t")
 
+# HHSVM parameters
+lam2 = 10
+delta = 3
 
 class_delta <- 1
 
@@ -168,11 +151,6 @@ TUNE <- FALSE                # PRE-TUNE PARAMETERS OF CLASSIFICATION MODELS?
 
 
 
-fileConn<-file("log.txt")
-
-
-
-
 #=========================== =============================== ==============================
 #=========================== ===== PRE-PROCESSING DATA ===== ==============================
 db2 <-t(db)
@@ -180,26 +158,23 @@ dataset.x <- as.matrix(db2[3:nrow(db2),2:(ncol(db2))])
 class(dataset.x) <- "numeric"
 colnames(dataset.x)<-db2[2,2:ncol(db2)]
 
-thresholds_number <- ncol(dataset.x)
-
-writeLines(paste(rownames(dataset.x)), fileConn)
-writeLines("\n\n", fileConn)
-
 # first line of original matrix is already col/rownames
 #print(db2[3:nrow(db2),1]) -> classes
 #print(db2[3:nrow(db2),2]) -> values
 dataset.y <- as.factor(db2[3:nrow(db2),1])
-
-dataset.genesnames <- colnames(dataset.x)
-
-writeLines("teste", fileConn)
-writeLines(paste("Classes: ", dataset.y), fileConn)
-
-writeLines(paste(table(dataset.y)), fileConn)
-
+new_levels = vector()
+levels_ids = list()
+id = 0
+for (level in levels(dataset.y)){
+    levels_ids[level] <- id
+    id = id + 1
+}
+for (c in dataset.y){
+    new_levels <- append(new_levels,levels_ids[c])
+}
+dataset.y = as.factor(unlist(new_levels))
 #=========================== =============================== ==============================
 #=========================== =============================== ==============================
-
 
 
 
@@ -210,7 +185,7 @@ writeLines(paste(table(dataset.y)), fileConn)
 folds <- stratified_balanced_cv(y=dataset.y,nfolds=5)
 nfold <- length(folds)
 cat("Number of folds", nfold,"\n")
-writeLines(paste("Number of folds: ",nfold), fileConn)
+#writeLines(paste("Number of folds: ",nfold), fileConn)
 
 global_genes_freq <- rep(0, ncol(dataset.x))
 avg_acc_by_rep <- rep(0,n_repetitions)
@@ -226,65 +201,37 @@ for (rep in 1:n_repetitions){
     print(i)
     print(i)
 
-    dataset2.x <- t(dataset.x[-folds[[i]], ,drop=FALSE])
+    i = 1
+    dataset2.x <- dataset.x[-folds[[i]], ,drop=FALSE]
     dataset2.y <- dataset.y[-folds[[i]]]
-    dataset2.testX <- t(dataset.x[folds[[i]], ,drop=FALSE])
-    dataset2.testY <- dataset.y[folds[[i]]]
+    dataset2.testX <- dataset.x[folds[[i]], ,drop=FALSE]
+    dataset2.testY <- as.factor(dataset.y[folds[[i]]])
     dataset2.class_count <- table(dataset2.y) #classes count
     dataset2.class_levels <- unique(dataset2.y)
     dataset2.n_classes <- length(dataset2.class_levels)
     dataset2.n_samples <- nrow(dataset2.x)
     dataset2.n_genes <- ncol(dataset2.x)
 
-    nsc_data <- list(x=dataset2.x, y=factor(dataset2.y), genenames=dataset.genesnames, geneids=1:length(dataset.genesnames))
 
-    # select genes using NSC
-    nsc_train <- pamr.train(nsc_data)
-    nsc_scales <- pamr.adaptthresh(nsc_train)
-    nsc_train <- pamr.train(nsc_data, threshold.scale=nsc_scales, n.threshold=thresholds_number)
+# FALHOU... NÃO FUNCIONA PARA MULTICLASS
 
-    #teste
-    nsc_prob <- pamr.predictmany(nsc_train, dataset2.testX)
 
-    preds = nsc_prob$predclass
-    thresholds = nsc_train$threshold
-    probabilities = vector()
-    nex=0
-    errors=vector()
-    for (iie in 1:ncol(preds)){
-      errors[iie] = length(which(!as.logical(preds[,iie] == dataset2.testY)))/length(dataset2.testY)
-      prob_matrix = nsc_prob$prob[,,iie,drop=FALSE]
-      total_probability = 0
-      if(ncol(prob_matrix)==1){
-          nex=1
-          total_probability = total_probability + max(prob_matrix[,1,,drop=FALSE])
-      }else{
-        nex = nrow(prob_matrix)
-        for (iiie in 1:nrow(prob_matrix)){
-          total_probability = total_probability + max(prob_matrix[iiie,,,drop=FALSE])
-        }
-      }
-      probabilities[iie] = total_probability/nex
-    }
-
-    result_fold <- getLowerErrorMaxThresholdMaxProbability(errors,thresholds,probabilities)
+    y <- as.numeric(as.vector(cbind(rep(-1,12),rep(1,12))))
+    y <- as.numeric(as.vector(dataset2.y))
 
 
 
-    accs_kfold[i] <- 1 - result_fold$error
+    train <- DrHSVM(dataset2.x,y, lam2, delta=delta)
+    pred <- DrHSVM.predict(train, dataset2.testX, dataset2.testY)    # training error
 
-    threshold = result_fold$higher_threshold
-    sorted_thresholds = rev(sort(thresholds))
-    if (threshold == sorted_thresholds[1]){ #max threshold implies in zero genes
-      threshold = sorted_thresholds[2]
-    }
+    accs_kfold[i] <- 1 - pred$error
 
-    # Filter the selected genes  by min error, max threshold and max probability, in this order
-    selected_genes <- as.numeric(as.vector(pamr.listgenes(nsc_train, nsc_data, threshold)[,1])) #first column is gene names
-
+    signature = signature(train)
     # If a gene is selected, than increment its global frequency
-    for (j in 1:length(selected_genes)){
-      global_genes_freq[selected_genes[j]] = global_genes_freq[selected_genes[j]] + 1
+    for (j in 1:length(signature)):
+        if (signature[j] ==  TRUE){
+            global_genes_freq[j] +=1
+        }
     }
   }
   # END - K-fold
@@ -314,9 +261,9 @@ for(nfeatures in 2:length(rank_by_freq)){
   for (i in 1:nfold){
         # Define ith train and test set
         i=1
-    dataset2.x <- t(dataset.x[-folds[[i]], ,drop=FALSE])
+    dataset2.x <- dataset.x[, -folds[[i]],drop=FALSE]
     dataset2.y <- dataset.y[-folds[[i]]]
-    dataset2.testX <- t(dataset.x[folds[[i]], ,drop=FALSE])
+    dataset2.testX <- dataset.x[, folds[[i]],drop=FALSE]
     dataset2.testY <- dataset.y[folds[[i]]]
     dataset2.class_count <- table(dataset2.y) #classes count
     dataset2.class_levels <- unique(dataset2.y)
@@ -381,9 +328,9 @@ for (pc in signature_heuristic){
     acc_kfold = list()
     for (i in 1:nfold){
           # Define ith train and test set
-      dataset2.x <- t(dataset.x[-folds[[i]], ,drop=FALSE])
+      dataset2.x <- dataset.x[, -folds[[i]],drop=FALSE]
       dataset2.y <- dataset.y[-folds[[i]]]
-      dataset2.testX <- t(dataset.x[folds[[i]], ,drop=FALSE])
+      dataset2.testX <- dataset.x[, folds[[i]],drop=FALSE]
       dataset2.testY <- dataset.y[folds[[i]]]
       dataset2.class_count <- table(dataset2.y) #classes count
       dataset2.class_levels <- unique(dataset2.y)
@@ -407,7 +354,7 @@ for (pc in signature_heuristic){
   }else{
     acc_by_signature[sig] <- -1
   }
-  signatures[sig] <- toString(colnames(dataset.x)[signature])
+  signatures[sig] <- toString(rownames(dataset.x)[signature])
   sig = sig + 1
 }
 
@@ -420,7 +367,7 @@ write.csv(result, file = "./results/ranking_using_simple_crossvalidation/nsc/pot
 
 
 # save the rank considering the entire dataset
-nsc_data <- list(x=t(dataset.x), y=factor(dataset.y), genenames=dataset.genesnames, geneids=dataset.genesnames)
+nsc_data <- list(x=dataset.x, y=factor(dataset.y), genenames=dataset.genesnames, geneids=dataset.genesnames)
 nsc_train <- pamr.train(nsc_data)
 nsc_scales <- pamr.adaptthresh(nsc_train)
 
@@ -429,3 +376,35 @@ nsc_train <- pamr.train(nsc_data, threshold.scale=nsc_scales,n.threshold=thresho
 complete_genes_list = pamr.listgenes(nsc_train, nsc_data, 0, genenames=TRUE)
 write.csv(complete_genes_list,"./results/ranking_using_simple_crossvalidation/nsc/rank_by_nsc_using_the_full_dataset.csv")
 #the end
+
+################### DrHSVM Method  ###########################
+
+
+x1 = mvrnorm(n=bigN,mu1,sigma)
+x2 = mvrnorm(n=bigN+1,mu2,sigma)
+y1 = rep(1,bigN)
+y2 = rep(-1,bigN+1)
+trX = rbind(x1,x2)
+trY = c(y1,y2)
+
+N = 2*bigN+1  # size of the training data set
+
+g <- DrHSVM(trX,trY,lam2,delta=delta)
+pre <- DrHSVM.predict(g,trX,trY)    # training error
+
+
+matplot(s, cbind(g$beta,pre$err), type="n", cex.lab = 1.5,
+      xlab=expression(paste("||",beta,"||",scriptscriptstyle(1))), ylab=expression(beta))
+for(i in 1:q)
+  lines(s, g$beta[,i], col=i+1, lty=1)
+for(i in (q+1):p)
+  lines(s, g$beta[,i], col=i+1, lty=2)
+
+signature = signature(g)
+selected_genes = dataset.genes[]
+
+for i in 1:length(signature):
+    if (signature[i] ==  TRUE){
+        freq[i] +=1
+    }
+}
