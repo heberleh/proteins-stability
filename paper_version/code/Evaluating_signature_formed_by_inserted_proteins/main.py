@@ -112,7 +112,7 @@ def calc_stuff(args):
 
 # =================== Global variables, change as you want =====================
 globalN = 1
-globalK = 28
+globalK = 22
 scale = True # apply z-score to attributes in the cross-validation class?
 normalize = False # apply normalization (0-1) to attributes in the cross-validation class?
 classifiers_types = [SVM_linear,SVM_poly, SVM_rbf, NSC, GaussianNaiveBayes, RandomForest, DecisionTree]  # DecisionTree, LinearDA,
@@ -127,7 +127,7 @@ list_of_ranking_genes = []#[svmrfe, ttest, nsc, wilcoxon_genes, little1, little2
 
 if __name__ == '__main__':  # freeze_support()
 
-    datasets_names = ["./dataset/train_all_samples.txt"]
+    datasets_names = ["./dataset/train_6_samples_independent.txt"]#["./dataset/train_all_samples.txt"] #["./dataset/train_6_samples_independent.txt"]
     datasets = []
     for name in datasets_names:
         data = Dataset(name, scale=False, normalize=False, sep='\t')
@@ -216,6 +216,56 @@ if __name__ == '__main__':  # freeze_support()
 
     # ===============================================================================
 
+
+    # independent test
+
+    accuracy_list, precision_list, recall_list, f1_list = [], [], [], []
+
+    complete_y_true = []
+    complete_y_pred = []
+
+    # DEFINIR...
+    # x_train, x_test = self.x[train_index,:], self.x[test_index,:]
+    # y_train, y_test = self.y[train_index], self.y[test_index]
+
+    for i, classifier_type in enumerate(classifiers_types):
+        #standardize attributes to mean 0 and desv 1 (z-score)
+        std_scale = preprocessing.StandardScaler().fit(x_train)
+        x_train = std_scale.transform(x_train)
+        x_test = std_scale.transform(x_test)
+
+        classifier = classifier_type(x_train, y_train, x_test, y_test)
+        classifier.fit()
+        ypred = classifier.test()
+
+        complete_y_pred = ypred
+        complete_y_true = y_test
+
+        #print complete_y_true, complete_y_pred
+        precision = 0.0
+        recall = 0.0
+        f1 = 0.0
+        accuracy = 0.0
+
+        #print complete_y_true, complete_y_pred
+
+        if len(np.unique(complete_y_true)) == 2:
+            precision = metrics.precision_score(complete_y_true, complete_y_pred)
+            recall = metrics.recall_score(complete_y_true, complete_y_pred)
+            f1 = metrics.f1_score(complete_y_true, complete_y_pred)
+            accuracy = accuracy_score(complete_y_true, complete_y_pred)
+        else:
+            precision = metrics.precision_score(complete_y_true, complete_y_pred, average="macro")
+            recall = metrics.recall_score(complete_y_true, complete_y_pred, average="macro")
+            f1 = metrics.f1_score(complete_y_true, complete_y_pred, average="macro")
+            accuracy = accuracy_score(complete_y_true, complete_y_pred)
+    
+
+       
+    # ==============================================================================
+    print "\n\nTime to finish the complete test:", time.time()-global_start_time, "seconds.\n\n"
+
+  
 
 
 

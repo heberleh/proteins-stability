@@ -1,0 +1,12 @@
+,5-fold,10-fold,28-folds (leave-one-out)
+classifier,inserted_proteins-mean,inserted_proteins-mean,inserted_proteins-mean
+SVM_Linear,0.54,0.75,0.71
+SVM_Poly,0.64,0.71,0.68
+SVM_RBF,0.68,0.68,0.68
+NSC,0.68,0.71,0.71
+Gaussian Naive Bayes,0.68,0.75,0.75
+Random Forest,0.64,0.75,0.71
+Decision Tree,0.61,0.75,0.68
+,,,
+,Média das abordagens,"0,6904761905",
+,Desvio padrão,"0,0533726471",
