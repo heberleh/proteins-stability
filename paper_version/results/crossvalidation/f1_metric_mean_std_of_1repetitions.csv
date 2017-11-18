@@ -1,0 +1,8 @@
+classifier;inserted_proteins-mean;inserted_proteins-std
+SVM_Linear;0.720238095238;0.0
+SVM_Poly;0.77417027417;0.0
+SVM_RBF;0.817521367521;0.0
+NSC;0.774603174603;0.0
+Gaussian Naive Bayes;0.774603174603;0.0
+Random Forest;0.774603174603;0.0
+Decision Tree;0.766239316239;0.0
