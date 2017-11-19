@@ -1,1 +1,1 @@
-python .//code/Evaluating_signature_formed_by_inserted_proteins/main.py
+python ./code/Evaluation_of_dataset/main.py
