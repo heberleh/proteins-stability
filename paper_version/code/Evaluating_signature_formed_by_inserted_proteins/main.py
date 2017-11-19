@@ -116,9 +116,9 @@ def calc_stuff(args):
 # =================== Global variables, change as you want =====================
 globalN = 1
 globalK = 22
-scaleC = False # apply z-score to attributes in the cross-validation class?
-normalizeC = True # apply normalization (0-1) to attributes in the cross-validation class?
-classifiers_types = [SVM_linear, SVM_poly, SVM_rbf, NSC, GaussianNaiveBayes, RandomForest, DecisionTree]  # DecisionTree, LinearDA,
+scaleC = True # apply z-score to attributes in the cross-validation class?
+normalizeC = False # apply normalization (0-1) to attributes in the cross-validation class?
+classifiers_types = [SVM_linear, SVM_poly, SVM_rbf, NSC, GaussianNaiveBayes, DecisionTree]  # DecisionTree, LinearDA,
 # RandomForest, AdaBoost]  #MultinomialNaiveBayes, (non-negative...)
 
 
@@ -145,8 +145,8 @@ if __name__ == '__main__':  # freeze_support()
 
     # ============ Reading rankings =================================================
     rankings = []
-    with open("./dataset/signature_inserted_proteins.txt", 'rb') as csv_file:
-    #with open("./dataset/all_proteins_rank.txt", 'rb') as csv_file: 
+    #with open("./dataset/signature_inserted_proteins.txt", 'rb') as csv_file:
+    with open("./dataset/all_proteins_rank.txt", 'rb') as csv_file: 
         reader = csv.reader(csv_file, delimiter='\t')
         for row in reader:
             for i in range(len(row)):
