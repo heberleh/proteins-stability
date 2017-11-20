@@ -126,7 +126,7 @@ def evaluate_genes(dataset, min_accuracy, n, k, max_group_size, classifiers_name
     # fixed folds to calculate accuracy and compare the results between different filters
     # if folds were shuffled every time k-folds runs, each time a 4-gene-set would give a different number of
     # lists of genes with accuracy > min_accuracy
-    header = "N"
+    header = "*N"
 
     for classifier_name in classifiers_names:
         header = header + ",acc_" + classifier_name
@@ -143,13 +143,13 @@ def evaluate_genes(dataset, min_accuracy, n, k, max_group_size, classifiers_name
           # if a group is > min_accuracy in ANY classifier (k-fold) it will be stored in this dictionary:
     high_acc_groups = {}
 
+    groups_file_name = 'groups_accuracy_higher_'+str(min_accuracy)+'__'+time_now+'.csv'
 
-    for sub_list_size in range(1, max_group_size):
-        genes_freq =[0 for i in range(len(dataset.genes))]
-        with open('groups_accuracy_higher_'+str(min_accuracy)+'_size_'+str(sub_list_size)+'__'+time_now+'.csv', 'a') as f:
-
-            f.write(header+"\n")
-
+    with open(groups_file_name, 'a') as f:
+        f.write(header+"\n")
+        for sub_list_size in range(1, max_group_size):
+            genes_freq =[0 for i in range(len(dataset.genes))]
+            
             print "Testing lists of", sub_list_size, "proteins."
 
             all_possible_groups = itertools.combinations(genes_index, sub_list_size)
@@ -176,7 +176,7 @@ def evaluate_genes(dataset, min_accuracy, n, k, max_group_size, classifiers_name
                         hasnext = False
                         break
                 gc.collect()
-               
+            
                 acc_list_part = pool.map(evaluate, current_args)
 
                 for i in range(len(acc_list_part)):
@@ -197,7 +197,7 @@ def evaluate_genes(dataset, min_accuracy, n, k, max_group_size, classifiers_name
                 gc.collect()
                 executed = executed + len(current_args)
                 print "Restam ", n_possible_groups - executed, ". Grupos encontrados: ", groups_found_count
-            f.close()
+        f.close()
         with open('genes_freq_accuracy_higher_'+str(min_accuracy)+'_size_'+str(sub_list_size)+'__'+time_now+'.csv', 'a') as f2:
             f2.write('protein, frequency\n')
             for protidx in range(len(genes_freq)):
@@ -211,6 +211,7 @@ def evaluate_genes(dataset, min_accuracy, n, k, max_group_size, classifiers_name
         pool.close()
         pool.join()
         gc.collect()
+    return groups_file_name
 
 
 
@@ -240,11 +241,55 @@ if __name__ == '__main__':
     #min_accuracy = 0.8
 
     n = 1  # n repetitions of k-fold cross validation
-    k = 4  # k-fold cross validations
+    k = 4  # k-fold cross validations - outer
+    kinner = 3
     max_group_size = 2 # the script will test groups of size 2, 3, ..., max_group_size-1 = [2, max_group_size)
 
-    evaluate_genes(dataset, min_accuracy, n, k, max_group_size, classifiers_names)
 
+    accuracy_list = []
+
+    # para cada volta i... armazena assinaturas e acurácias
+    for train_index, test_index in KFold(n=len(dataset.labels),n_folds=k):
+        print train_index
+        # encontra assinaturas de tamanho 3 com acc > 0.8182
+        newdataset = dataset.get_sub_dataset_by_samples(train_index)
+        filename = evaluate_genes(newdataset, min_accuracy, n, kinner, max_group_size, classifiers_names)
+        print filename
+        # with open(filename, 'r') as csv_file:
+        #     reader = csv.reader(csv_file, delimiter=";")
+        #     for row in reader:
+        #         for i in range(len(row)):
+        #             row[i] = row[i].replace(' ','')
+        #         self.complete_dataset.append(row)
+
+
+        # encontra assinaturas de tamanho 1, 2 com acc > 0.8182 a partir da lista de genes encontrada
+
+        # armazena essas assinaturas junto com as assinaturas de tamanho 3
+
+        # testa com o conjunto de teste deste loop
+        # standardize attributes to mean 0 and desv 1 (z-score)
+
+        # accuracy_pair = {"genes":genes,"n":len(genes),"acc":0}
+        # x_train, x_test = x[train_index, :], x[test_index, :]
+        # y_train, y_test = y[train_index], y[test_index]       
+        # std_scale = preprocessing.StandardScaler().fit(x_train)        
+        # classifier.fit(std_scale.transform(x_train), y_train)
+        # accuracy_pair["acc"] = metrics.accuracy_score(y_test, classifier.predict(std_scale.transform(x_test)))
+        # if accuracy > min_break_accuracy:
+        #     accuracy_list.append(accuracy_pair)
+
+        # armazena cada assinatura com cada Acc. (para a volta i do loop)
+
+
+        
+
+    # Calcula acurácia média de todas as assinaturas e de todas as voltas
+    # Esta é nossa acurácia final.
+
+
+
+    
     print "\n\n Time to complete the algorithm", (time.time() - start)/60, "minutes."
 
 

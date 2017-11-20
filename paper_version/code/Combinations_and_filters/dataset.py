@@ -89,3 +89,17 @@ class Dataset(object):
         new_dataset.name = self.name+"_modified"
         return new_dataset
 
+    def get_sub_dataset_by_samples(self, samples_indexes):
+        """ Returns a sub dataset containing only the given genes.
+
+        Parameters:
+            genes: the genes will appear in the returned dataset.
+        """        
+        indexes = samples_indexes
+        new_dataset = Dataset()
+        new_dataset.genes = self.genes
+        new_dataset.matrix = self.matrix[indexes, :]
+        new_dataset.labels = list(np.array(self.labels)[indexes])
+        new_dataset.samples = list(np.array(self.samples)[indexes])
+        new_dataset.name = self.name+"_modified"
+        return new_dataset
