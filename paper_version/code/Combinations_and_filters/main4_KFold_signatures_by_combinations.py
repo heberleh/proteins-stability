@@ -241,12 +241,14 @@ if __name__ == '__main__':
 
     dataset = Dataset("./dataset/train_6_samples_independent.txt", scale=False, normalize=False, sep='\t')
 
-    krus = KruskalRankSumTest3Classes(dataset)
-    krus_h, krus_p = krus.run()
-    cutoff = 0.05
 
-    dataset = dataset.get_sub_dataset([dataset.genes[i] for i in range(len(dataset.genes)) if krus_p[i]<cutoff])
-    print "Genes with Kruskal < ", str(cutoff),": ", dataset.genes
+    # krus = KruskalRankSumTest3Classes(dataset)
+    # krus_h, krus_p = krus.run()
+    # cutoff = 0.01
+    # dataset = dataset.get_sub_dataset([dataset.genes[i] for i in range(len(dataset.genes)) if krus_p[i]<cutoff])
+    # print "Genes with Kruskal < ", str(cutoff),": ", dataset.genes
+
+
 
     n_classes = len(unique(dataset.labels))
     print "Number of classes: ", str(n_classes)
@@ -281,6 +283,9 @@ if __name__ == '__main__':
     all_independent_genes_from_kfold[1] = set()
     all_independent_genes_from_kfold[2] = set()
     all_independent_genes_from_kfold[3] = set()    
+    
+    with open('./results/combinations/independent_test_with_all_signature_genes.csv', 'w') as f:
+        f.close()
 
     for train_index, test_index in outer_folds:        
         print "\n\n==============================="
@@ -304,6 +309,8 @@ if __name__ == '__main__':
         # 1,0.833333333333,P02769_BSA        
         independent_genes1_with_high_acc = set()
         maxAcc = static_min_accuracy
+
+
         with open(filename, 'r') as csv_file:
             reader = csv.reader(csv_file, delimiter=",")
             reader.next()
@@ -388,15 +395,17 @@ if __name__ == '__main__':
 
         filename = evaluate_genes(dataset=newdataset4, min_accuracy=maxAcc, n=n, k=kinner, min_group_size=1, max_group_size=3,classifiers_names=classifiers_names)
 
+        all_signature_genes = set()
         with open(filename, 'r') as csv_file:
             reader = csv.reader(csv_file, delimiter=",")
             reader.next()
-            print "Signatures: "
+            print "Signatures: "            
             for row in reader:
                 acc = row[1]
                 genes = []
                 for col in range(2,len(row)):
                     genes.append(row[col])
+                    all_signature_genes.add(row[col])
                 signature = Signature(genes)
                             
                 genes_index = []
@@ -427,6 +436,29 @@ if __name__ == '__main__':
                     signature.add_acc(acc)
                     signature.add_independent_test_acc(accuracy)
                     all_signatures.append(signature)
+            
+        
+            if len(all_signature_genes) > 0:
+                genes_index = []
+                for i in range(len(dataset.genes)):
+                    for gene in all_signature_genes:
+                        if dataset.genes[i] == gene:
+                            genes_index.append(i)
+
+                x_tr = x_train[:,genes_index]  # data matrix
+                y_tr = y_train
+                x_te = x_test[:,genes_index]
+                y_te = y_test
+
+                classifier = tree.DecisionTreeClassifier()
+                # standardize attributes to mean 0 and desv 1 (z-score)
+                std_scale = preprocessing.StandardScaler().fit(x_tr)
+                classifier.fit(std_scale.transform(x_tr), y_tr)
+                accuracy = metrics.accuracy_score(y_te, classifier.predict(std_scale.transform(x_te)))  
+                
+                with open('./results/combinations/independent_test_with_all_signature_genes.csv', 'a') as f:
+                    f.write(str(accuracy)+"\n")
+                    f.close()
             csv_file.close()
    
     
@@ -468,31 +500,3 @@ if __name__ == '__main__':
             f.write("\n")
         f.close()
 
-    all_signature_genes = set()
-    for signature in all_signatures:
-        for gene in signature:
-            all_signature_genes.add(gene)
-    
-    
-    genes_index = []
-    for i in range(len(dataset.genes)):
-        for gene in all_signature_genes:
-            if dataset.genes[i] == gene:
-                genes_index.append(i)
-    
-    x_tr = x_train[:,genes_index]  # data matrix
-    y_tr = y_train
-    x_te = x_test[:,genes_index]
-    y_te = y_test
-
-    classifier = tree.DecisionTreeClassifier()
-    # standardize attributes to mean 0 and desv 1 (z-score)
-    std_scale = preprocessing.StandardScaler().fit(x_tr)
-    classifier.fit(std_scale.transform(x_tr), y_tr)
-    accuracy = metrics.accuracy_score(y_te, classifier.predict(std_scale.transform(x_te)))
-
-    print "Printing all signature genes"
-    for gene in all_signature_genes:
-        print gene
-
-    print "Independent test set accuracy using all signature genes", accuracy
