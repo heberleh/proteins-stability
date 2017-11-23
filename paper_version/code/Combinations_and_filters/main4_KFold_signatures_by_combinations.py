@@ -168,7 +168,7 @@ def evaluate_genes(dataset, min_accuracy, n, k, min_group_size, max_group_size, 
                 n_possible_groups*last_individual_time/60/60, "horas."
 
             #n_splits = int(n_possible_groups/40)#1000*(3/(sub_list_size*1.0)))
-            n_cpu = 7#cpu_count()
+            n_cpu = cpu_count()
             
             n_splits = n_cpu*300
             if (n_splits > n_possible_groups/2):
@@ -241,12 +241,19 @@ if __name__ == '__main__':
 
     dataset = Dataset("./dataset/train_6_samples_independent.txt", scale=False, normalize=False, sep='\t')
 
+    dataset_test = Dataset("./dataset/test_6_samples_independent.txt", scale=False, normalize=False, sep='\t')
 
-    # krus = KruskalRankSumTest3Classes(dataset)
-    # krus_h, krus_p = krus.run()
-    # cutoff = 0.01
-    # dataset = dataset.get_sub_dataset([dataset.genes[i] for i in range(len(dataset.genes)) if krus_p[i]<cutoff])
-    # print "Genes with Kruskal < ", str(cutoff),": ", dataset.genes
+
+    # Filtering train and test Datasets
+    krus = KruskalRankSumTest3Classes(dataset)
+    krus_h, krus_p = krus.run()
+    cutoff = 0.25
+
+    dataset = dataset.get_sub_dataset([dataset.genes[i] for i in range(len(dataset.genes)) if krus_p[i]<cutoff])
+
+    dataset_test = dataset.get_sub_dataset([dataset_test.genes[i] for i in range(len(dataset_test.genes)) if krus_p[i]<cutoff])
+
+    print "Genes with Kruskal < ", str(cutoff),": ", dataset.genes
 
 
 
@@ -278,16 +285,34 @@ if __name__ == '__main__':
     all_signatures = []
 
     # para cada volta i... armazena assinaturas e acurácias
-    outer_folds = StratifiedKFold(y=dataset.labels, n_folds=k)    
-    all_independent_genes_from_kfold = {}
-    all_independent_genes_from_kfold[1] = set()
-    all_independent_genes_from_kfold[2] = set()
-    all_independent_genes_from_kfold[3] = set()    
+    outer_folds = StratifiedKFold(y=dataset.labels, n_folds=k)
+
     
-    with open('./results/combinations/independent_test_with_all_signature_genes.csv', 'w') as f:
+    
+    with open('./results/combinations/kfold_independent_test_with_all_signature_genes.csv', 'w') as f:
+        f.write("N, acc independent, all proteins found in a loop\n")
+        f.close()
+    
+    with open('./results/combinations/kfold_independent_test_with_all_independent_proteins.csv', 'w') as f:
+        f.write("N, acc independent, all proteins found in a loop\n")
         f.close()
 
-    for train_index, test_index in outer_folds:        
+    fold_i = -1
+
+
+    kfold_independent_proteins = {}
+    for i in range(k):
+        kfold_independent_proteins[i] = set()
+
+    
+    kfold_signature_proteins = {}
+    for i in range(k):
+        kfold_signature_proteins[i] = set()   
+
+    for train_index, test_index in outer_folds:     
+
+        fold_i += 1
+
         print "\n\n==============================="
         print "Next train set"
 
@@ -319,6 +344,8 @@ if __name__ == '__main__':
                     maxAcc = float(row[1])
             csv_file.close()
         
+        print "New max acc ", maxAcc
+        
         with open(filename, 'r') as csv_file:
             reader = csv.reader(csv_file, delimiter=",")
             reader.next()
@@ -327,7 +354,6 @@ if __name__ == '__main__':
                     independent_genes1_with_high_acc.add(row[2])
             csv_file.close()
        
-        all_independent_genes_from_kfold[1] = all_independent_genes_from_kfold[1] | independent_genes1_with_high_acc
 
         # ----------------------------------
         newdataset2 = newdataset1.get_sub_dataset([gene for gene in newdataset1.genes if (gene not in independent_genes1_with_high_acc)])
@@ -343,6 +369,8 @@ if __name__ == '__main__':
                 if  float(row[1]) > maxAcc:
                     maxAcc = float(row[1])
             csv_file.close()
+        
+        print "New max acc ", maxAcc
 
         with open(filename, 'r') as csv_file:
             reader = csv.reader(csv_file, delimiter=",")
@@ -353,14 +381,13 @@ if __name__ == '__main__':
                     independent_genes2_with_high_acc.add(row[3])
             csv_file.close()
 
-        all_independent_genes_from_kfold[2] = all_independent_genes_from_kfold[2] | independent_genes2_with_high_acc
 
         # ----------------------------------
         # encontra assinaturas de tamanho 3 com acc > 0.8182, removendo-se genes que conseguem separar as classses sozinhos ou em duplas (já excluídos os sozinhos) com acc > 0.8182
         
-        newdataset3 = newdataset2.get_sub_dataset([gene for gene in newdataset2.genes if (gene not in independent_genes2_with_high_acc) and (gene not in independent_genes1_with_high_acc)])
+        newdataset3 = newdataset2.get_sub_dataset([gene for gene in newdataset2.genes if  (gene not in independent_genes1_with_high_acc)]) # (gene not in independent_genes2_with_high_acc) and
 
-        filename = evaluate_genes(dataset=newdataset3, min_accuracy=maxAcc, n=n, k=kinner, min_group_size=3, max_group_size=3,classifiers_names=classifiers_names)
+        filename = evaluate_genes(dataset=newdataset3, min_accuracy=maxAcc+0.01, n=n, k=kinner, min_group_size=3, max_group_size=3,classifiers_names=classifiers_names)
 
         with open(filename, 'r') as csv_file:
             reader = csv.reader(csv_file, delimiter=",")
@@ -369,6 +396,8 @@ if __name__ == '__main__':
                 if float(row[1]) > maxAcc:
                     maxAcc = float(row[1])
             csv_file.close()
+        
+        print "New max acc ", maxAcc
 
         independent_genes3_with_high_acc = set()
         with open(filename, 'r') as csv_file:
@@ -380,7 +409,6 @@ if __name__ == '__main__':
                     independent_genes3_with_high_acc.add(row[3])
                     independent_genes3_with_high_acc.add(row[4])
             csv_file.close()
-        all_independent_genes_from_kfold[3] = all_independent_genes_from_kfold[3] | independent_genes3_with_high_acc
 
 
         # ----------------------------------
@@ -388,7 +416,37 @@ if __name__ == '__main__':
         independent_genes = independent_genes1_with_high_acc | independent_genes2_with_high_acc
         independent_genes = independent_genes | independent_genes3_with_high_acc
 
+        kfold_independent_proteins[fold_i] = kfold_independent_proteins[fold_i] | independent_genes
+
         print "All IndependentGenes", independent_genes
+
+        if len(independent_genes) > 0:
+            genes_index = []
+            for i in range(len(dataset.genes)):
+                for gene in independent_genes:
+                    if dataset.genes[i] == gene:
+                        genes_index.append(i)
+
+            x_tr = x_train[:,genes_index]  # data matrix
+            y_tr = y_train
+            x_te = x_test[:,genes_index]
+            y_te = y_test
+
+            classifier = tree.DecisionTreeClassifier()
+            # standardize attributes to mean 0 and desv 1 (z-score)
+            std_scale = preprocessing.StandardScaler().fit(x_tr)
+            classifier.fit(std_scale.transform(x_tr), y_tr)
+            accuracy = metrics.accuracy_score(y_te, classifier.predict(std_scale.transform(x_te)))  
+            
+            with open('./results/combinations/kfold_independent_test_with_all_independent_proteins.csv', 'a') as f:
+                f.write(str(len(independent_genes))+","+str(accuracy))
+                for gene in independent_genes:
+                    f.write(","+gene)
+                f.write("\n")
+                f.close()
+
+
+#-------------------------------------------------------- try to create minimum signatures with "more independent" proteins...
         newdataset4 = newdataset1
         if len(independent_genes) > 0:
             newdataset4 = newdataset1.get_sub_dataset([gene for gene in independent_genes])
@@ -456,22 +514,22 @@ if __name__ == '__main__':
                 classifier.fit(std_scale.transform(x_tr), y_tr)
                 accuracy = metrics.accuracy_score(y_te, classifier.predict(std_scale.transform(x_te)))  
                 
-                with open('./results/combinations/independent_test_with_all_signature_genes.csv', 'a') as f:
-                    f.write(str(accuracy)+"\n")
+                with open('./results/combinations/kfold_independent_test_with_all_signature_genes.csv.csv', 'a') as f:
+                    f.write(str(len(all_signature_genes))+","+str(accuracy))
+                    for gene in all_signature_genes:
+                        f.write(","+gene)
+                    f.write("\n")
                     f.close()
             csv_file.close()
+        kfold_signature_proteins[fold_i] = kfold_signature_proteins[fold_i] | all_signature_genes
    
     
     print "\n\n Time to complete the algorithm", (time.time() - start)/60, "minutes."
-    for i in range(1,len(all_independent_genes_from_kfold)+1):
-        print "Independent Genes size ", i, all_independent_genes_from_kfold[i]
 
-    
     with open('./results/combinations/signatures_combinations.csv', 'w') as f:
         f.write("n,avg_acc,stddev_acc,ind_avg_acc,ind_stddev_acc,weight,signature\n")       
         for signature in all_signatures:
             print "accs", signature.get_independent_test_accs()
-
             mean_acc=0.0
             std_acc=0.0
             mean_independent_acc=0.0
@@ -499,4 +557,161 @@ if __name__ == '__main__':
                 f.write(","+gene)
             f.write("\n")
         f.close()
+    
+    
+    intersection_of_all_independent_proteins = kfold_independent_proteins[0]    
+    union_of_all_independent_proteins = set()
+    for key in kfold_independent_proteins:        
 
+        union_of_all_independent_proteins = union_of_all_independent_proteins | kfold_independent_proteins[key]
+
+        intersection_of_all_independent_proteins = intersection_of_all_independent_proteins & kfold_independent_proteins[key]
+
+
+    intersection_of_all_signature_proteins = kfold_signature_proteins[0]    
+    union_of_all_signature_proteins = set()
+    for key in kfold_signature_proteins:        
+
+        union_of_all_signature_proteins = union_of_all_signature_proteins | kfold_signature_proteins[key]
+
+        intersection_of_all_signature_proteins = intersection_of_all_signature_proteins & kfold_signature_proteins[key]
+
+    with open('./results/combinations/independent_test_set.csv', 'w') as f:
+        f.write("type,acc,n,proteins\n")  
+
+        # test independent dataset
+        
+        #__________________________________________________
+        # with intersection of "most independent proteins"
+        if len(intersection_of_all_independent_proteins) > 0:
+            genes_index = []
+            for i in range(len(dataset.genes)):
+                for gene in intersection_of_all_independent_proteins:
+                    if dataset.genes[i] == gene:
+                        genes_index.append(i)
+
+            x_tr = x_train[:,genes_index]  # data matrix
+            y_tr = y_train
+            x_te = x_test[:,genes_index]
+            y_te = y_test
+
+            classifier = tree.DecisionTreeClassifier()
+            # standardize attributes to mean 0 and desv 1 (z-score)
+            std_scale = preprocessing.StandardScaler().fit(x_tr)
+            classifier.fit(std_scale.transform(x_tr), y_tr)
+            accuracy = metrics.accuracy_score(y_te, classifier.predict(std_scale.transform(x_te)))
+            
+            f.write("intersection_of_all_independent_proteins,"+str(accuracy)+","
+            +str(len(intersection_of_all_independent_proteins)))
+            for gene in intersection_of_all_independent_proteins:
+                f.write(","+gene)
+            f.write("\n")
+        
+        
+        #__________________________________________________
+        # with union of "most independent proteins"
+        if len(union_of_all_independent_proteins) > 0:
+            genes_index = []
+            for i in range(len(dataset.genes)):
+                for gene in union_of_all_independent_proteins:
+                    if dataset.genes[i] == gene:
+                        genes_index.append(i)
+
+            x_tr = x_train[:,genes_index]  # data matrix
+            y_tr = y_train
+            x_te = x_test[:,genes_index]
+            y_te = y_test
+
+            classifier = tree.DecisionTreeClassifier()
+            # standardize attributes to mean 0 and desv 1 (z-score)
+            std_scale = preprocessing.StandardScaler().fit(x_tr)
+            classifier.fit(std_scale.transform(x_tr), y_tr)
+            accuracy = metrics.accuracy_score(y_te, classifier.predict(std_scale.transform(x_te)))
+
+            f.write("union_of_all_independent_proteins,"+str(accuracy)+","
+            +str(len(union_of_all_independent_proteins)))
+            for gene in union_of_all_independent_proteins:
+                f.write(","+gene)
+            f.write("\n")
+
+        #__________________________________________________
+        # with intersection of "union of signature proteins"
+        if len(intersection_of_all_signature_proteins) > 0:
+            genes_index = []
+            for i in range(len(dataset.genes)):
+                for gene in intersection_of_all_signature_proteins:
+                    if dataset.genes[i] == gene:
+                        genes_index.append(i)
+
+            x_tr = x_train[:,genes_index]  # data matrix
+            y_tr = y_train
+            x_te = x_test[:,genes_index]
+            y_te = y_test
+
+            classifier = tree.DecisionTreeClassifier()
+            # standardize attributes to mean 0 and desv 1 (z-score)
+            std_scale = preprocessing.StandardScaler().fit(x_tr)
+            classifier.fit(std_scale.transform(x_tr), y_tr)
+            accuracy = metrics.accuracy_score(y_te, classifier.predict(std_scale.transform(x_te)))
+            
+            f.write("intersection_of_all_signature_proteins,"+str(accuracy)+","
+            +str(len(intersection_of_all_signature_proteins)))
+            for gene in intersection_of_all_signature_proteins:
+                f.write(","+gene)
+            f.write("\n")        
+
+        #__________________________________________________
+        # with union of "union of signature proteins"
+        if len(union_of_all_signature_proteins) > 0:
+            genes_index = []
+            for i in range(len(dataset.genes)):
+                for gene in union_of_all_signature_proteins:
+                    if dataset.genes[i] == gene:
+                        genes_index.append(i)
+
+            x_tr = x_train[:,genes_index]  # data matrix
+            y_tr = y_train
+            x_te = x_test[:,genes_index]
+            y_te = y_test
+
+            classifier = tree.DecisionTreeClassifier()
+            # standardize attributes to mean 0 and desv 1 (z-score)
+            std_scale = preprocessing.StandardScaler().fit(x_tr)
+            classifier.fit(std_scale.transform(x_tr), y_tr)
+            accuracy = metrics.accuracy_score(y_te, classifier.predict(std_scale.transform(x_te)))
+        
+            f.write("union_of_all_signature_proteins,"+str(accuracy)+","
+            +str(len(union_of_all_signature_proteins)))
+            for gene in union_of_all_signature_proteins:
+                f.write(","+gene)
+            f.write("\n")
+
+
+
+
+        if len(intersection_of_all_independent_proteins) > 2:
+            newdataset5 = newdataset1.get_sub_dataset([gene for gene in intersection_of_all_independent_proteins])           
+
+            filename = evaluate_genes(dataset=newdataset5, min_accuracy=static_min_accuracy, n=n, k=kinner, min_group_size=1, max_group_size=3,classifiers_names=classifiers_names)
+            
+            with open(filename, 'r') as csv_file:
+                reader = csv.reader(csv_file, delimiter=",")
+                reader.next()                
+                f.write(",acc,n,signatures formed by intersection_of_all_independent_proteins crosvalidated externally\n")            
+                for row in reader:
+                    f.write(","+str(row[1])+",")
+                    genes = []
+                    for col in range(2,len(row)):
+                        genes.append(row[col])
+                    f.write(str(len(genes)))
+                    for gene in genes:
+                        f.write(","+gene)
+                    f.write("\n")
+                
+
+                  
+
+
+
+
+        f.close()
