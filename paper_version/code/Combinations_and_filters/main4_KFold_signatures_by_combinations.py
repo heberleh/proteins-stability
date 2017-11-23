@@ -514,7 +514,7 @@ if __name__ == '__main__':
                 classifier.fit(std_scale.transform(x_tr), y_tr)
                 accuracy = metrics.accuracy_score(y_te, classifier.predict(std_scale.transform(x_te)))  
                 
-                with open('./results/combinations/kfold_independent_test_with_all_signature_genes.csv.csv', 'a') as f:
+                with open('./results/combinations/kfold_independent_test_with_all_signature_genes.csv', 'a') as f:
                     f.write(str(len(all_signature_genes))+","+str(accuracy))
                     for gene in all_signature_genes:
                         f.write(","+gene)
