@@ -1,1 +1,1 @@
-python ./code/Combinations_and_filters/main3_little_goups_with_high_accuracy.py
+python ./code/Combinations_and_filters/main4_FullTrain_signatures_by_combinations.py
