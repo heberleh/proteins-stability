@@ -15,6 +15,7 @@ from multiprocessing import Pool, Lock, cpu_count
 from sklearn.cross_validation import StratifiedKFold
 from kruskal import KruskalRankSumTest3Classes
 from signature import Signature
+from possibleEdge import PossibleEdge
 from sklearn.cross_validation import KFold
 from sklearn import preprocessing
 from numpy import mean, std, median
@@ -129,6 +130,18 @@ def evaluate_genes(dataset, min_accuracy, n, k, min_group_size, max_group_size, 
 
     folds = StratifiedKFold(y=dataset.labels, n_folds=k)    
 
+    how_many_can_appear_in_groups = -1
+    number_of_proteins = len(dataset.genes)
+    if max_group_size == 1:
+        how_many_can_appear_in_groups = 1
+    elif max_group_size == 2 and number_of_proteins > 2:
+        how_many_can_appear_in_groups = number_of_proteins-1
+    elif max_group_size == 3 and number_of_proteins > 3:
+        how_many_can_appear_in_groups = (number_of_proteins-1)*(number_of_proteins-2)
+    else:
+        how_many_can_appear_in_groups = 1
+        
+
 
     time_now = str(datetime.now()).replace("-", "_").replace(" ", "__").replace(":", "_").replace(".", "_")
 
@@ -152,7 +165,7 @@ def evaluate_genes(dataset, min_accuracy, n, k, min_group_size, max_group_size, 
           # if a group is > min_accuracy in ANY classifier (k-fold) it will be stored in this dictionary:
     high_acc_groups = {}
 
-    groups_file_name = './results/combinations/groups_accuracy_higher_'+str(min_accuracy)+'__'+time_now+'.csv'
+    groups_file_name = './results/combinations/groups_from_'+str(min_group_size)+'_to_'+str(max_group_size)+'_fold-'+str(fold_i)+'_accuracy_higher_'+str(min_accuracy)+'__'+time_now+'.csv'
 
     with open(groups_file_name, 'a') as f:
         f.write(header+"\n")
@@ -213,10 +226,10 @@ def evaluate_genes(dataset, min_accuracy, n, k, min_group_size, max_group_size, 
                 executed = executed + len(current_args)
                 print "Restam ", n_possible_groups - executed, ". Grupos encontrados: ", groups_found_count
         f.close()
-        with open('./results/combinations/genes_freq_accuracy_higher_'+str(min_accuracy)+'_size_'+str(sub_list_size)+'__'+time_now+'.csv', 'a') as f2:
-            f2.write('protein, frequency\n')
+        with open('./results/combinations/genes_freq_size_'+str(sub_list_size)+'_fold-'+str(fold_i)+'__accuracy_higher_'+str(min_accuracy)+'__'+time_now+'.csv', 'a') as f2:
+            f2.write('protein, probability of being in a group of size from '+str(min_group_size)+' to '+str(max_group_size)+' with acc higher or equal to '+ str(min_accuracy)+'\n')
             for protidx in range(len(genes_freq)):
-                f2.write(dataset.genes[protidx] +','+str(genes_freq[protidx])+'\n')
+                f2.write(dataset.genes[protidx] +','+str(genes_freq[protidx]/float(how_many_can_appear_in_groups))+'\n')
             f2.close()
 
         delta = time.time()-start
@@ -247,7 +260,7 @@ if __name__ == '__main__':
     # Filtering train and test Datasets
     krus = KruskalRankSumTest3Classes(dataset)
     krus_h, krus_p = krus.run()
-    cutoff = 0.25
+    cutoff = 0.5
 
     dataset = dataset.get_sub_dataset([dataset.genes[i] for i in range(len(dataset.genes)) if krus_p[i]<cutoff])
 
@@ -576,9 +589,10 @@ if __name__ == '__main__':
 
         intersection_of_all_signature_proteins = intersection_of_all_signature_proteins & kfold_signature_proteins[key]
 
+
     with open('./results/combinations/independent_test_set.csv', 'w') as f:
         f.write("type,acc,n,proteins\n")  
-
+    
         # test independent dataset
         
         #__________________________________________________
@@ -686,18 +700,18 @@ if __name__ == '__main__':
                 f.write(","+gene)
             f.write("\n")
 
-
-
-
+        
         if len(intersection_of_all_independent_proteins) > 2:
             newdataset5 = newdataset1.get_sub_dataset([gene for gene in intersection_of_all_independent_proteins])           
 
             filename = evaluate_genes(dataset=newdataset5, min_accuracy=static_min_accuracy, n=n, k=kinner, min_group_size=1, max_group_size=3,classifiers_names=classifiers_names)
             
+            
+            possible_edges = []
             with open(filename, 'r') as csv_file:
                 reader = csv.reader(csv_file, delimiter=",")
                 reader.next()                
-                f.write(",acc,n,signatures formed by intersection_of_all_independent_proteins crosvalidated externally\n")            
+                f.write("signature,acc,n,signatures formed by intersection_of_all_independent_proteins crosvalidated externally\n")            
                 for row in reader:
                     f.write(","+str(row[1])+",")
                     genes = []
@@ -707,11 +721,77 @@ if __name__ == '__main__':
                     for gene in genes:
                         f.write(","+gene)
                     f.write("\n")
-                
+                    
+                    if len(genes) == 3:
+                        edge0 = PossibleEdge(genes[0],genes[1]) #out 2
+                        edge1 = PossibleEdge(genes[1],genes[2]) #out 0                        
+                        edge2 = PossibleEdge(genes[0],genes[2]) #out 1
+                        
+                        if edge0 not in possible_edges:
+                            possible_edges.append(edge0)
+                        else:
+                            possible_edges[possible_edges.index(edge0)].increment_count()
 
-                  
+                        if edge1 not in possible_edges:
+                            possible_edges.append(edge1)
+                        else:
+                            possible_edges[possible_edges.index(edge1)].increment_count()
 
+                        if edge2 not in possible_edges:
+                            possible_edges.append(edge2)
+                        else:
+                            possible_edges[possible_edges.index(edge2)].increment_count()
 
+            with open('./results/combinations/possible_interactions_intersection_of_all_independent_proteins.csv', 'w') as f2:
+                f2.write("source,target,weight\n")
+                for edge in possible_edges:
+                    f2.write(edge.source+","+edge.target+","+str(edge.count)+"\n")
+                f2.close()
 
+        if len(union_of_all_independent_proteins) > 2:
+            newdataset5 = newdataset1.get_sub_dataset([gene for gene in union_of_all_independent_proteins])           
 
+            filename = evaluate_genes(dataset=newdataset5, min_accuracy=static_min_accuracy, n=n, k=kinner, min_group_size=1, max_group_size=3,classifiers_names=classifiers_names)
+            
+            
+            possible_edges = []
+            with open(filename, 'r') as csv_file:
+                reader = csv.reader(csv_file, delimiter=",")
+                reader.next()                
+                f.write("signature,acc,n,signatures formed by union_of_all_independent_proteins crosvalidated externally\n")            
+                for row in reader:
+                    f.write(","+str(row[1])+",")
+                    genes = []
+                    for col in range(2,len(row)):
+                        genes.append(row[col])
+                    f.write(str(len(genes)))
+                    for gene in genes:
+                        f.write(","+gene)
+                    f.write("\n")
+
+                    if len(genes) == 3:
+                        edge0 = PossibleEdge(genes[0],genes[1]) #out 2
+                        edge1 = PossibleEdge(genes[1],genes[2]) #out 0                        
+                        edge2 = PossibleEdge(genes[0],genes[2]) #out 1
+                        
+                        if edge0 not in possible_edges:
+                            possible_edges.append(edge0)
+                        else:
+                            possible_edges[possible_edges.index(edge0)].increment_count()
+
+                        if edge1 not in possible_edges:
+                            possible_edges.append(edge1)
+                        else:
+                            possible_edges[possible_edges.index(edge1)].increment_count()
+
+                        if edge2 not in possible_edges:
+                            possible_edges.append(edge2)
+                        else:
+                            possible_edges[possible_edges.index(edge2)].increment_count()                    
+
+            with open('./results/combinations/possible_interactions_union_of_all_independent_proteins.csv', 'w') as f2:
+                f2.write("source,target,weight\n")
+                for edge in possible_edges:
+                    f2.write(edge.source+","+edge.target+","+str(edge.count)+"\n")
+                f2.close
         f.close()
