@@ -257,16 +257,16 @@ if __name__ == '__main__':
     dataset_test = Dataset("./dataset/test_6_samples_independent.txt", scale=False, normalize=False, sep='\t')
 
 
-    # Filtering train and test Datasets
-    krus = KruskalRankSumTest3Classes(dataset)
-    krus_h, krus_p = krus.run()
-    cutoff = 0.01
+    # # Filtering train and test Datasets
+    # krus = KruskalRankSumTest3Classes(dataset)
+    # krus_h, krus_p = krus.run()
+    # cutoff = 0.01
 
-    dataset = dataset.get_sub_dataset([dataset.genes[i] for i in range(len(dataset.genes)) if krus_p[i]<cutoff])
+    # dataset = dataset.get_sub_dataset([dataset.genes[i] for i in range(len(dataset.genes)) if krus_p[i]<cutoff])
 
-    dataset_test = dataset.get_sub_dataset([dataset_test.genes[i] for i in range(len(dataset_test.genes)) if krus_p[i]<cutoff])
+    # dataset_test = dataset.get_sub_dataset([dataset_test.genes[i] for i in range(len(dataset_test.genes)) if krus_p[i]<cutoff])
 
-    print "Genes with Kruskal < ", str(cutoff),": ", dataset.genes
+    # print "Genes with Kruskal < ", str(cutoff),": ", dataset.genes
 
 
 
