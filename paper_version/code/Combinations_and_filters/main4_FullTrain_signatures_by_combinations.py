@@ -257,22 +257,22 @@ if __name__ == '__main__':
     dataset_test = Dataset("./dataset/test_6_samples_independent.txt", scale=False, normalize=False, sep='\t')
 
 
-    # Filtering train and test Datasets
-    krus = KruskalRankSumTest3Classes(dataset)
-    krus_h, krus_p = krus.run()
-    cutoff = 0.5
+    # # Filtering train and test Datasets
+    # krus = KruskalRankSumTest3Classes(dataset)
+    # krus_h, krus_p = krus.run()
+    # cutoff = 0.5
 
-    dataset = dataset.get_sub_dataset([dataset.genes[i] for i in range(len(dataset.genes)) if krus_p[i]<cutoff])
+    # dataset = dataset.get_sub_dataset([dataset.genes[i] for i in range(len(dataset.genes)) if krus_p[i]<cutoff])
 
-    dataset_test = dataset.get_sub_dataset([dataset_test.genes[i] for i in range(len(dataset_test.genes)) if krus_p[i]<cutoff])
-
+    # dataset_test = dataset.get_sub_dataset([dataset_test.genes[i] for i in range(len(dataset_test.genes)) if krus_p[i]<cutoff])
+    #print "Genes with Kruskal < ", str(cutoff),": ", dataset.genes
 
     x_train = dataset.matrix  # data matrix
     y_train = factorize(dataset.labels)[0]  # classes/labels of each sample from matrix x
 
     x_test = dataset_test.matrix
     y_test = factorize(dataset_test.labels)[0]
-    print "Genes with Kruskal < ", str(cutoff),": ", dataset.genes
+    
 
 
     n_classes = len(unique(dataset.labels))
