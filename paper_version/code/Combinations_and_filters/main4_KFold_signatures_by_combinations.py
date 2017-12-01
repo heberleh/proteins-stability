@@ -129,19 +129,7 @@ def evaluate_genes(dataset, min_accuracy, n, k, min_group_size, max_group_size, 
     min_break_accuracy = (k*min_accuracy) - (k-1)  #may be negative.. so any acc is considered, including zero, that is... all loops of k-fold will be executed
 
     folds = StratifiedKFold(y=dataset.labels, n_folds=k)    
-
-    how_many_can_appear_in_groups = -1
-    number_of_proteins = len(dataset.genes)
-    if max_group_size == 1:
-        how_many_can_appear_in_groups = 1
-    elif max_group_size == 2 and number_of_proteins > 2:
-        how_many_can_appear_in_groups = 1 + number_of_proteins-1
-    elif max_group_size == 3 and number_of_proteins > 3:
-        how_many_can_appear_in_groups = 1 + (number_of_proteins-1) + (number_of_proteins-1)*(number_of_proteins-2)
-    else:
-        how_many_can_appear_in_groups = 1
         
-
 
     time_now = str(datetime.now()).replace("-", "_").replace(" ", "__").replace(":", "_").replace(".", "_")
 
@@ -227,9 +215,9 @@ def evaluate_genes(dataset, min_accuracy, n, k, min_group_size, max_group_size, 
                 print "Restam ", n_possible_groups - executed, ". Grupos encontrados: ", groups_found_count
         f.close()
         with open('./results/combinations/genes_freq_size_from_'+str(min_group_size)+'_to_'+str(max_group_size)+'_fold-'+str(fold_i)+'__accuracy_higher_'+str(min_accuracy)+'__'+time_now+'.csv', 'a') as f2:
-            f2.write('protein, probability of being in a group of size from '+str(min_group_size)+' to '+str(max_group_size)+' with acc higher or equal to '+ str(min_accuracy)+'\n')
+            f2.write('protein, counting from '+str(len(dataset.genes))+' of being in a group of size from '+str(min_group_size)+' to '+str(max_group_size)+' with acc higher or equal to '+ str(min_accuracy)+'\n')
             for protidx in range(len(genes_freq)):
-                f2.write(dataset.genes[protidx] +','+str(genes_freq[protidx]/float(how_many_can_appear_in_groups))+'\n')
+                f2.write(dataset.genes[protidx] +','+str(genes_freq[protidx])+'\n')
             f2.close()
 
         delta = time.time()-start
@@ -257,16 +245,16 @@ if __name__ == '__main__':
     dataset_test = Dataset("./dataset/test_6_samples_independent.txt", scale=False, normalize=False, sep='\t')
 
 
-    # # Filtering train and test Datasets
-    # krus = KruskalRankSumTest3Classes(dataset)
-    # krus_h, krus_p = krus.run()
-    # cutoff = 0.01
+    # Filtering train and test Datasets
+    krus = KruskalRankSumTest3Classes(dataset)
+    krus_h, krus_p = krus.run()
+    cutoff = 0.05
 
-    # dataset = dataset.get_sub_dataset([dataset.genes[i] for i in range(len(dataset.genes)) if krus_p[i]<cutoff])
+    dataset = dataset.get_sub_dataset([dataset.genes[i] for i in range(len(dataset.genes)) if krus_p[i]<cutoff])
 
-    # dataset_test = dataset.get_sub_dataset([dataset_test.genes[i] for i in range(len(dataset_test.genes)) if krus_p[i]<cutoff])
+    dataset_test = dataset.get_sub_dataset([dataset_test.genes[i] for i in range(len(dataset_test.genes)) if krus_p[i]<cutoff])
 
-    # print "Genes with Kruskal < ", str(cutoff),": ", dataset.genes
+    print "Genes with Kruskal < ", str(cutoff),": ", dataset.genes
 
 
 

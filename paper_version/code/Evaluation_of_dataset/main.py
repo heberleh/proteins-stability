@@ -146,7 +146,8 @@ if __name__ == '__main__':  # freeze_support()
     # ============ Reading rankings =================================================
     rankings = []
     #with open("./dataset/signature_inserted_proteins.txt", 'rb') as csv_file:
-    with open("./dataset/all_proteins_rank.txt", 'rb') as csv_file: 
+    #with open("./dataset/all_proteins_rank.txt", 'rb') as csv_file:
+    with open("./dataset/signature_inserted_proteins_possible_good_proteins.txt", 'rb') as csv_file:
         reader = csv.reader(csv_file, delimiter='\t')
         for row in reader:
             for i in range(len(row)):
@@ -223,8 +224,12 @@ if __name__ == '__main__':  # freeze_support()
         # independent test
         accuracy_list, precision_list, recall_list, f1_list = [], [], [], []
         complete_y_true = []
-        complete_y_pred = []
-        # DEFINIR...
+        complete_y_pred = []    
+
+        print "\n"
+        print "List of genes are being used", list_of_ranking_genes[0]['genes']
+        print "\n"
+
         x_train = dataset.get_sub_dataset(list_of_ranking_genes[0]['genes']).matrix
         y_train = dataset.labels
 
