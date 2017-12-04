@@ -110,11 +110,11 @@ stratified_balanced_cv <- function(y, nfolds = min(min(table(y)), 10)){
 getLowerErrorMaxThresholdMaxProbability <- function(errors, thresholds, probabilities){
   min_error = min(errors)
   higher_threshold = min(thresholds)
-  index = match(c(higher_threshold),thresholds)
+  index = match(c(higher_threshold),thresholds) #???
 
   index_error = which(errors == min_error, arr.ind=TRUE)
 
-  #entre os de erro m??nimo, qual o de max threshold
+  #entre os de erro minimo, qual o de max threshold
   selected_thres = thresholds[index_error]
 
   max_threshold =  max(selected_thres)
@@ -153,12 +153,13 @@ getLowerErrorMaxThresholdMaxProbability <- function(errors, thresholds, probabil
 
 # PARAMETERS:    train.txt
 # SEE THE train.txt AND FOLLOW THE PATTERN
-input_file_name <- "./dataset/current/train.txt"
+input_file_name <- "./dataset/train_6_samples_independent.txt"
 db <- read.table(input_file_name, header=TRUE, sep="\t")
 
+input_file_name_test <- "./dataset/test_6_samples_independent.txt"
+db_test <- read.table(input_file_name, header=TRUE, sep="\t")
 
 class_delta <- 1
-
 n_repetitions <- 1
 
 TUNE <- FALSE                # PRE-TUNE PARAMETERS OF CLASSIFICATION MODELS?
@@ -166,12 +167,7 @@ TUNE <- FALSE                # PRE-TUNE PARAMETERS OF CLASSIFICATION MODELS?
 #=========================== =============================== ==============================
 #=========================== =============================== ==============================
 
-
-
 #fileConn<-file("log.txt")
-
-
-
 
 #=========================== =============================== ==============================
 #=========================== ===== PRE-PROCESSING DATA ===== ==============================
@@ -180,21 +176,19 @@ TUNE <- FALSE                # PRE-TUNE PARAMETERS OF CLASSIFICATION MODELS?
 dataset.x <- as.matrix(db[2:(nrow(db)),3:ncol(db)])
 class(dataset.x) <- "numeric"
 rownames(dataset.x)<-db[2:nrow(db),2]
-
 thresholds_number <- nrow(dataset.x)
-
 dataset.y <- as.factor(as.matrix(db[1,3:ncol(db)]))
-
 dataset.genesnames <- rownames(dataset.x)
 
-#writeLines("teste", fileConn)
-#writeLines(paste("Classes: ", dataset.y), fileConn)
-#writeLines(paste("Proteins: ", dataset.genesnames), fileConn)
-#writeLines(paste(table(dataset.y)), fileConn)
+dataset_test.x <- as.matrix(db_test[2:(nrow(db_test)),3:ncol(db_test)])
+class(dataset_test.x) <- "numeric"
+rownames(dataset_test.x)<-db_test[2:nrow(db_test),2]
+dataset_test.y <- as.factor(as.matrix(db_test[1,3:ncol(db_test)]))
+dataset_test.genesnames <- rownames(dataset_test.x)
+
 
 #=========================== =============================== ==============================
 #=========================== =============================== ==============================
-
 
 
 
@@ -202,89 +196,143 @@ dataset.genesnames <- rownames(dataset.x)
 #=========================== =============================== ==============================
 #=========================== ============ START ============ ==============================
 
-folds <- stratified_balanced_cv(y=dataset.y, nfolds=ncol(dataset.x))
-nfold <- length(folds)
-cat("Number of folds", nfold,"\n")
-#writeLines(paste("Number of folds: ",nfold), fileConn)
+outer_k = 4
+inner_k = 3
+
+
 
 global_genes_freq <- rep(0, nrow(dataset.x))
 avg_acc_by_rep <- rep(0,n_repetitions)
+
+
 for (rep in 1:n_repetitions){
-  folds <- stratified_balanced_cv(y=dataset.y,nfolds=5)
-  nfold <- length(folds)
+  folds <- stratified_balanced_cv(y=dataset.y, nfolds=outer_k)
+  nfold_outer <- length(folds)
+  cat("Number of outer folds", nfold_outer,"\n")
 
-
-  # START K-Fold
-  accs_kfold = rep(0,nfold)
-  for (i in 1:nfold){
+  # START K-Fold   [outer-loop]
+  accs_kfold_outer = rep(0,nfold_outer)
+  for (i_outer in 1:nfold_outer){
     # Define ith train and test set
-    print(i)
-    print(i)
-
-    dataset2.x <- dataset.x[, -folds[[i]],drop=FALSE]
-    dataset2.y <- dataset.y[-folds[[i]]]
-    dataset2.testX <- dataset.x[, folds[[i]],drop=FALSE]
-    dataset2.testY <- dataset.y[folds[[i]]]
+    dataset2.x <- dataset.x[, -folds[[i_outer]],drop=FALSE]
+    dataset2.y <- dataset.y[-folds[[i_outer]]]
+    dataset2.testX <- dataset.x[, folds[[i_outer]],drop=FALSE]
+    dataset2.testY <- dataset.y[folds[[i_outer]]]
     dataset2.class_count <- table(dataset2.y) #classes count
     dataset2.class_levels <- unique(dataset2.y)
     dataset2.n_classes <- length(dataset2.class_levels)
     dataset2.n_samples <- nrow(dataset2.x)
     dataset2.n_genes <- ncol(dataset2.x)
 
-    nsc_data <- list(x=dataset2.x, y=factor(dataset2.y), genenames=dataset.genesnames, geneids=1:length(dataset.genesnames))
 
-    # select genes using NSC
-    nsc_train <- pamr.train(nsc_data)
-    nsc_scales <- pamr.adaptthresh(nsc_train)
-    nsc_train <- pamr.train(nsc_data, threshold.scale=nsc_scales, n.threshold=thresholds_number)
+    folds_inner <- stratified_balanced_cv(y=dataset.y, nfolds=outer_k)
+    nfold_inner <- length(folds_inner)
+    cat("Number of outer folds", nfold_inner,"\n")
 
-    #teste
-    nsc_prob <- pamr.predictmany(nsc_train, dataset2.testX)
+    # START K-Fold   [inner-loop]
+    accs_kfold_inner= rep(0,nfold_inner)
+    selected_genes_inner = NULL
+    max_acc_inner = 0
+    max_thres_inner = 0
+    max_prob_inner = 0
 
-    preds = nsc_prob$predclass
-    thresholds = nsc_train$threshold
-    probabilities = vector()
-    nex=0
-    errors=vector()
-    for (iie in 1:ncol(preds)){
-      errors[iie] = length(which(!as.logical(preds[,iie] == dataset2.testY)))/length(dataset2.testY)
-      prob_matrix = nsc_prob$prob[,,iie,drop=FALSE]
-      total_probability = 0
-      if(ncol(prob_matrix)==1){
-          nex=1
-          total_probability = total_probability + max(prob_matrix[,1,,drop=FALSE])
+    for (i_inner in 1:nfold_inner){
+          # Define ith train and test set
+      dataset3.x <- dataset2.x[, -folds_inner[[i_inner]],drop=FALSE]
+      dataset3.y <- dataset2.y[-folds_inner[[i_inner]]]
+      dataset3.testX <- dataset2.x[, folds_inner[[i_inner]],drop=FALSE]
+      dataset3.testY <- dataset2.y[folds_inner[[i_inner]]]
+      dataset3.class_count <- table(dataset3.y) #classes count
+      dataset3.class_levels <- unique(dataset3.y)
+      dataset3.n_classes <- length(dataset3.class_levels)
+      dataset3.n_samples <- nrow(dataset3.x)
+      dataset3.n_genes <- ncol(dataset3.x)
+
+      nsc_data <- list(x=dataset3.x, y=factor(dataset3.y), genenames=dataset.genesnames, geneids=1:length(dataset.genesnames))
+
+      # select genes using NSC
+      nsc_train <- pamr.train(nsc_data)
+      nsc_scales <- pamr.adaptthresh(nsc_train)
+      nsc_train <- pamr.train(nsc_data, threshold.scale=nsc_scales, n.threshold=thresholds_number)
+
+      #teste
+      nsc_prob <- pamr.predictmany(nsc_train, dataset3.testX)
+
+      preds = nsc_prob$predclass
+      thresholds = nsc_train$threshold
+      probabilities = vector()
+      nex=0
+      errors=vector()
+      for (iie in 1:ncol(preds)){
+        errors[iie] = length(which(!as.logical(preds[,iie] == dataset2.testY)))/length(dataset2.testY)
+        prob_matrix = nsc_prob$prob[,,iie,drop=FALSE]
+        total_probability = 0
+        if(ncol(prob_matrix)==1){
+            nex=1
+            total_probability = total_probability + max(prob_matrix[,1,,drop=FALSE])
+        }else{
+          nex = nrow(prob_matrix)
+          for (iiie in 1:nrow(prob_matrix)){
+            total_probability = total_probability + max(prob_matrix[iiie,,,drop=FALSE])
+          }
+        }
+        probabilities[iie] = total_probability/nex
+      }
+
+      result_fold <- getLowerErrorMaxThresholdMaxProbability(errors,thresholds,probabilities)
+
+      threshold = result_fold$higher_threshold
+      # sorted_thresholds = rev(sort(thresholds))
+      # if (threshold == sorted_thresholds[1]){ #max threshold implies in zero genes (?)
+      #   threshold = sorted_thresholds[2] # get second higher threshold
+      # }
+
+      # Filter the selected genes  by min error, max threshold and max probability, in this order
+      selected_genes <- as.numeric(as.vector(pamr.listgenes(nsc_train, nsc_data, threshold)[,1])) #first column is gene names
+
+
+      accs_kfold_inner[i_inner] <- 1 - result_fold$error
+      if (accs_kfold_inner[i_inner] > max_acc_inner){
+        selected_genes_inner = selected_genes
+        max_acc_inner = accs_kfold_inner[i_inner]
+        max_prob_inner = result_fold$probability
+        max_thres_inner = result_fold$higher_threshold
       }else{
-        nex = nrow(prob_matrix)
-        for (iiie in 1:nrow(prob_matrix)){
-          total_probability = total_probability + max(prob_matrix[iiie,,,drop=FALSE])
+        if (accs_kfold_inner[i_inner] == max_acc_inner){
+          if(result_fold$higher_threshold > max_thres_inner){
+            selected_genes_inner = selected_genes
+            # max_acc_inner = accs_kfold_inner[i_inner]
+            max_prob_inner = result_fold$probability
+            max_thres_inner = result_fold$higher_threshold
+            
+          }else{
+            if(result_fold$higher_threshold == max_thres_inner){
+              if(result_fold$probability > max_prob_inner){
+              selected_genes_inner = selected_genes
+              # max_acc_inner = accs_kfold_inner[i_inner]
+              max_prob_inner = result_fold$probability
+              # max_thres_inner = result_fold$higher_threshold
+              }else{
+                 cat("######################################################################################################################################################################### PROBLEM: There are more than one list with the same threshold, prob and accuracy. \n")
+              }
+            }
+          }
         }
       }
-      probabilities[iie] = total_probability/nex
+
+      # If a gene is selected, than increment its global frequency
+      for (j in 1:length(selected_genes)){
+        global_genes_freq[selected_genes[j]] = global_genes_freq[selected_genes[j]] + 1
+      }    
     }
-
-    result_fold <- getLowerErrorMaxThresholdMaxProbability(errors,thresholds,probabilities)
-
+    accs_kfold_outer[i_outer] <- mean(accs_kfold_inner)
 
 
-    accs_kfold[i] <- 1 - result_fold$error
-
-    threshold = result_fold$higher_threshold
-    sorted_thresholds = rev(sort(thresholds))
-    if (threshold == sorted_thresholds[1]){ #max threshold implies in zero genes
-      threshold = sorted_thresholds[2]
-    }
-
-    # Filter the selected genes  by min error, max threshold and max probability, in this order
-    selected_genes <- as.numeric(as.vector(pamr.listgenes(nsc_train, nsc_data, threshold)[,1])) #first column is gene names
-
-    # If a gene is selected, than increment its global frequency
-    for (j in 1:length(selected_genes)){
-      global_genes_freq[selected_genes[j]] = global_genes_freq[selected_genes[j]] + 1
-    }
+    genes_kfold_inner
   }
   # END - K-fold
 
-  avg_acc_by_rep[rep] = mean(accs_kfold)
+  avg_acc_by_rep[rep] = mean(accs_kfold_outer)
 }
 
 avg_acc = mean(avg_acc_by_rep)
@@ -304,9 +352,9 @@ n_values = list()
 #n_values <- append(n_values,1)
 for(nfeatures in 2:length(rank_by_freq)){
   folds <- stratified_balanced_cv(y=dataset.y,nfolds=5)
-  nfold <- length(folds)
+  nfold_outer <- length(folds)
   acc_kfold = list()
-  for (i in 1:nfold){
+  for (i in 1:nfold_outer){
         # Define ith train and test set
         i=1
     dataset2.x <- dataset.x[, -folds[[i]],drop=FALSE]
@@ -360,7 +408,7 @@ signature_heuristic <- c(0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1)
 for (pc in signature_heuristic){
   signature = list()
 
-  minimum_freq = pc * n_repetitions * nfold
+  minimum_freq = pc * n_repetitions * nfold_outer
 
   for (geneidx in 1:length(global_genes_freq)){
     if (global_genes_freq[geneidx] >= minimum_freq){
@@ -372,9 +420,9 @@ for (pc in signature_heuristic){
   if (length(signature)>1){
     # make a CV using the signature
     folds <- stratified_balanced_cv(y=dataset.y,nfolds=5)
-    nfold <- length(folds)
+    nfold_outer <- length(folds)
     acc_kfold = list()
-    for (i in 1:nfold){
+    for (i in 1:nfold_outer){
           # Define ith train and test set
       dataset2.x <- dataset.x[, -folds[[i]],drop=FALSE]
       dataset2.y <- dataset.y[-folds[[i]]]
