@@ -155,6 +155,7 @@ getLowerErrorMaxThresholdMaxProbability <- function(errors, thresholds, probabil
 # SEE THE train.txt AND FOLLOW THE PATTERN
 input_file_name <- "./dataset/train_6_samples_independent.txt"
 db <- read.table(input_file_name, header=TRUE, sep="\t")
+#db <- t(db[1:100,])
 
 input_file_name_test <- "./dataset/test_6_samples_independent.txt"
 db_test <- read.table(input_file_name, header=TRUE, sep="\t")
@@ -201,9 +202,14 @@ inner_k = 3
 
 
 
-global_genes_freq <- rep(0, nrow(dataset.x))
+global_genes_freq_inner <- rep(0, nrow(dataset.x))
+global_genes_freq_outer <- rep(0, nrow(dataset.x))
 avg_acc_by_rep <- rep(0,n_repetitions)
+std_acc_by_rep <- rep(0,n_repetitions)
 
+accs_kfold_outer = list()
+max_thres_outer = 0
+max_acc_outer = 0
 
 for (rep in 1:n_repetitions){
   folds <- stratified_balanced_cv(y=dataset.y, nfolds=outer_k)
@@ -211,7 +217,6 @@ for (rep in 1:n_repetitions){
   cat("Number of outer folds", nfold_outer,"\n")
 
   # START K-Fold   [outer-loop]
-  accs_kfold_outer = rep(0,nfold_outer)
   for (i_outer in 1:nfold_outer){
     # Define ith train and test set
     dataset2.x <- dataset.x[, -folds[[i_outer]],drop=FALSE]
@@ -225,19 +230,19 @@ for (rep in 1:n_repetitions){
     dataset2.n_genes <- ncol(dataset2.x)
 
 
-    folds_inner <- stratified_balanced_cv(y=dataset.y, nfolds=outer_k)
+    folds_inner <- stratified_balanced_cv(y=dataset2.y, nfolds=inner_k)
     nfold_inner <- length(folds_inner)
-    cat("Number of outer folds", nfold_inner,"\n")
+    cat("Number of inner folds", nfold_inner,"\n")
 
-    # START K-Fold   [inner-loop]
-    accs_kfold_inner= rep(0,nfold_inner)
+    # START K-Fold   [inner-loop]    
     selected_genes_inner = NULL
     max_acc_inner = 0
     max_thres_inner = 0
     max_prob_inner = 0
 
     for (i_inner in 1:nfold_inner){
-          # Define ith train and test set
+      # Define ith train and test set
+      cat("Fold number", i_inner,"\n")
       dataset3.x <- dataset2.x[, -folds_inner[[i_inner]],drop=FALSE]
       dataset3.y <- dataset2.y[-folds_inner[[i_inner]]]
       dataset3.testX <- dataset2.x[, folds_inner[[i_inner]],drop=FALSE]
@@ -282,34 +287,34 @@ for (rep in 1:n_repetitions){
       result_fold <- getLowerErrorMaxThresholdMaxProbability(errors,thresholds,probabilities)
 
       threshold = result_fold$higher_threshold
-      # sorted_thresholds = rev(sort(thresholds))
-      # if (threshold == sorted_thresholds[1]){ #max threshold implies in zero genes (?)
-      #   threshold = sorted_thresholds[2] # get second higher threshold
-      # }
+      sorted_thresholds = rev(sort(thresholds))
+      if (threshold == sorted_thresholds[1]){ #max threshold implies in zero genes (?)
+        threshold = sorted_thresholds[2] # get second higher threshold
+      }
 
       # Filter the selected genes  by min error, max threshold and max probability, in this order
       selected_genes <- as.numeric(as.vector(pamr.listgenes(nsc_train, nsc_data, threshold)[,1])) #first column is gene names
 
 
-      accs_kfold_inner[i_inner] <- 1 - result_fold$error
-      if (accs_kfold_inner[i_inner] > max_acc_inner){
+      accs_kfold_inner <- 1 - result_fold$error
+      if (accs_kfold_inner > max_acc_inner){
         selected_genes_inner = selected_genes
-        max_acc_inner = accs_kfold_inner[i_inner]
+        max_acc_inner = accs_kfold_inner
         max_prob_inner = result_fold$probability
         max_thres_inner = result_fold$higher_threshold
       }else{
-        if (accs_kfold_inner[i_inner] == max_acc_inner){
-          if(result_fold$higher_threshold > max_thres_inner){
+        if (accs_kfold_inner == max_acc_inner){
+          if(result_fold$probability > max_prob_inner){
             selected_genes_inner = selected_genes
-            # max_acc_inner = accs_kfold_inner[i_inner]
+            # max_acc_inner = accs_kfold_inner
             max_prob_inner = result_fold$probability
             max_thres_inner = result_fold$higher_threshold
             
           }else{
-            if(result_fold$higher_threshold == max_thres_inner){
-              if(result_fold$probability > max_prob_inner){
+            if(result_fold$probability == max_prob_inner){
+              if(result_fold$higher_threshold > max_thres_inner){
               selected_genes_inner = selected_genes
-              # max_acc_inner = accs_kfold_inner[i_inner]
+              # max_acc_inner = accs_kfold_inner
               max_prob_inner = result_fold$probability
               # max_thres_inner = result_fold$higher_threshold
               }else{
@@ -322,36 +327,75 @@ for (rep in 1:n_repetitions){
 
       # If a gene is selected, than increment its global frequency
       for (j in 1:length(selected_genes)){
-        global_genes_freq[selected_genes[j]] = global_genes_freq[selected_genes[j]] + 1
+        global_genes_freq_inner[selected_genes[j]] = global_genes_freq_inner[selected_genes[j]] + 1
       }    
+    } # end inner k-fold
+
+    # testing the threshold found in the inner-loop
+    nsc_data_outer <- list(x=dataset2.x, y=factor(dataset2.y), genenames=dataset.genesnames, geneids=1:length(dataset.genesnames))
+
+    # select genes using NSC
+    nsc_train_outer <- pamr.train(nsc_data_outer)
+    nsc_scales_outer <- pamr.adaptthresh(nsc_train_outer)
+    nsc_train_outer <- pamr.train(nsc_data_outer, threshold.scale=nsc_scales_outer, n.threshold=thresholds_number)
+
+    #adapt threshold so that it will not eliminate all genes
+
+    #teste
+    pred = pamr.predict(nsc_train, dataset2.testX, max_thres_inner, type=c("class"))
+    acc = length(which(as.logical(pred == dataset2.testY)))/length(dataset2.testY)    
+    accs_kfold_outer <- append(accs_kfold_outer, acc)
+
+    if(acc > max_acc_outer){
+      max_acc_outer = acc
+      max_thres_outer = max_thres_inner
     }
-    accs_kfold_outer[i_outer] <- mean(accs_kfold_inner)
 
+    cat("\nMax threshold",max_thres_inner ,"\n")
+    thresholds = nsc_train_outer$threshold
 
-    genes_kfold_inner
+    sorted_thresholds = rev(sort(thresholds))
+    if (max_thres_inner >= sorted_thresholds[1]){ #max threshold implies in zero genes (?) (or one?)
+      max_thres_inner = sorted_thresholds[2] # get second higher threshold
+    }
+
+    # If a gene is selected, than increment its global frequency
+    selected_genes <- as.numeric(as.vector(pamr.listgenes(nsc_train_outer, nsc_data_outer, max_thres_inner)[,1])) 
+    for (j in 1:length(selected_genes)){
+      global_genes_freq_inner[selected_genes[j]] = global_genes_freq_inner[selected_genes[j]] + 1
+    } 
+
   }
-  # END - K-fold
+  # END - K-fold - outer
 
   avg_acc_by_rep[rep] = mean(accs_kfold_outer)
-}
+  std_acc_by_rep[rep] = sd(accs_kfold_outer)
+} # end reps  k-folds
 
-avg_acc = mean(avg_acc_by_rep)
-sd_acc = sd(avg_acc_by_rep)
+# using selected threshold in the outer loop... compute the accuracy using the independent test
+
+#avg_acc = mean(avg_acc_by_rep)
+#sd_acc = sd(avg_acc_by_rep)
+
+avg_acc = avg_acc_by_rep[1]
+sd_acc = std_acc_by_rep[1]
+
+cat("Avg Acc DCV", avg_acc,"\n")
+cat("Std Acc DCV", sd_acc,"\n")
 
 result <- cbind(data.frame(avg_acc),data.frame(sd_acc))
 colnames(result) <- c("avg acc","std acc")
-write.csv(result, file = "./results/ranking_using_simple_crossvalidation/nsc/cv_result_avg_repetitions_nsc.csv")
-
+write.csv(result, file = "./results/double_cross_validation/nsc/avg_std_acc.csv")
 
 # sort genes by freq.
-rank_by_freq <- rev(sort(global_genes_freq, index.return = TRUE)$ix)
+rank_by_freq <- rev(sort(global_genes_freq_inner, index.return = TRUE)$ix)
 
 acc_by_n_freq_rank = rep(-1,length(rank_by_freq))
 n_values = list()
 #acc_by_n_freq_rank <- append(acc_by_n_freq_rank, 0)
 #n_values <- append(n_values,1)
 for(nfeatures in 2:length(rank_by_freq)){
-  folds <- stratified_balanced_cv(y=dataset.y,nfolds=5)
+  folds <- stratified_balanced_cv(y=dataset.y,nfolds=4)
   nfold_outer <- length(folds)
   acc_kfold = list()
   for (i in 1:nfold_outer){
@@ -387,15 +431,39 @@ print(length(acc_by_n_freq_rank))
 result <- cbind(data.frame(1:length(rank_by_freq)),data.frame(global_genes_freq[rank_by_freq]),data.frame(colnames(dataset.x)[rank_by_freq]),data.frame(unlist(acc_by_n_freq_rank)))
 colnames(result) <- c("rank","freq","gene","avg_cv_acc_after_nsc")
 #write.matrix(merged, file = "big_matrix_svm-rfe.csv", sep = ",")
-write.csv(result, file = "./results/ranking_using_simple_crossvalidation/nsc/genes_freq_matrix_cv_whithout_repetition.csv")
-
-
-
+write.csv(result, file = "./results/double_cross_validation/nsc/genes_freq_matrix_inner_CV.csv")
 
 # plot the cv result of rank by freq
 pdf("./results/ranking_using_simple_crossvalidation/nsc/freq_rank_cv_nsc.pdf")
 plot(1:length(rank_by_freq),unlist(acc_by_n_freq_rank))
 dev.off()
+
+
+# dado o threshold final do K-Fold, utilizá-lo no conjunto de 22 amostras
+
+
+# testar o threshold em uma crosvalidação
+
+
+# testar o threshold com o teste independente
+
+
+# teremos: acc de cross, acc de double-cross, e acc de teste independente 
+                #(teoricamente da maior pra menor nesta ordem...)
+
+
+# lista de genes final -> threshold aplicado no conjunto de 22 amostras
+
+
+# salvar tal lista de genes para posterior criação de "arestas" e cálculo de todas as combinações possíveis e acurácias usando árvores de decisão.
+
+
+
+
+
+
+
+
 
 
 # generate a candidates Signatures selecting genes that appears at least at X% of experements
