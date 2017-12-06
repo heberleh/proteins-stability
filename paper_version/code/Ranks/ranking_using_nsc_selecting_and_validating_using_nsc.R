@@ -154,11 +154,11 @@ getLowerErrorMaxThresholdMaxProbability <- function(errors, thresholds, probabil
 # PARAMETERS:    train.txt
 # SEE THE train.txt AND FOLLOW THE PATTERN
 input_file_name <- "./dataset/train_6_samples_independent.txt"
-db <- read.table(input_file_name, header=TRUE, sep="\t")
+db <- read.table(input_file_name, header=FALSE, sep="\t")
 #db <- t(db[1:100,])
 
 input_file_name_test <- "./dataset/test_6_samples_independent.txt"
-db_test <- read.table(input_file_name, header=TRUE, sep="\t")
+db_test <- read.table(input_file_name, header=FALSE, sep="\t")
 
 class_delta <- 1
 n_repetitions <- 1
@@ -174,17 +174,18 @@ TUNE <- FALSE                # PRE-TUNE PARAMETERS OF CLASSIFICATION MODELS?
 #=========================== ===== PRE-PROCESSING DATA ===== ==============================
 #lines are genes
 #columns are samples
-dataset.x <- as.matrix(db[2:(nrow(db)),3:ncol(db)])
+dataset.x <- as.matrix(db[3:(nrow(db)),2:ncol(db)])
 class(dataset.x) <- "numeric"
-rownames(dataset.x)<-db[2:nrow(db),2]
+rownames(dataset.x)<-db[3:nrow(db),1]
 thresholds_number <- nrow(dataset.x)
-dataset.y <- as.factor(as.matrix(db[1,3:ncol(db)]))
+dataset.y <- as.factor(as.matrix(db[2,2:ncol(db)]))
+cat(dataset.y)
 dataset.genesnames <- rownames(dataset.x)
 
-dataset_test.x <- as.matrix(db_test[2:(nrow(db_test)),3:ncol(db_test)])
+dataset_test.x <- as.matrix(db_test[3:(nrow(db_test)),2:ncol(db_test)])
 class(dataset_test.x) <- "numeric"
-rownames(dataset_test.x)<-db_test[2:nrow(db_test),2]
-dataset_test.y <- as.factor(as.matrix(db_test[1,3:ncol(db_test)]))
+rownames(dataset_test.x)<-db_test[3:nrow(db_test),1]
+dataset_test.y <- as.factor(as.matrix(db_test[2,2:ncol(db_test)]))
 dataset_test.genesnames <- rownames(dataset_test.x)
 
 
@@ -200,7 +201,7 @@ dataset_test.genesnames <- rownames(dataset_test.x)
 outer_k = 4
 inner_k = 3
 
-
+cat("Number of genes",nrow(dataset.x))
 
 global_genes_freq_inner <- rep(0, nrow(dataset.x))
 global_genes_freq_outer <- rep(0, nrow(dataset.x))
@@ -342,7 +343,7 @@ for (rep in 1:n_repetitions){
     #adapt threshold so that it will not eliminate all genes
 
     #teste
-    pred = pamr.predict(nsc_train, dataset2.testX, max_thres_inner, type=c("class"))
+    pred = pamr.predict(nsc_train_outer, dataset2.testX, max_thres_inner, type=c("class"))
     acc = length(which(as.logical(pred == dataset2.testY)))/length(dataset2.testY)    
     accs_kfold_outer <- append(accs_kfold_outer, acc)
 
@@ -357,19 +358,34 @@ for (rep in 1:n_repetitions){
     sorted_thresholds = rev(sort(thresholds))
     if (max_thres_inner >= sorted_thresholds[1]){ #max threshold implies in zero genes (?) (or one?)
       max_thres_inner = sorted_thresholds[2] # get second higher threshold
+      cat("\nPicking second max threshold",max_thres_inner ,"\n")
     }
 
     # If a gene is selected, than increment its global frequency
     selected_genes <- as.numeric(as.vector(pamr.listgenes(nsc_train_outer, nsc_data_outer, max_thres_inner)[,1])) 
+    cat("\nGenes were selected. \n")
+    for (j in 1:length(selected_genes)){
+      cat("Selected: ",selected_genes[j],"\n")
+    }
+    cat("Max index of selected genes", max(selected_genes), "\n")
     for (j in 1:length(selected_genes)){
       global_genes_freq_inner[selected_genes[j]] = global_genes_freq_inner[selected_genes[j]] + 1
     } 
 
   }
+
+  accs_kfold_outer =  as.numeric(accs_kfold_outer)
   # END - K-fold - outer
+  for (j in 1:length(accs_kfold_outer)){
+    cat("acc: ",accs_kfold_outer[j],"\n")
+  }
 
   avg_acc_by_rep[rep] = mean(accs_kfold_outer)
+  cat("\n# Accuracy for rep.",rep," is", avg_acc_by_rep[rep],"\n")
+
   std_acc_by_rep[rep] = sd(accs_kfold_outer)
+  cat("\n# Std for rep.",rep," is", std_acc_by_rep[rep],"\n")
+
 } # end reps  k-folds
 
 # using selected threshold in the outer loop... compute the accuracy using the independent test
@@ -428,8 +444,8 @@ for(nfeatures in 2:length(rank_by_freq)){
 # write global rank and associated mean Acc by N value in rank
 print(length(rank_by_freq))
 print(length(acc_by_n_freq_rank))
-result <- cbind(data.frame(1:length(rank_by_freq)),data.frame(global_genes_freq[rank_by_freq]),data.frame(colnames(dataset.x)[rank_by_freq]),data.frame(unlist(acc_by_n_freq_rank)))
-colnames(result) <- c("rank","freq","gene","avg_cv_acc_after_nsc")
+result <- cbind(data.frame(rank_by_freq),data.frame(1:length(rank_by_freq)),data.frame(global_genes_freq_inner[rank_by_freq]),data.frame(rownames(dataset.x)[rank_by_freq]),data.frame(unlist(acc_by_n_freq_rank)))
+colnames(result) <- c("index","rank","freq","gene","avg_cv_acc_after_nsc")
 #write.matrix(merged, file = "big_matrix_svm-rfe.csv", sep = ",")
 write.csv(result, file = "./results/double_cross_validation/nsc/genes_freq_matrix_inner_CV.csv")
 
@@ -466,77 +482,77 @@ dev.off()
 
 
 
-# generate a candidates Signatures selecting genes that appears at least at X% of experements
-# freq >= 0.5 * length(repetitions) * k
+# # generate a candidates Signatures selecting genes that appears at least at X% of experements
+# # freq >= 0.5 * length(repetitions) * k
 
-acc_by_signature <- list()
-signatures <- list()
-sig = 1
-signature_heuristic <- c(0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1)
-for (pc in signature_heuristic){
-  signature = list()
+# acc_by_signature <- list()
+# signatures <- list()
+# sig = 1
+# signature_heuristic <- c(0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1)
+# for (pc in signature_heuristic){
+#   signature = list()
 
-  minimum_freq = pc * n_repetitions * nfold_outer
+#   minimum_freq = pc * n_repetitions * nfold_outer
 
-  for (geneidx in 1:length(global_genes_freq)){
-    if (global_genes_freq[geneidx] >= minimum_freq){
-      signature <- append(signature, geneidx)
-    }
-  }
-  signature <- unlist(signature)
+#   for (geneidx in 1:length(global_genes_freq)){
+#     if (global_genes_freq[geneidx] >= minimum_freq){
+#       signature <- append(signature, geneidx)
+#     }
+#   }
+#   signature <- unlist(signature)
 
-  if (length(signature)>1){
-    # make a CV using the signature
-    folds <- stratified_balanced_cv(y=dataset.y,nfolds=5)
-    nfold_outer <- length(folds)
-    acc_kfold = list()
-    for (i in 1:nfold_outer){
-          # Define ith train and test set
-      dataset2.x <- dataset.x[, -folds[[i]],drop=FALSE]
-      dataset2.y <- dataset.y[-folds[[i]]]
-      dataset2.testX <- dataset.x[, folds[[i]],drop=FALSE]
-      dataset2.testY <- dataset.y[folds[[i]]]
-      dataset2.class_count <- table(dataset2.y) #classes count
-      dataset2.class_levels <- unique(dataset2.y)
-      dataset2.n_classes <- length(dataset2.class_levels)
-      dataset2.n_samples <- nrow(dataset2.x)
-      dataset2.n_genes <- ncol(dataset2.x)
+#   if (length(signature)>1){
+#     # make a CV using the signature
+#     folds <- stratified_balanced_cv(y=dataset.y,nfolds=5)
+#     nfold_outer <- length(folds)
+#     acc_kfold = list()
+#     for (i in 1:nfold_outer){
+#           # Define ith train and test set
+#       dataset2.x <- dataset.x[, -folds[[i]],drop=FALSE]
+#       dataset2.y <- dataset.y[-folds[[i]]]
+#       dataset2.testX <- dataset.x[, folds[[i]],drop=FALSE]
+#       dataset2.testY <- dataset.y[folds[[i]]]
+#       dataset2.class_count <- table(dataset2.y) #classes count
+#       dataset2.class_levels <- unique(dataset2.y)
+#       dataset2.n_classes <- length(dataset2.class_levels)
+#       dataset2.n_samples <- nrow(dataset2.x)
+#       dataset2.n_genes <- ncol(dataset2.x)
 
-      nsc_data <- list(x=dataset2.x[signature, ], y=dataset2.y,genenames=dataset.genesnames[signature],geneids=signature)
+#       nsc_data <- list(x=dataset2.x[signature, ], y=dataset2.y,genenames=dataset.genesnames[signature],geneids=signature)
 
-      #  train NSC
-      nsc_train <- pamr.train(nsc_data)
+#       #  train NSC
+#       nsc_train <- pamr.train(nsc_data)
 
-      #teste
-      pred = pamr.predict(nsc_train, dataset2.testX[signature, ], 0.000, type=c("class")) #consider all selected proteins (n features of this loop)
-      acc = length(which(as.logical(pred == dataset2.testY)))/length(dataset2.testY)
-      acc_kfold <- append(acc_kfold, acc)
-      acc_by_signature[sig] <- mean(unlist(acc_kfold))
-
-
-    }
-  }else{
-    acc_by_signature[sig] <- -1
-  }
-  signatures[sig] <- toString(rownames(dataset.x)[signature])
-  sig = sig + 1
-}
-
-# write signatures and CV results in File
-# ALERT: this CV results is highly biased since the frequencies of genes and the K-fold that test the signatures are computed using the same dataset
-result <- cbind(data.frame(signature_heuristic), data.frame(unlist(acc_by_signature)), data.frame(unlist(signatures)))
-colnames(result) <- c("presence_in_folds_and_repetitions","acc","signature")
-#write.matrix(merged, file = "big_matrix_svm-rfe.csv", sep = ",")
-write.csv(result, file = "./results/ranking_using_simple_crossvalidation/nsc/potential_signatures_cv_nsc.csv")
+#       #teste
+#       pred = pamr.predict(nsc_train, dataset2.testX[signature, ], 0.000, type=c("class")) #consider all selected proteins (n features of this loop)
+#       acc = length(which(as.logical(pred == dataset2.testY)))/length(dataset2.testY)
+#       acc_kfold <- append(acc_kfold, acc)
+#       acc_by_signature[sig] <- mean(unlist(acc_kfold))
 
 
-# save the rank considering the entire dataset
-nsc_data <- list(x=dataset.x, y=factor(dataset.y), genenames=dataset.genesnames, geneids=dataset.genesnames)
-nsc_train <- pamr.train(nsc_data)
-nsc_scales <- pamr.adaptthresh(nsc_train)
+#     }
+#   }else{
+#     acc_by_signature[sig] <- -1
+#   }
+#   signatures[sig] <- toString(rownames(dataset.x)[signature])
+#   sig = sig + 1
+# }
 
-nsc_train <- pamr.train(nsc_data, threshold.scale=nsc_scales,n.threshold=thresholds_number, scale.sd=TRUE)
+# # write signatures and CV results in File
+# # ALERT: this CV results is highly biased since the frequencies of genes and the K-fold that test the signatures are computed using the same dataset
+# result <- cbind(data.frame(signature_heuristic), data.frame(unlist(acc_by_signature)), data.frame(unlist(signatures)))
+# colnames(result) <- c("presence_in_folds_and_repetitions","acc","signature")
+# #write.matrix(merged, file = "big_matrix_svm-rfe.csv", sep = ",")
+# write.csv(result, file = "./results/ranking_using_simple_crossvalidation/nsc/potential_signatures_cv_nsc.csv")
 
-complete_genes_list = pamr.listgenes(nsc_train, nsc_data, 0, genenames=TRUE)
-write.csv(complete_genes_list,"./results/ranking_using_simple_crossvalidation/nsc/rank_by_nsc_using_the_full_dataset.csv")
-#the end
+
+# # save the rank considering the entire dataset
+# nsc_data <- list(x=dataset.x, y=factor(dataset.y), genenames=dataset.genesnames, geneids=dataset.genesnames)
+# nsc_train <- pamr.train(nsc_data)
+# nsc_scales <- pamr.adaptthresh(nsc_train)
+
+# nsc_train <- pamr.train(nsc_data, threshold.scale=nsc_scales,n.threshold=thresholds_number, scale.sd=TRUE)
+
+# complete_genes_list = pamr.listgenes(nsc_train, nsc_data, 0, genenames=TRUE)
+# write.csv(complete_genes_list,"./results/ranking_using_simple_crossvalidation/nsc/rank_by_nsc_using_the_full_dataset.csv")
+# #the end
