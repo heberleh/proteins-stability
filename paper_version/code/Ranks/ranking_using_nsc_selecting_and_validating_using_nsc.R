@@ -209,8 +209,8 @@ avg_acc_by_rep <- rep(0,n_repetitions)
 std_acc_by_rep <- rep(0,n_repetitions)
 
 accs_kfold_outer = list()
-max_thres_outer = 0
-max_acc_outer = 0
+max_thres_outer = -99999
+max_acc_outer = -999999
 
 for (rep in 1:n_repetitions){
   folds <- stratified_balanced_cv(y=dataset.y, nfolds=outer_k)
@@ -455,24 +455,32 @@ plot(1:length(rank_by_freq),unlist(acc_by_n_freq_rank))
 dev.off()
 
 
-# dado o threshold final do K-Fold, utilizá-lo no conjunto de 22 amostras
+# testing the threshold found Double-Cross with INDEPENDENT test
+nsc_data<- list(x=dataset.x, y=factor(dataset.y), genenames=dataset.genesnames, geneids=1:length(dataset.genesnames))
+
+# select genes using NSC
+nsc_train <- pamr.train(nsc_data)
+nsc_scales <- pamr.adaptthresh(nsc_train)
+nsc_train <- pamr.train(nsc_data, threshold.scale=nsc_scales, n.threshold=thresholds_number)
+
+#test
+pred = pamr.predict(nsc_train, dataset_test.x, max_thres_outer, type=c("class"))
+acc = length(which(as.logical(pred == dataset_test.y)))/length(dataset_test.y)   
+result <- cbind(data.frame(c("independent acc"),data.frame(c(acc))))
+cat("independent acc: ", acc)
+#write.matrix(merged, file = "big_matrix_svm-rfe.csv", sep = ",")
+
+write.csv(result, file = "./results/double_cross_validation/nsc/independent_test_threshold_from_DCV.csv")
 
 
-# testar o threshold em uma crosvalidação
 
+#final genes according to Double-Cross
+dc_selected_genes <- as.numeric(as.vector(pamr.listgenes(nsc_train, nsc_data, max_thres_outer)[,1]))
 
-# testar o threshold com o teste independente
-
-
-# teremos: acc de cross, acc de double-cross, e acc de teste independente 
-                #(teoricamente da maior pra menor nesta ordem...)
-
-
-# lista de genes final -> threshold aplicado no conjunto de 22 amostras
-
-
-# salvar tal lista de genes para posterior criação de "arestas" e cálculo de todas as combinações possíveis e acurácias usando árvores de decisão.
-
+result <- cbind(data.frame(dc_selected_genes),data.frame(1:length(dc_selected_genes)),data.frame(rownames(dataset.x)[dc_selected_genes]))
+colnames(result) <- c("index","rank?","name")
+#write.matrix(merged, file = "big_matrix_svm-rfe.csv", sep = ",")
+write.csv(result, file = "./results/double_cross_validation/nsc/genes_DCV.csv")
 
 
 
