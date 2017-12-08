@@ -168,7 +168,6 @@ TUNE <- FALSE                # PRE-TUNE PARAMETERS OF CLASSIFICATION MODELS?
 #=========================== =============================== ==============================
 #=========================== =============================== ==============================
 
-#fileConn<-file("log.txt")
 
 #=========================== =============================== ==============================
 #=========================== ===== PRE-PROCESSING DATA ===== ==============================
@@ -469,7 +468,6 @@ acc = length(which(as.logical(pred == dataset_test.y)))/length(dataset_test.y)
 result <- cbind(data.frame(c("independent acc"),data.frame(c(acc))))
 cat("independent acc: ", acc)
 #write.matrix(merged, file = "big_matrix_svm-rfe.csv", sep = ",")
-
 write.csv(result, file = "./results/double_cross_validation/nsc/independent_test_threshold_from_DCV.csv")
 
 
