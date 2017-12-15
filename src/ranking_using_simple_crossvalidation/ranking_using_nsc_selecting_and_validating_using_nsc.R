@@ -107,31 +107,27 @@ stratified_balanced_cv <- function(y, nfolds = min(min(table(y)), 10)){
 }
 
 
+
 getLowerErrorMaxThresholdMaxProbability <- function(errors, thresholds, probabilities){
   min_error = min(errors)
-  higher_threshold = min(thresholds)
-  index = match(c(higher_threshold),thresholds)
+  higher_threshold = min(thresholds) 
 
   index_error = which(errors == min_error, arr.ind=TRUE)
-
-  #entre os de erro m??nimo, qual o de max threshold
-  selected_thres = thresholds[index_error]
-
-  max_threshold =  max(selected_thres)
-
-  index_threshold = which(thresholds == max_threshold, arr.ind=TRUE)
-
-  index_error_thres = intersect(index_threshold, index_error)
-
-  selected_probs = probabilities[index_error_thres]
+  
+  selected_probs = probabilities[index_error]
 
   max_probability = max(selected_probs)
 
   index_prob = which(probabilities == max_probability, arr.ind = TRUE)
 
-  index = intersect(index_prob, index_error_thres)[1]
+  index_prob = intersect(index_error,index_prob)
 
-  result = list(higher_threshold = max_threshold, error = min_error, probability = max_probability, index=index)
+  selected_thres = thresholds[index_prob]
+ 
+  max_threshold =  max(selected_thres)  
+
+  result = list(higher_threshold = max_threshold, error = min_error, probability = max_probability)
+  
   return(result)
 }
 

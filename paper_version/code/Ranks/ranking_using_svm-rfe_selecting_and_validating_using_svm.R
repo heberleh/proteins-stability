@@ -105,6 +105,17 @@ stratified_balanced_cv <- function(y, nfolds = min(min(table(y)), 10)){
   return(res)
 }
 
+leave_one_out_cv <- function(y, nfolds){
+  folds <- createFolds(y, k = nfolds, list = TRUE)
+
+  res <- vector("list", nfolds)
+  for (j in 1:nfolds) {
+    res[[j]] <- folds[[j]]
+  }
+  return(res)
+}
+
+
 
 ################################################
 # Feature Ranking with SVM-RFE   REFERENCE: http://www.uccor.edu.ar/paginas/seminarios/Software/SVM_RFE_R_implementation.pdf
@@ -246,10 +257,10 @@ input_file_name <- "./dataset/train_6_samples_independent.txt"
 db <- read.table(input_file_name, header=FALSE, sep="\t")
 
 input_file_name_test <- "./dataset/test_6_samples_independent.txt"
-db_test <- read.table(input_file_name, header=FALSE, sep="\t")
+db_test <- read.table(input_file_name_test, header=FALSE, sep="\t")
 
 class_delta <- 1
-n_repetitions <- 1
+
 
 TUNE <- FALSE                # PRE-TUNE PARAMETERS OF CLASSIFICATION MODELS?
 #=========================== =============================== ==============================
@@ -285,50 +296,61 @@ dataset_test.genesnames <- rownames(dataset_test.x)
 #=========================== =============================== ==============================
 #=========================== ============ START ============ ==============================
 
-outer_k = 4
+outer_k = 22
 inner_k = 3
+n_repetitions <- 2
 
 cat("Number of genes",nrow(dataset.x))
 
 global_genes_freq_inner <- rep(0, nrow(dataset.x))
 global_genes_freq_outer <- rep(0, nrow(dataset.x))
-avg_acc_by_rep <- rep(0,n_repetitions)
-std_acc_by_rep <- rep(0,n_repetitions)
 
 accs_kfold_outer = list()
+accs_kfold_outer_all_genes = list()
 best_n_outer = 0
-max_acc_outer = -999999
+max_acc_outer = 0
 
-for (rep in 1:n_repetitions){
+
+folds = NULL
+if (outer_k == length(dataset.y)){
+  folds <- leave_one_out_cv(dataset.y,outer_k)
+}else{
   folds <- stratified_balanced_cv(y=dataset.y, nfolds=outer_k)
-  nfold_outer <- length(folds)
-  cat("Number of outer folds", nfold_outer,"\n")
+} 
+nfold_outer <- length(folds)
+cat("Number of outer folds", nfold_outer,"\n")
 
-   # START K-Fold   [outer-loop]
-  for (i_outer in 1:nfold_outer){
-    # Define ith train and test set
-    dataset2.x <- dataset.x[, -folds[[i_outer]],drop=FALSE]
-    dataset2.y <- dataset.y[-folds[[i_outer]]]
-    dataset2.testX <- dataset.x[, folds[[i_outer]],drop=FALSE]
-    dataset2.testY <- dataset.y[folds[[i_outer]]]
-    dataset2.class_count <- table(dataset2.y) #classes count
-    dataset2.class_levels <- unique(dataset2.y)
-    dataset2.n_classes <- length(dataset2.class_levels)
-    dataset2.n_samples <- nrow(dataset2.x)
-    dataset2.n_genes <- ncol(dataset2.x)
+  # START K-Fold   [outer-loop]
+for (i_outer in 1:nfold_outer){
+  # Define ith train and test set
+  dataset2.x <- dataset.x[, -folds[[i_outer]],drop=FALSE]
+  dataset2.y <- dataset.y[-folds[[i_outer]]]
+  dataset2.testX <- dataset.x[, folds[[i_outer]],drop=FALSE]
+  dataset2.testY <- dataset.y[folds[[i_outer]]]
+  dataset2.class_count <- table(dataset2.y) #classes count
+  dataset2.class_levels <- unique(dataset2.y)
+  dataset2.n_classes <- length(dataset2.class_levels)
+  dataset2.n_samples <- nrow(dataset2.x)
+  dataset2.n_genes <- ncol(dataset2.x)
 
-    cat("colnames dataset2 size ", length(colnames(dataset2.x)),": ", colnames(dataset2.x),"\n")
-    cat("labels dataset2 size ", length(dataset2.y),": ", dataset2.y,"\n")
+  cat("colnames dataset2 size ", length(colnames(dataset2.x)),": ", colnames(dataset2.x),"\n")
+  cat("labels dataset2 size ", length(dataset2.y),": ", dataset2.y,"\n")
 
+  folds_inner = NULL
+  if (inner_k == length(dataset2.y)){
+    folds_inner <- leave_one_out_cv(dataset2.y,inner_k)
+  }else{
     folds_inner <- stratified_balanced_cv(y=dataset2.y, nfolds=inner_k)
-    nfold_inner <- length(folds_inner)
-    cat("Number of inner folds", nfold_inner,"\n")
+  }  
+  nfold_inner <- length(folds_inner)
+  cat("Number of inner folds", nfold_inner,"\n")
 
-    # START K-Fold   [inner-loop]    
-    selected_genes_inner = NULL
-    max_acc_inner = 0.0
-    best_n_inner = 0
+  # START K-Fold   [inner-loop]    
+  selected_genes_inner = NULL
+  max_acc_inner = 0.0
+  best_n_inner = 0
 
+  for (rep in 1:n_repetitions){
     for (i_inner in 1:nfold_inner){
       # Define ith train and test set
       cat("Fold number", i_inner,"\n")
@@ -401,76 +423,92 @@ for (rep in 1:n_repetitions){
       # If a gene is selected, than increment its global frequency
       for (j in 1:length(selected_genes)){
         global_genes_freq_inner[selected_genes[j]] = global_genes_freq_inner[selected_genes[j]] + 1
-      }
-    
+      }    
+
     } # END K-fold inner
-      cat("\nEnd of one inner K-fold\n")
 
-      tuned = NULL
-      if (TUNE == TRUE){
-        # Tune variable is used when CV and when classify the independent test of each loop
-        tuned <- tune.svm(x=t(dataset2.x), y=dataset2.y, gamma = 2^(-4:2), cost = 2^(1:4))
-      }else{
-        tuned$best.parameters[1] = 10^(-4)
-        tuned$best.parameters[2] = 10
-      }
+  } # END rep
 
-      # rank the genes using SVM-RFE
-      rank_data <- svmrfeFeatureRankingForMulticlass(t(dataset2.x), dataset2.y, tuned)
-      rank = rank_data$featureRankedList
-      
-      # testing min N of max acc selected in inner Loop genes of rank
-      svmModel = svm(t(dataset2.x[rank[1:best_n_inner], ]), dataset2.y, cost = tuned$best.parameters[2], gamma = tuned$best.parameters[1], scale = T, type="C-classification", kernel="linear")
-      pred <- predict(svmModel, t(dataset2.testX[rank[1:best_n_inner], ]))
-      acc_by_n = length(which(as.logical(pred == dataset2.testY)))/length(dataset2.testY)
+  cat("\nEnd of one inner K-fold\n")
 
-      accs_kfold_outer <- append(accs_kfold_outer, acc_by_n)
-    
-      # Select the smallest list of genes with max Accuracy
-      if (max_acc_outer < acc_by_n){
-        max_acc_outer = acc_by_n
-        best_n_outer = best_n_inner
-      }
-
-      # Filter the selected genes (get it from rank)
-      selected_genes <- rank[1:best_n_inner]
-
-      # If a gene is selected, than increment its global frequency
-      for (j in 1:length(selected_genes)){
-        global_genes_freq_outer[selected_genes[j]] = global_genes_freq_outer[selected_genes[j]] + 1
-      }
-
+  tuned = NULL
+  if (TUNE == TRUE){
+    # Tune variable is used when CV and when classify the independent test of each loop
+    tuned <- tune.svm(x=t(dataset2.x), y=dataset2.y, gamma = 2^(-4:2), cost = 2^(1:4))
+  }else{
+    tuned$best.parameters[1] = 10^(-4)
+    tuned$best.parameters[2] = 10
   }
-  # END - K-fold outer
-  cat("\nEnd of outer K-fold\n")
 
-
-  accs_kfold_outer =  as.numeric(accs_kfold_outer)
+  # rank the genes using SVM-RFE
+  rank_data <- svmrfeFeatureRankingForMulticlass(t(dataset2.x), dataset2.y, tuned)
+  rank <- rank_data$featureRankedList
   
-  for (j in 1:length(accs_kfold_outer)){
-    cat("acc: ",accs_kfold_outer[j],"\n")
+  # testing min N of max acc selected in inner Loop genes of rank
+  svmModel = svm(t(dataset2.x[rank[1:best_n_inner], ]), dataset2.y, cost = tuned$best.parameters[2], gamma = tuned$best.parameters[1], scale = T, type="C-classification", kernel="linear")
+  pred <- predict(svmModel, t(dataset2.testX[rank[1:best_n_inner], ]))
+  
+  svmModel2 = svm(t(dataset2.x), dataset2.y, cost = tuned$best.parameters[2],gamma = tuned$best.parameters[1], scale = T, type="C-classification", kernel="linear")
+  pred2 <- predict(svmModel2, t(dataset2.testX))
+
+
+  acc_by_n = NULL
+  acc2 = NULL
+  if (outer_k == length(dataset.y)){
+    if (as.logical(pred == dataset2.testY)){
+      acc_by_n = 1    
+    }else{
+      acc_by_n = 0
+    }
+    if (as.logical(pred2 == dataset2.testY)){
+      acc2 = 1    
+    }else{
+      acc2 = 0
+    }
+  }else{
+    acc_by_n = length(which(as.logical(pred == dataset2.testY)))/length(dataset2.testY)
+    acc2 <- length(which(as.logical(pred2 == dataset2.testY)))/length(dataset2.testY)
+  }  
+  accs_kfold_outer <- append(accs_kfold_outer, acc_by_n)
+  accs_kfold_outer_all_genes <- append(accs_kfold_outer_all_genes, acc2)
+  
+
+  # Select the smallest list of genes with max Accuracy
+  if (max_acc_outer < acc_by_n){
+    max_acc_outer = acc_by_n
+    best_n_outer = best_n_inner
   }
 
-  avg_acc_by_rep[rep] = mean(accs_kfold_outer)
-  cat("\n# Accuracy for rep.",rep," is", avg_acc_by_rep[rep],"\n")
+  # Filter the selected genes (get it from rank)
+  selected_genes <- rank[1:best_n_inner]
 
-  std_acc_by_rep[rep] = sd(accs_kfold_outer)
-  cat("\n# Std for rep.",rep," is", std_acc_by_rep[rep],"\n")
+  # If a gene is selected, than increment its global frequency
+  for (j in 1:length(selected_genes)){
+    global_genes_freq_outer[selected_genes[j]] = global_genes_freq_outer[selected_genes[j]] + 1
+  }
+}# END - K-fold outer
 
-}# end - repetitions
-cat("\nEnd of repetitions\n")
+cat("\nEnd of outer K-fold\n")
 
 
+accs_kfold_outer =  as.numeric(accs_kfold_outer)
+accs_kfold_outer_all_genes = as.numeric(accs_kfold_outer_all_genes)
+
+for (j in 1:length(accs_kfold_outer)){
+  cat("acc: ",accs_kfold_outer[j],"\n")
+}
+
+avg_acc = mean(accs_kfold_outer)
+avg_acc_all_genes = mean(accs_kfold_outer_all_genes)
+cat("\n# Accuracy for rep.",rep," is", avg_acc,"\n")
 
 
-avg_acc = avg_acc_by_rep[1]
-sd_acc = std_acc_by_rep[1]
+avg_acc = avg_acc
 
 cat("Avg Acc DCV", avg_acc,"\n")
-cat("Std Acc DCV", sd_acc,"\n")
 
-result <- cbind(data.frame(avg_acc),data.frame(sd_acc))
-colnames(result) <- c("avg acc","std acc")
+result <- cbind(data.frame(avg_acc),data.frame(avg_acc_all_genes))
+colnames(result) <- c("avg acc dcv", "avg acc all genes - same folds from dcv")
 write.csv(result, file = "./results/double_cross_validation/svm/avg_std_acc.csv")
 
 # sort genes by freq.
@@ -508,11 +546,12 @@ for(nfeatures in 2:length(rank_by_freq)){
       tuned$best.parameters[2] = 10
     }
     selected_genes_idx = rank_by_freq[1:nfeatures]
-    svmModel = svm(t(dataset2.x[selected_genes_idx, ]), dataset2.y, cost = tuned$best.parameters[2], gamma = tuned$best.parameters[1], scale = T, type="C-classification", kernel="linear")
+    svmModel = svm(t(dataset2.x[selected_genes_idx, ]), dataset2.y, cost = tuned$best.parameters[2],gamma = tuned$best.parameters[1], scale = T, type="C-classification", kernel="linear")
 
     pred <- predict(svmModel, t(dataset2.testX[selected_genes_idx, ]))
-
-    acc_kfold <- append(acc_kfold, length(which(as.logical(pred == dataset2.testY)))/length(dataset2.testY))
+    acc <- length(which(as.logical(pred == dataset2.testY)))/length(dataset2.testY)
+      
+    acc_kfold <- append(acc_kfold, acc)    
 
   }
   acc_by_n_freq_rank <- append(acc_by_n_freq_rank, mean(unlist(acc_kfold)))
@@ -523,7 +562,7 @@ for(nfeatures in 2:length(rank_by_freq)){
 print(length(rank_by_freq))
 print(length(acc_by_n_freq_rank))
 result <- cbind(data.frame(rank_by_freq),data.frame(1:length(rank_by_freq)),data.frame(global_genes_freq_inner[rank_by_freq]),data.frame(rownames(dataset.x)[rank_by_freq]),data.frame(unlist(acc_by_n_freq_rank)))
-colnames(result) <- c("index","rank","freq","gene","avg_cv_acc_after_nsc")
+colnames(result) <- c("index","rank","freq","gene","avg_cv_acc_after_svmrfe")
 #write.matrix(merged, file = "big_matrix_svm-rfe.csv", sep = ",")
 write.csv(result, file = "./results/double_cross_validation/svm/genes_freq_matrix_inner_CV.csv")
 
@@ -533,9 +572,8 @@ colnames(result) <- c("index","freq","gene")
 write.csv(result, file = "./results/double_cross_validation/svm/genes_freq_matrix_outer.csv")
 
 
-
 # plot the cv result of rank by freq
-pdf("./results/double_cross_validation/svm/freq_rank_cv_nsc.pdf")
+pdf("./results/double_cross_validation/svm/freq_rank_cv_svmrfe.pdf")
 plot(1:length(rank_by_freq),unlist(acc_by_n_freq_rank))
 dev.off()
 
@@ -558,13 +596,20 @@ rank = rank_data$featureRankedList
 # testing min N of max acc selected in inner Loop genes of rank
 svmModel = svm(t(dataset.x[rank[1:best_n_outer], ]), dataset.y, cost = tuned$best.parameters[2], gamma = tuned$best.parameters[1], scale = T, type="C-classification", kernel="linear")
 
+svmModel2 = svm(t(dataset.x), dataset.y, cost = tuned$best.parameters[2], gamma = tuned$best.parameters[1], scale = T, type="C-classification", kernel="linear")
+
 pred <- predict(svmModel, t(dataset_test.x[rank[1:best_n_outer], ]))
+pred2 <- predict(svmModel2, t(dataset_test.x))
 
 acc = length(which(as.logical(pred == dataset_test.y)))/length(dataset_test.y)
+acc2 = length(which(as.logical(pred2 == dataset_test.y)))/length(dataset_test.y)   
+cat("\npred ", pred,"\n")
+cat("\nexpec ", dataset_test.y,"\n")
+result <- cbind(data.frame(data.frame(c(acc)),data.frame(c(acc2)))
+colnames(result) <- c("Acc min N DCV", "Acc all proteins")
 
-result <- cbind(data.frame(c("independent acc"),data.frame(c(acc))))
-
-cat("independent acc: ", acc)
+cat("\nindependent acc min N: ", acc)
+cat("\nindependent acc all proteins: ", acc2, "\n")
 
 write.csv(result, file = "./results/double_cross_validation/svm/independent_test_threshold_from_DCV.csv")
 
@@ -580,85 +625,3 @@ colnames(result) <- c("index","rank?","name")
 write.csv(result, file = "./results/double_cross_validation/svm/genes_DCV.csv")
 
 
-
-
-
-
-#========================================================================================================
-
-# # generate a candidates Signatures selecting genes that appears at least at X% of experements
-# # freq >= 0.5 * length(repetitions) * k
-
-# acc_by_signature <- list()
-# signatures <- list()
-# sig = 1
-# signature_heuristic <- c(0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1)
-# for (pc in signature_heuristic){
-#   signature = list()
-
-#   minimum_freq = pc * n_repetitions * nfold
-
-#   for (geneidx in 1:length(global_genes_freq)){
-#     if (global_genes_freq[geneidx] >= minimum_freq){
-#       signature <- append(signature, geneidx)
-#     }
-#   }
-#   signature <- unlist(signature)
-#   # make a CV using the signature
-#   folds <- stratified_balanced_cv(y=dataset.y,nfolds=5)
-#   nfold <- length(folds)
-#   acc_kfold = list()
-#   for (i in 1:nfold){
-#         # Define ith train and test set
-#     dataset2.x <- dataset.x[-folds[[i]], ,drop=FALSE]
-#     dataset2.y <- dataset.y[-folds[[i]]]
-#     dataset2.testX <- dataset.x[folds[[i]], ,drop=FALSE]
-#     dataset2.testY <- dataset.y[folds[[i]]]
-#     dataset2.class_count <- table(dataset2.y) #classes count
-#     dataset2.class_levels <- unique(dataset2.y)
-#     dataset2.n_classes <- length(dataset2.class_levels)
-#     dataset2.n_samples <- nrow(dataset2.x)
-#     dataset2.n_genes <- ncol(dataset2.x)
-
-#     tuned = NULL
-#     if (TUNE == TRUE){
-#       # Tune variable is used when CV and when classify the independent test of each loop
-#       tuned <- tune.svm(x=dataset2.x, y=dataset2.y, gamma = 2^(-4:2), cost = 2^(1:4))
-#     }else{
-#       tuned$best.parameters[1] = 10^(-4)
-#       tuned$best.parameters[2] = 10
-#     }
-#     svmModel = svm(dataset2.x[, signature], dataset2.y, cost = tuned$best.parameters[2], gamma = tuned$best.parameters[1], scale = T, type="C-classification", kernel="linear")
-#     pred <- predict(svmModel, dataset2.testX[, signature])
-#     acc_kfold<-append(acc_kfold, length(which(as.logical(pred == dataset2.testY)))/length(dataset2.testY))
-#   }
-
-#   acc_by_signature[sig] <- mean(unlist(acc_kfold))
-#   signatures[sig] <- toString(colnames(dataset.x)[signature])
-#   sig = sig + 1
-# }
-
-# # write signatures and CV results in File
-# # ALERT: this CV results is highly biased since the frequencies of genes and the K-fold that test the signatures are computed using the same dataset
-# result <- cbind(data.frame(signature_heuristic), data.frame(unlist(acc_by_signature)), data.frame(unlist(signatures)))
-# colnames(result) <- c("presence_in_folds_and_repetitions","acc","signature")
-# #write.matrix(merged, file = "big_matrix_svm-rfe.csv", sep = ",")
-# write.csv(result, file = "./results/ranking_using_simple_crossvalidation/svm-rfe/potential_signatures_cv_svm-rfe.csv")
-
-
-# tuned = NULL
-# if (TUNE == TRUE){
-#   # Tune variable is used when CV and when classify the independent test of each loop
-#   tuned <- tune.svm(x=dataset.x, y=dataset.y, gamma = 2^(-4:2), cost = 2^(1:4))
-# }else{
-#   tuned$best.parameters[1] = 10^(-4)
-#   tuned$best.parameters[2] = 10
-# }
-
-# # save the rank considering the entire dataset
-# rank_data <- svmrfeFeatureRankingForMulticlass(dataset.x, dataset.y, tuned)
-# rank = rank_data$featureRankedList
-# rank_matrix <- cbind(data.frame(1:length(rank)), data.frame(colnames(dataset.x)[rank]))
-# colnames(rank_matrix) <- c("rank","protein")
-# write.csv(rank_matrix, file = "./results/ranking_using_simple_crossvalidation/svm-rfe/rank_by_svm-rfe_using_the_full_dataset.csv")
-# #the end
