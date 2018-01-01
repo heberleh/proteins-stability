@@ -297,8 +297,8 @@ dataset_test.genesnames <- rownames(dataset_test.x)
 #=========================== ============ START ============ ==============================
 
 outer_k = 22
-inner_k = 3
-n_repetitions <- 2
+inner_k = 7
+n_repetitions <- 10
 
 cat("Number of genes",nrow(dataset.x))
 
@@ -320,6 +320,7 @@ if (outer_k == length(dataset.y)){
 nfold_outer <- length(folds)
 cat("Number of outer folds", nfold_outer,"\n")
 
+max_acc_inner_outer = 0
   # START K-Fold   [outer-loop]
 for (i_outer in 1:nfold_outer){
   # Define ith train and test set
@@ -429,6 +430,8 @@ for (i_outer in 1:nfold_outer){
 
   } # END rep
 
+
+
   cat("\nEnd of one inner K-fold\n")
 
   tuned = NULL
@@ -477,6 +480,17 @@ for (i_outer in 1:nfold_outer){
   if (max_acc_outer < acc_by_n){
     max_acc_outer = acc_by_n
     best_n_outer = best_n_inner
+  }else{
+    if(max_acc_outer == acc_by_n){
+      if (i_outer == 1){
+        max_acc_inner_outer =  max_acc_inner
+      }else{
+        if(max_acc_inner > max_acc_inner_outer){
+            best_n_outer = best_n_inner
+            max_acc_inner_outer = max_acc_inner
+        }
+      }
+    }
   }
 
   # Filter the selected genes (get it from rank)
@@ -502,8 +516,6 @@ avg_acc = mean(accs_kfold_outer)
 avg_acc_all_genes = mean(accs_kfold_outer_all_genes)
 cat("\n# Accuracy for rep.",rep," is", avg_acc,"\n")
 
-
-avg_acc = avg_acc
 
 cat("Avg Acc DCV", avg_acc,"\n")
 
@@ -605,7 +617,7 @@ acc = length(which(as.logical(pred == dataset_test.y)))/length(dataset_test.y)
 acc2 = length(which(as.logical(pred2 == dataset_test.y)))/length(dataset_test.y)   
 cat("\npred ", pred,"\n")
 cat("\nexpec ", dataset_test.y,"\n")
-result <- cbind(data.frame(data.frame(c(acc)),data.frame(c(acc2)))
+result <- cbind(data.frame(c(acc)),data.frame(c(acc2)))
 colnames(result) <- c("Acc min N DCV", "Acc all proteins")
 
 cat("\nindependent acc min N: ", acc)
