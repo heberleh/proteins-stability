@@ -5,3 +5,9 @@ project_2 : dados da romênia para utilização dos scrips de double-cross-valid
 
 
 project_3 : dados da romênia sem teste independente, feito para a exploração da frequência dos genes  com p<0.05 nos rankings
+
+
+project_4: dados da romênia
+
+
+project_5: dados de peptídeos, artigo que voltou da nature para melhorar

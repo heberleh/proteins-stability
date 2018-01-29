@@ -1,0 +1,1 @@
+python ./code/Combinations_and_filters/main4_FullTrain_signatures_by_combinations.py
