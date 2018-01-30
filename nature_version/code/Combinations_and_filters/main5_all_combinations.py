@@ -12,7 +12,8 @@ from numpy import min, unique
 import time
 import itertools
 from multiprocessing import Pool, Lock, cpu_count
-from sklearn.cross_validation import StratifiedKFold
+#from sklearn.cross_validation import StratifiedKFold
+from sklearn.model_selection import RepeatedStratifiedKFold
 from wilcoxon import WilcoxonRankSumTest
 from signature import Signature
 from possibleEdge import PossibleEdge
@@ -100,137 +101,32 @@ def key(genes):
 
 
 def evaluate(args):
-    genes, n, x, y, min_break_accuracy, k, classifiers_names, folds = args[0], args[1], \
-                                                              args[2], args[3], args[4], args[5], args[6], args[7]
-    acc_list = []
-    classifiers_class = {"svm":svm.LinearSVC, "tree":tree.DecisionTreeClassifier, "nsc":NearestCentroid, "naive_bayes":GaussianNB}
-    for classifier_name in classifiers_names:        
-        acc_list.append(CrossValidation.run(genes, n, folds, x, y, classifiers_class[classifier_name], min_break_accuracy))
-    gc.collect()
+    classifiers_class = {"svm":svm.LinearSVC, "tree":tree.DecisionTreeClassifier, "nsc":NearestCentroid, "naive_bayes":GaussianNB, "glm": LogisticRegression, "sgdc":SGDClassifier,"mtElasticNet":MultiTaskElasticNet,"elasticNet":ElasticNet,"perceptron":Perceptron, "lr":LogisticRegression, "randForest":RandomForestClassifier}
 
-    return {"group":genes, "accs":acc_list}
+    dataset, outer_folds, classifier_name = args[1], args[2], args[3]#, args[4], args[5]
+    t = []
+    p = []
+    for train_index, test_index in outer_folds: #bootstrap? (100 iterations...)
+        newdataset1 = dataset.get_sub_dataset_by_samples(train_index)        
+        test_dataset1 = dataset.get_sub_dataset_by_samples(test_index)
 
+        x_train = newdataset1.matrix[:, args[0]]  # data matrix
+        y_train = factorize(newdataset1.labels)[0]  # classes/labels of each sample from matrix x
+
+        x_test = test_dataset1.matrix[:, args[0]]
+        y_test = factorize(test_dataset1.labels)[0]
+
+        classifier = classifiers_class[classifier_name]()
+        std_scale = preprocessing.StandardScaler().fit(x_train)
+        classifier.fit(std_scale.transform(x_train), y_train)
+        
+        t.extend(y_test)
+        p.extend(classifier.predict(std_scale.transform(x_test)))
+    return {'g':args[0], 't':t, 'p':p}
+    
 
 def split(arr, count):
      return [arr[i::count] for i in range(count)]
-
-
-def evaluate_genes(dataset, min_accuracy, n, k, min_group_size, max_group_size, classifiers_names):
-
-    if len(dataset.genes) == 0:
-        return False
-    elif len(dataset.genes) < max_group_size:
-        max_group_size = len(dataset.genes)
-    print "\n\n_____________________________________________"
-    print "Acurácia mínima:", min_accuracy
-    # breaks a k-fold if a minimum acc is not reached...
-    # supose 5 folds, considering 4 folds with 100% acc, and we want min_accuracy of 95%
-    # the fold must have at least 5*0.95 - 4 = 75% of acc... otherwise the average of acc of all folds would never reach 95% of acc
-    min_break_accuracy = (k*min_accuracy) - (k-1)  #may be negative.. so any acc is considered, including zero, that is... all loops of k-fold will be executed
-
-    folds = StratifiedKFold(y=dataset.labels, n_folds=k)    
-        
-    time_now = str(datetime.now()).replace("-", "_").replace(" ", "__").replace(":", "_").replace(".", "_")
-
-    # fixed folds to calculate accuracy and compare the results between different filters
-    # if folds were shuffled every time k-folds runs, each time a 4-gene-set would give a different number of
-    # lists of genes with accuracy > min_accuracy
-    header = "*N"
-
-    for classifier_name in classifiers_names:
-        header = header + ",acc_" + classifier_name
-    header = header + ",groups"
-
-    genes_index = [i for i in range(len(dataset.genes))]
-
-    # calculate N value using number of samples and number of classes
-    x = dataset.matrix  # data matrix
-    y = factorize(dataset.labels)[0]  # classes/labels of each sample from matrix x
-
-    last_individual_time = 4.34675638278*60/39340   # log the time
-
-          # if a group is > min_accuracy in ANY classifier (k-fold) it will be stored in this dictionary:
-    high_acc_groups = {}
-
-    groups_file_name = './results/combinations/groups_from_'+str(min_group_size)+'_to_'+str(max_group_size)+'_fold-'+str(fold_i)+'_accuracy_higher_'+str(min_accuracy)+'__'+time_now+'.csv'
-
-    with open(groups_file_name, 'a') as f:
-        f.write(header+"\n")
-        for sub_list_size in range(min_group_size, max_group_size+1):
-            genes_freq =[0 for i in range(len(dataset.genes))]
-                        
-            print  sub_list_size, "proteins."
-
-            all_possible_groups = itertools.combinations(genes_index, sub_list_size)
-            n_possible_groups = nCr(len(genes_index),sub_list_size)
-
-            print "Combination of ",len(genes_index),". There are ", n_possible_groups, "lists to be tested. Estimated time to complete:",\
-                n_possible_groups*last_individual_time/60/60, "horas."
-
-            #n_splits = int(n_possible_groups/40)#1000*(3/(sub_list_size*1.0)))
-            n_cpu = cpu_count()
-            
-            n_splits = n_cpu*300
-            if (n_splits > n_possible_groups/2):
-                if n_possible_groups > 300:
-                    n_splits = n_possible_groups/3
-            
-
-            start = time.time()
-            pool = Pool(processes=n_cpu)
-            hasnext = True
-            executed = 0
-            groups_found_count = 0
-            while(hasnext):
-                current_args = []
-                for rep in range(n_splits):
-                    try:
-                        g = next(all_possible_groups)
-                        current_args.append((g, n, x, y, min_break_accuracy, k, classifiers_names, folds))
-                    except:
-                        hasnext = False
-                        break
-                gc.collect()
-            
-                acc_list_part = pool.map(evaluate, current_args)
-
-                for i in range(len(acc_list_part)):
-                    if max(acc_list_part[i]["accs"]) >= min_accuracy:
-                        result = acc_list_part[i]
-                        for protidx in result["group"]:
-                            genes_freq[protidx] += 1
-                        group = [dataset.genes[i] for i in result["group"]]
-                        accs = result["accs"]
-                        line = str(len(group))
-                        for acc in accs:
-                            line = line + "," + str(acc)
-                        for protein in group:
-                            line = line + "," + protein
-                        f.write(line+"\n")
-                        groups_found_count += 1
-
-                gc.collect()
-                executed = executed + len(current_args)
-                print "Restam ", n_possible_groups - executed, ". Grupos encontrados: ", groups_found_count
-        f.close()
-        with open('./results/combinations/genes_freq_size_from_'+str(min_group_size)+'_to_'+str(max_group_size)+'_fold-'+str(fold_i)+'__accuracy_higher_'+str(min_accuracy)+'__'+time_now+'.csv', 'a') as f2:
-            f2.write('protein, counting from '+str(len(dataset.genes))+' of being in a group of size from '+str(min_group_size)+' to '+str(max_group_size)+' with acc higher or equal to '+ str(min_accuracy)+'\n')
-            for protidx in range(len(genes_freq)):
-                f2.write(dataset.genes[protidx] +','+str(genes_freq[protidx])+'\n')
-            f2.close()
-
-        delta = time.time()-start
-        last_individual_time = delta/float(n_possible_groups)
-        del all_possible_groups
-        print "The pool of processes took ", delta/60, "minutes to finish the job.\n"
-        pool.close()
-        pool.join()
-        pool.terminate()
-        gc.collect()
-    return groups_file_name
-
-
-
 
 
 if __name__ == '__main__':
@@ -243,17 +139,25 @@ if __name__ == '__main__':
 
     dataset_test = Dataset("./dataset/independent_test.txt", scale=False, normalize=False, sep='\t')
 
-    filter = False
+    filter = True
 
     if filter:
         # Filtering train and test Datasets
         wil = WilcoxonRankSumTest(dataset)
         wil_z, wil_p = wil.run()
         cutoff = 0.05
+        with open('./results/combinations/wilcoxon_test.csv', 'w') as f:
+            f.write("gene,p-value\n")
+            for i in range(len(dataset.genes)):
+                f.write(dataset.genes[i]+","+str(wil_p[i])+"\n")        
 
         dataset = dataset.get_sub_dataset([dataset.genes[i] for i in range(len(dataset.genes)) if wil_p[i]<cutoff])
 
         dataset_test = dataset.get_sub_dataset([dataset_test.genes[i] for i in range(len(dataset_test.genes)) if wil_p[i]<cutoff])
+
+
+                
+
 
         print "Genes with Wilcox < ", str(cutoff),": ", dataset.genes
 
@@ -265,19 +169,25 @@ if __name__ == '__main__':
     from sklearn.neighbors.nearest_centroid import NearestCentroid
     from sklearn import tree
     from sklearn import svm
+    from sklearn.linear_model import SGDClassifier, Perceptron
+    from sklearn.linear_model import PassiveAggressiveClassifier
+    from sklearn.linear_model import LogisticRegression
+    from sklearn.linear_model import ElasticNet
+    from sklearn.linear_model import MultiTaskElasticNet
+    from sklearn.linear_model import LogisticRegression
+    from sklearn.ensemble import RandomForestClassifier
 
     # classifiers that will be considered
-    classifiers_names = ["svm","tree","nsc","naive_bayes"] #["svm","tree","nsc","naive_bayes"]
-    classifiers_class = {"svm":svm.LinearSVC, "tree":tree.DecisionTreeClassifier, "nsc":NearestCentroid, "naive_bayes":GaussianNB}
+    classifiers_names = ["svm","tree","nsc","naive_bayes","glm","sgdc","perceptron", "lr", "randForest"] #["svm","tree","nsc","naive_bayes"]
+    classifiers_class = {"svm":svm.LinearSVC, "tree":tree.DecisionTreeClassifier, "nsc":NearestCentroid, "naive_bayes":GaussianNB, "glm": LogisticRegression, "sgdc":SGDClassifier,"mtElasticNet":MultiTaskElasticNet,"elasticNet":ElasticNet,"perceptron":Perceptron, "lr":LogisticRegression, "randForest":RandomForestClassifier}
 
     min_accuracy = 0
     static_min_accuracy = 0
     #min_accuracy = 0.8
-
-    n = 1  # n repetitions of k-fold cross validation
-    k = 4  # k-fold cross validations - outer
-    kinner = 3
-    max_group_size = 3
+    
+    k = 8  # k-fold cross validations - outer    
+    n_repeats = 100    
+    max_group_size = len(dataset.genes)
 
     accuracy_list = []
 
@@ -287,138 +197,240 @@ if __name__ == '__main__':
         all_signatures[name] = {"idx":ci,"signatures":[]}
         ci+=1
 
-    # para cada volta i... armazena assinaturas e acurácias
-    outer_folds = StratifiedKFold(y=dataset.labels, n_folds=k)    
-    
-    with open('./results/combinations/kfold_test_with_all_signature_genes.csv', 'w') as f:
-        f.write("N, acc independent, all proteins found in a loop\n")
-        f.close()
-    
-    with open('./results/combinations/kfold_test_with_all_independent_genes.csv', 'w') as f:
-        f.write("N, acc independent, all proteins found in a loop\n")
-        f.close()
-
-    fold_i = -1
-
-    kfold_independent_proteins = {}
-    for i in range(k):
-        kfold_independent_proteins[i] = set()
-
-    
-    kfold_signature_proteins = {}
-    for i in range(k):
-        kfold_signature_proteins[i] = set()   
-    
-    for train_index, test_index in outer_folds:     
-
-        fold_i += 1
-
-        print "\n\n==============================="
-        print "Next train set"
-
-        # encontra assinaturas de tamanho 1
-        newdataset1 = dataset.get_sub_dataset_by_samples(train_index)        
-        test_dataset1 = dataset.get_sub_dataset_by_samples(test_index)
-
-        x_train = newdataset1.matrix  # data matrix
-        y_train = factorize(newdataset1.labels)[0]  # classes/labels of each sample from matrix x
-
-        x_test = test_dataset1.matrix
-        y_test = factorize(test_dataset1.labels)[0]
-                
-        # ----------------------------------
-        filename = evaluate_genes(dataset=newdataset1, min_accuracy=static_min_accuracy, n=n, k=kinner, min_group_size=1, max_group_size=max_group_size,classifiers_names=classifiers_names)
-
-        # *N,acc_tree,groups
-        # 1,0.833333333333,CON__P00761
-        # 1,0.833333333333,P02769_BSA        
-        independent_genes1_with_high_acc = set()
+    # BOOTSTRAP OR K-FOLD?
+    #
+    rskf = RepeatedStratifiedKFold(n_splits=k, n_repeats=n_repeats,random_state=25684)
+    gen = rskf.split(dataset.matrix, dataset.labels)
+    outer_folds = []
+    for ti, tk in gen:
+        outer_folds.append([ti,tk])
         
+    for ti ,tk in outer_folds:
+        print "Folds:", ti, tk,"\n"
+    
+    maxAcc = 0.0    
+    maxF1 = 0.0
+    for name in classifiers_names:
+        with open('./results/combinations/predictions_'+name+'.csv', 'w') as f:
 
-        for name in classifiers_names:
-            maxAcc = static_min_accuracy
-            signatures_data = all_signatures[name]            
-            signatures = signatures_data["signatures"]
+            line = "n, f1, acc, recall, precision, f1_independent, acc_independent, recall_independent, precision_independent, signature\n"
+            f.write(line)               
+            for sub_list_size in range(1, max_group_size+1):
+                genes_freq =[0 for i in range(len(dataset.genes))]
+                            
+                print  sub_list_size, "proteins."
 
-            with open(filename, 'r') as csv_file:
-                reader = csv.reader(csv_file, delimiter=",")
-                reader.next()
-                for row in reader:            
-                    if float(row[signatures_data["idx"]]) > maxAcc:
-                        maxAcc = float(row[signatures_data["idx"]])
-                csv_file.close()
+                genes_index = [i for i in range(len(dataset.genes))]
+
+                all_possible_groups = itertools.combinations(genes_index, sub_list_size)
+                n_possible_groups = nCr(len(genes_index),sub_list_size)       
             
-            print "New max acc for classifier ", name, ":", maxAcc           
+                print "Combination of ",len(genes_index),". There are ", n_possible_groups, "lists to be tested."
 
-            # for each signature...   
-            with open(filename, 'r') as csv_file:
-                reader = csv.reader(csv_file, delimiter=",")
-                reader.next()
-                print "Signatures: "            
-                for row in reader:  
-                    acc = row[signatures_data["idx"]]              
-                    genes = []
-                    for col in range(len(classifiers_names)+1,len(row)):
-                        genes.append(row[col])                       
-                    signature = Signature(genes)
-                                
-                    genes_index = []
-                    for i in range(len(dataset.genes)):
-                        for gene in genes:
-                            if dataset.genes[i] == gene:
-                                genes_index.append(i)
-                    
-                    x_tr = x_train[:,genes_index]  # data matrix
-                    y_tr = y_train
-                    x_te = x_test[:,genes_index]
-                    y_te = y_test
-
-                    classifier = classifiers_class[name]()
-                    # standardize attributes to mean 0 and desv 1 (z-score)
-                    std_scale = preprocessing.StandardScaler().fit(x_tr)
-                    classifier.fit(std_scale.transform(x_tr), y_tr)
-                    accuracy = metrics.accuracy_score(y_te, classifier.predict(std_scale.transform(x_te)))
-
-                    found = False
-                    for sig in signatures:
-                        if sig == signature:
-                            sig.add_acc(acc)
-                            signature.add_independent_test_acc(accuracy)
-                            found = True
+                #n_splits = int(n_possible_groups/40)#1000*(3/(sub_list_size*1.0)))
+                n_cpu = cpu_count()
+                
+                n_splits = n_cpu*8
+                # if (n_splits > n_possible_groups/2):
+                #     if n_possible_groups > 300:
+                #         n_splits = n_possible_groups/2.5
+                
+                start = time.time()
+                pool = Pool(processes=n_cpu)
+                hasnext = True
+                executed = 0
+                groups_found_count = 0
+                while(hasnext):
+                    current_args = []
+                    for rep in range(n_splits):
+                        try:
+                            g = next(all_possible_groups)               
+                            #dataset, outer_folds, classifier_name        
+                            current_args.append((g, dataset, outer_folds, name)) 
+                        except:
+                            hasnext = False
                             break
-                    if not found:
-                        signature.add_acc(acc)
-                        signature.add_independent_test_acc(accuracy)
-                        signatures.append(signature)
-            
-        
-            # if len(all_signature_genes) > 0:
-            #     genes_index = []
-            #     for i in range(len(dataset.genes)):
-            #         for gene in all_signature_genes:
-            #             if dataset.genes[i] == gene:
-            #                 genes_index.append(i)
-
-            #     x_tr = x_train[:,genes_index]  # data matrix
-            #     y_tr = y_train
-            #     x_te = x_test[:,genes_index]
-            #     y_te = y_test
-
-            #     classifier = tree.DecisionTreeClassifier()
-            #     # standardize attributes to mean 0 and desv 1 (z-score)
-            #     std_scale = preprocessing.StandardScaler().fit(x_tr)
-            #     classifier.fit(std_scale.transform(x_tr), y_tr)
-            #     accuracy = metrics.accuracy_score(y_te, classifier.predict(std_scale.transform(x_te)))  
+                    gc.collect()
                 
-            #     with open('./results/combinations/kfold_test_with_all_signature_genes.csv', 'a') as f:
-            #         f.write(str(len(all_signature_genes))+","+str(accuracy))
-            #         for gene in all_signature_genes:
-            #             f.write(","+gene)
-            #         f.write("\n")
-            #         f.close()
+                    result_part = pool.map(evaluate, current_args)
+
+                    for i in range(len(result_part)):            
+                        result = result_part[i]
+
+                        group = [dataset.genes[i] for i in result["g"]]
+                        truth = result['t']
+                        predicted = result['p']
+
+                        acc = metrics.accuracy_score(truth,predicted)
+                        f1 = metrics.f1_score(truth,predicted)
+                        precision = metrics.precision_score(truth,predicted)
+                        recall = metrics.recall_score(truth,predicted)
+
+
+                        x_train = dataset.matrix[:, result["g"]]  # data matrix
+                        y_train = factorize(dataset.labels)[0]  # classes/labels of each sample from matrix x
+
+                        x_test = dataset_test.matrix[:, result["g"]]
+                        y_test = factorize(dataset_test.labels)[0]
+
+                        classifier = classifiers_class[name]()
+                        std_scale = preprocessing.StandardScaler().fit(x_train)
+                        classifier.fit(std_scale.transform(x_train), y_train)                       
+                        independent_prediction = classifier.predict(std_scale.transform(x_test))
+
+                        acc_independent = metrics.accuracy_score(y_test,independent_prediction)
+                        f1_independent = metrics.f1_score(y_test,independent_prediction)
+                        precision_independent = metrics.precision_score(y_test,independent_prediction)
+                        recall_independent = metrics.recall_score(y_test,independent_prediction)
+
+                        if acc > maxAcc:
+                            maxAcc = acc 
+                        if f1 > maxF1:
+                            maxF1 = f1                       
+
+                        line = str(len(group))+","+\
+                                      str(f1)+","+\
+                                      str(acc)+","+\
+                                      str(recall)+","+\
+                                      str(precision)+","+\
+                                      str(f1_independent)+","+\
+                                      str(acc_independent)+","+\
+                                      str(recall_independent)+","+\
+                                      str(precision_independent)
+                        #"n, f1, acc, recall, precision, signature\n"                               
+                        for g in group:
+                            line = line + "," + str(g)
+                        f.write(line+"\n") 
+
+                    gc.collect()
+                    executed = executed + len(current_args)
+                    print "Restam ", str(n_possible_groups - executed), "grupos.\n"
+            f.close()
+  
+    delta = time.time()-start
+    last_individual_time = delta/float(n_possible_groups)
+    del all_possible_groups
+    print "The pool of processes took ", delta/60, "minutes to finish the job.\n"
+    print "\n\nAcurácia máxima: ", maxAcc,"\n\n"
+    print "\n\nF1 máximo: ",maxF1,"\n\n"
+    pool.close()
+    pool.join()
+    pool.terminate()
+    gc.collect()
+
+    exit()
+
+    # *N,acc_tree,groups
+    # 1,0.833333333333,CON__P00761
+    # 1,0.833333333333,P02769_BSA        
+    independent_genes1_with_high_acc = set()        
+
+    for name in classifiers_names:
+        maxAcc = static_min_accuracy
+        signatures_data = all_signatures[name]            
+        signatures = signatures_data["signatures"]
+
+        with open(filename, 'r') as csv_file:
+            reader = csv.reader(csv_file, delimiter=",")
+            reader.next()
+            for row in reader:            
+                if float(row[signatures_data["idx"]]) > maxAcc:
+                    maxAcc = float(row[signatures_data["idx"]])
             csv_file.close()
         
-   
+        print "New max acc for classifier ", name, ":", maxAcc           
+
+        # for each signature...   
+        with open(filename, 'r') as csv_file:
+            reader = csv.reader(csv_file, delimiter=",")
+            reader.next()
+            print "Signatures: "            
+            for row in reader:  
+                acc = row[signatures_data["idx"]]              
+                genes = []
+                for col in range(len(classifiers_names)+1,len(row)):
+                    genes.append(row[col])                       
+                signature = Signature(genes)
+                            
+                genes_index = []
+                for i in range(len(dataset.genes)):
+                    for gene in genes:
+                        if dataset.genes[i] == gene:
+                            genes_index.append(i)
+                
+                x_tr = x_train[:,genes_index]  # data matrix
+                y_tr = y_train
+                x_te = x_test[:,genes_index]
+                y_te = y_test
+
+                classifier = classifiers_class[name]()
+                # standardize attributes to mean 0 and desv 1 (z-score)
+                std_scale = preprocessing.StandardScaler().fit(x_tr)
+                classifier.fit(std_scale.transform(x_tr), y_tr)
+                # accuracy = metrics.accuracy_score(y_te, classifier.predict(std_scale.transform(x_te)))
+                predicted = classifier.predict(std_scale.transform(x_te))
+
+                found = False
+                for sig in signatures:
+                    if sig == signature:
+                        sig.add_pair_truth_prediced(y_te,predicted)
+                        found = True
+                        break
+                if not found:
+                    signature.add_pair_truth_prediced(y_te,predicted)                        
+                    signatures.append(signature)
+        
+    
+        # if len(all_signature_genes) > 0:
+        #     genes_index = []
+        #     for i in range(len(dataset.genes)):
+        #         for gene in all_signature_genes:
+        #             if dataset.genes[i] == gene:
+        #                 genes_index.append(i)
+
+        #     x_tr = x_train[:,genes_index]  # data matrix
+        #     y_tr = y_train
+        #     x_te = x_test[:,genes_index]
+        #     y_te = y_test
+
+        #     classifier = tree.DecisionTreeClassifier()
+        #     # standardize attributes to mean 0 and desv 1 (z-score)
+        #     std_scale = preprocessing.StandardScaler().fit(x_tr)
+        #     classifier.fit(std_scale.transform(x_tr), y_tr)
+        #     accuracy = metrics.accuracy_score(y_te, classifier.predict(std_scale.transform(x_te)))  
+            
+        #     with open('./results/combinations/kfold_test_with_all_signature_genes.csv', 'a') as f:
+        #         f.write(str(len(all_signature_genes))+","+str(accuracy))
+        #         for gene in all_signature_genes:
+        #             f.write(","+gene)
+        #         f.write("\n")
+        #         f.close()
+        csv_file.close()
+        
+    for name in classifiers_names:
+        with open('./results/combinations/all_sig_dcv_acc_'+name+'.csv', 'w') as f:
+            signatures = all_signatures[name]["signatures"]  
+            min_acc = 1
+            max_acc = 0
+
+
+            f.write("max acc,"+min_acc+"\n")
+            f.write("min acc,"+max_acc+"\n")
+            f.write("size, avg dcv acc, std dcv acc, signature\n")
+                    
+            for signature in signatures:
+                f.write(str(signature.get_n())+","
+                        +str(np.mean(signature.get_independent_test_accs()))+","
+                        +str(np.std(signature.get_independent_test_accs()))                        
+                        )
+                for gene in signature.genes:
+                    f.write(","+gene)
+                f.write("\n")
+            f.close()
+    
+
+
+
     
     # print "\n\n Time to complete the algorithm", (time.time() - start)/60, "minutes."
 
