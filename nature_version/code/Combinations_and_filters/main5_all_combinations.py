@@ -101,7 +101,7 @@ def key(genes):
 
 
 def evaluate(args):
-    classifiers_class = {"svm":svm.LinearSVC, "tree":tree.DecisionTreeClassifier, "nsc":NearestCentroid, "naive_bayes":GaussianNB, "glm": LogisticRegression, "sgdc":SGDClassifier,"mtElasticNet":MultiTaskElasticNet,"elasticNet":ElasticNet,"perceptron":Perceptron, "lr":LogisticRegression, "randForest":RandomForestClassifier}
+    classifiers_class = {"svm":svm.LinearSVC, "tree":tree.DecisionTreeClassifier, "nsc":NearestCentroid, "naive_bayes":GaussianNB, "glm": LogisticRegression, "sgdc":SGDClassifier,"mtElasticNet":MultiTaskElasticNet,"elasticNet":ElasticNet,"perceptron":Perceptron, "randForest":RandomForestClassifier, "svm-rbf":SVC}
 
     dataset, outer_folds, classifier_name = args[1], args[2], args[3]#, args[4], args[5]
     t = []
@@ -145,7 +145,7 @@ if __name__ == '__main__':
         # Filtering train and test Datasets
         wil = WilcoxonRankSumTest(dataset)
         wil_z, wil_p = wil.run()
-        cutoff = 0.05
+        cutoff = 0.3
         with open('./results/combinations/wilcoxon_test.csv', 'w') as f:
             f.write("gene,p-value\n")
             for i in range(len(dataset.genes)):
@@ -176,10 +176,11 @@ if __name__ == '__main__':
     from sklearn.linear_model import MultiTaskElasticNet
     from sklearn.linear_model import LogisticRegression
     from sklearn.ensemble import RandomForestClassifier
+    from sklearn.svm import SVC
 
     # classifiers that will be considered
-    classifiers_names = ["svm","tree","nsc","naive_bayes","glm","sgdc","perceptron", "lr", "randForest"] #["svm","tree","nsc","naive_bayes"]
-    classifiers_class = {"svm":svm.LinearSVC, "tree":tree.DecisionTreeClassifier, "nsc":NearestCentroid, "naive_bayes":GaussianNB, "glm": LogisticRegression, "sgdc":SGDClassifier,"mtElasticNet":MultiTaskElasticNet,"elasticNet":ElasticNet,"perceptron":Perceptron, "lr":LogisticRegression, "randForest":RandomForestClassifier}
+    classifiers_names = ["svm-rbf"]#["svm","tree","nsc","naive_bayes","glm","sgdc","perceptron", "randForest"] #["svm","tree","nsc","naive_bayes"]
+    classifiers_class = {"svm":svm.LinearSVC, "tree":tree.DecisionTreeClassifier, "nsc":NearestCentroid, "naive_bayes":GaussianNB, "glm": LogisticRegression, "sgdc":SGDClassifier,"mtElasticNet":MultiTaskElasticNet,"elasticNet":ElasticNet,"perceptron":Perceptron, "randForest":RandomForestClassifier, "svm-rbf":SVC}
 
     min_accuracy = 0
     static_min_accuracy = 0
@@ -208,6 +209,17 @@ if __name__ == '__main__':
     for ti ,tk in outer_folds:
         print "Folds:", ti, tk,"\n"
     
+    #n_splits = int(n_possible_groups/40)#1000*(3/(sub_list_size*1.0)))
+    n_cpu = cpu_count()
+    
+    n_splits = n_cpu*10
+    # if (n_splits > n_possible_groups/2):
+    #     if n_possible_groups > 300:
+    #         n_splits = n_possible_groups/2.5
+
+    pool = Pool(processes=n_cpu)
+    
+    start = time.time()
     maxAcc = 0.0    
     maxF1 = 0.0
     for name in classifiers_names:
@@ -226,17 +238,7 @@ if __name__ == '__main__':
                 n_possible_groups = nCr(len(genes_index),sub_list_size)       
             
                 print "Combination of ",len(genes_index),". There are ", n_possible_groups, "lists to be tested."
-
-                #n_splits = int(n_possible_groups/40)#1000*(3/(sub_list_size*1.0)))
-                n_cpu = cpu_count()
                 
-                n_splits = n_cpu*8
-                # if (n_splits > n_possible_groups/2):
-                #     if n_possible_groups > 300:
-                #         n_splits = n_possible_groups/2.5
-                
-                start = time.time()
-                pool = Pool(processes=n_cpu)
                 hasnext = True
                 executed = 0
                 groups_found_count = 0
@@ -254,6 +256,7 @@ if __name__ == '__main__':
                 
                     result_part = pool.map(evaluate, current_args)
 
+                    gc.collect()
                     for i in range(len(result_part)):            
                         result = result_part[i]
 
@@ -302,6 +305,7 @@ if __name__ == '__main__':
                             line = line + "," + str(g)
                         f.write(line+"\n") 
 
+                    f.flush()
                     gc.collect()
                     executed = executed + len(current_args)
                     print "Restam ", str(n_possible_groups - executed), "grupos.\n"
