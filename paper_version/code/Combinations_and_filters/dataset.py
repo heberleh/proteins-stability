@@ -11,6 +11,8 @@ import csv
 import numpy as np
 
 
+
+
 class Dataset(object):
 
     def __init__(self, filename=None, scale=False, normalize=False, sep=";"):
@@ -103,3 +105,8 @@ class Dataset(object):
         new_dataset.samples = list(np.array(self.samples)[indexes])
         new_dataset.name = self.name+"_modified"
         return new_dataset
+    
+    def shuffle_labels(self):
+        print self.labels
+        np.random.shuffle(self.labels)
+        print self.labels

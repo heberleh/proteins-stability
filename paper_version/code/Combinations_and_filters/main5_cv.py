@@ -107,7 +107,10 @@ def evaluate(args):
     dataset, folds, classifier_name = args[1], args[2], args[3]#, args[4], args[5]
     t = []
     p = []
+    count = 0
+    accs = []
     for train_index, test_index in folds: #bootstrap? (100 iterations...)
+        count += 1
         newdataset1 = dataset.get_sub_dataset_by_samples(train_index)        
         test_dataset1 = dataset.get_sub_dataset_by_samples(test_index)
 
@@ -121,9 +124,16 @@ def evaluate(args):
         std_scale = preprocessing.StandardScaler().fit(x_train)
         classifier.fit(std_scale.transform(x_train), y_train)
         
-        t.append(y_test)
-        p.append(classifier.predict(std_scale.transform(x_test)))
-    return {'g':args[0], 't':t, 'p':p}
+        t.extend(y_test)
+        p.extend(classifier.predict(std_scale.transform(x_test)))
+        
+        if count == 7:
+            accs.append(metrics.accuracy_score(t,p))
+            count = 0
+            t = []
+            p = []
+
+    return {'g':args[0], 'accs':accs}
     
 
 def split(arr, count):
@@ -132,14 +142,20 @@ def split(arr, count):
 
 if __name__ == '__main__':
 
+    shuffle_labels = True
+
     start = time.time()
 
     global x, y, n, k, ns, nk, max_len, min_acc, classifier_class, min_break_accuracy, dataset
+
 
     dataset = Dataset("./dataset/train_6_samples_independent.txt", scale=False, normalize=False, sep='\t')
 
     dataset_test = Dataset("./dataset/test_6_samples_independent.txt", scale=False, normalize=False, sep='\t')
 
+    if shuffle_labels:
+        dataset.shuffle_labels()
+        dataset_test.shuffle_labels()
 
     rankes_names = ["rank_nsc.csv","rank_svm_linear.csv","rank_svm_rbf.csv","rank_kruskal.csv"]
 
@@ -208,7 +224,8 @@ if __name__ == '__main__':
         maxAcc = 0.0    
         maxF1 = 0.0
         for name in classifiers_names:            
-            current_args = []          
+            current_args = []  
+            accs_independent = []        
             for topN in range(1, rank_size+1):  
                 genes_names = []
                 for i in range(0,topN):
@@ -219,62 +236,40 @@ if __name__ == '__main__':
                     genes_index.append(dataset.genes.index(g))                
                 current_args.append((genes_index, dataset, folds, name)) 
 
+                x_train = dataset.matrix[:, genes_index]  # data matrix
+                y_train = factorize(dataset.labels)[0]  # classes/labels of each sample from matrix x
+
+                x_test = dataset_test.matrix[:, genes_index]
+                y_test = factorize(dataset_test.labels)[0]
+
+                classifier = classifiers_class[name]()
+                std_scale = preprocessing.StandardScaler().fit(x_train)
+                classifier.fit(std_scale.transform(x_train), y_train)                       
+                independent_prediction = classifier.predict(std_scale.transform(x_test))
+
+                acc_independent = metrics.accuracy_score(y_test,independent_prediction)
+                f1_independent = metrics.f1_score(y_test,independent_prediction,average="weighted")
+                precision_independent = metrics.precision_score(y_test,independent_prediction,average="weighted")
+                recall_independent = metrics.recall_score(y_test,independent_prediction,average="weighted")
+
+                accs_independent.append(acc_independent)
+
+
+
             result_part = pool.map(evaluate, current_args)
             gc.collect()
 
             print "resultpart size", len(result_part)
-            matrix_cv = []
-            matrix_independent = []            
+            matrix_cv = []                      
             for i in range(len(result_part)):            
                 result = result_part[i]
                 group = [dataset.genes[i] for i in result["g"]]
-                truth = result['t']
-                predicted = result['p']
-                accs_cv = []
-                accs_independent = []
-                print len(truth)
-                print len(predicted)
-
-                for j in range(len(truth)):
-                    t = truth[j]
-                    p = predicted[j]
-
-                    acc = metrics.accuracy_score(t,p)
-                    f1 = metrics.f1_score(t,p,average="weighted")
-                    precision = metrics.precision_score(t,p,average="weighted")
-                    recall = metrics.recall_score(t,p,average="weighted")
-                    
-                    accs_cv.append(acc)
-
-                    x_train = dataset.matrix[:, result["g"]]  # data matrix
-                    y_train = factorize(dataset.labels)[0]  # classes/labels of each sample from matrix x
-
-                    x_test = dataset_test.matrix[:, result["g"]]
-                    y_test = factorize(dataset_test.labels)[0]
-
-                    classifier = classifiers_class[name]()
-                    std_scale = preprocessing.StandardScaler().fit(x_train)
-                    classifier.fit(std_scale.transform(x_train), y_train)                       
-                    independent_prediction = classifier.predict(std_scale.transform(x_test))
-
-                    acc_independent = metrics.accuracy_score(y_test,independent_prediction)
-                    f1_independent = metrics.f1_score(y_test,independent_prediction,average="weighted")
-                    precision_independent = metrics.precision_score(y_test,independent_prediction,average="weighted")
-                    recall_independent = metrics.recall_score(y_test,independent_prediction,average="weighted")
-
-                    accs_independent.append(acc_independent)
-
-                    if acc > maxAcc:
-                        maxAcc = acc 
-                    if f1 > maxF1:
-                        maxF1 = f1                       
-
+                accs_cv = result['accs']
                 matrix_cv.append(accs_cv)
-                matrix_independent.append(accs_independent)
             
             gc.collect()
 
-            with open('./results/cv/cv_'+rank_name+'_'+name+'.csv', 'w') as f:
+            with open('./results/cv/cv_'+rank_name.replace('.csv','')+'_'+name+'.csv', 'w') as f:
                 line = "top-1"
                 for topN in range(2, rank_size+1): 
                     line = line + ",top-"+str(topN)
@@ -290,17 +285,16 @@ if __name__ == '__main__':
                 f.close()                
                 gc.collect()
 
-            with open('./results/cv/independent_'+rank_name+'_'+name+'.csv', 'w') as f:
+            with open('./results/cv/independent_'+rank_name.replace('.csv','')+'_'+name+'.csv', 'w') as f:
                 line = "top-1"
                 for topN in range(2, rank_size+1): 
                     line = line + ",top-"+str(topN)
                 f.write(line+"\n")
 
-                for li in range(len(matrix_cv[0])):
-                    line = str(matrix_cv[0][li])
-                    for topN in range(1, rank_size):
-                        line = line+","+str(matrix_cv[topN][li])
-                    f.write(line+"\n")
+                line = str(accs_independent[0])
+                for li in range(1,len(accs_independent)):                    
+                    line = line+","+str(accs_independent[li])
+                f.write(line+"\n")
                 f.close()                
                 gc.collect()
     
