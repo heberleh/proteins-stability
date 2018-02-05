@@ -103,3 +103,8 @@ class Dataset(object):
         new_dataset.samples = list(np.array(self.samples)[indexes])
         new_dataset.name = self.name+"_modified"
         return new_dataset
+    
+    def shuffle_labels(self):
+        print self.labels
+        np.random.shuffle(self.labels)
+        print self.labels
