@@ -15,6 +15,7 @@ from multiprocessing import Pool, Lock, cpu_count
 #from sklearn.cross_validation import StratifiedKFold
 from sklearn.model_selection import RepeatedStratifiedKFold
 from wilcoxon import WilcoxonRankSumTest
+from ttest import TTest
 from signature import Signature
 from possibleEdge import PossibleEdge
 from sklearn.cross_validation import KFold
@@ -140,26 +141,38 @@ if __name__ == '__main__':
     dataset_test = Dataset("./dataset/independent_test.txt", scale=False, normalize=False, sep='\t')
 
     filter = True
+    filter_name = "ttest"
+    cutoff = 0.1
 
     if filter:
-        # Filtering train and test Datasets
-        wil = WilcoxonRankSumTest(dataset)
-        wil_z, wil_p = wil.run()
-        cutoff = 0.3
-        with open('./results/combinations/wilcoxon_test.csv', 'w') as f:
-            f.write("gene,p-value\n")
-            for i in range(len(dataset.genes)):
-                f.write(dataset.genes[i]+","+str(wil_p[i])+"\n")        
+        if filter_name == "wilcoxon":
+            # Filtering train and test Datasets
+            wil = WilcoxonRankSumTest(dataset)
+            wil_z, wil_p = wil.run()            
+            with open('./results/combinations/wilcoxon_test.csv', 'w') as f:
+                f.write("gene,p-value\n")
+                for i in range(len(dataset.genes)):
+                    f.write(dataset.genes[i]+","+str(wil_p[i])+"\n")        
 
-        dataset = dataset.get_sub_dataset([dataset.genes[i] for i in range(len(dataset.genes)) if wil_p[i]<cutoff])
+            dataset = dataset.get_sub_dataset([dataset.genes[i] for i in range(len(dataset.genes)) if wil_p[i]<cutoff])
 
-        dataset_test = dataset.get_sub_dataset([dataset_test.genes[i] for i in range(len(dataset_test.genes)) if wil_p[i]<cutoff])
+            dataset_test = dataset.get_sub_dataset([dataset_test.genes[i] for i in range(len(dataset_test.genes)) if wil_p[i]<cutoff])
+        elif filter_name == "ttest":
+            # Filtering train and test Datasets
+            ttest = TTest(dataset)
+            ttest_t, ttest_p = ttest.run()            
+            with open('./results/combinations/t_test.csv', 'w') as f:
+                f.write("gene,p-value\n")
+                for i in range(len(dataset.genes)):
+                    f.write(dataset.genes[i]+","+str(ttest_p[i])+"\n")        
 
+            dataset = dataset.get_sub_dataset([dataset.genes[i] for i in range(len(dataset.genes)) if ttest_p[i]<cutoff])
 
+            dataset_test = dataset.get_sub_dataset([dataset_test.genes[i] for i in range(len(dataset_test.genes)) if ttest_p[i]<cutoff])
                 
 
 
-        print "Genes with Wilcox < ", str(cutoff),": ", dataset.genes
+    print "Genes with Wilcox < ", str(cutoff),": ", dataset.genes
 
     n_classes = len(unique(dataset.labels))
     print "Number of classes: ", str(n_classes)
@@ -179,7 +192,7 @@ if __name__ == '__main__':
     from sklearn.svm import SVC
 
     # classifiers that will be considered
-    classifiers_names = ["svm-rbf"]#["svm","tree","nsc","naive_bayes","glm","sgdc","perceptron", "randForest"] #["svm","tree","nsc","naive_bayes"]
+    classifiers_names = ["svm","svm-rbf","tree","nsc","naive_bayes","glm","sgdc","perceptron", "randForest"] #["svm","tree","nsc","naive_bayes"]
     classifiers_class = {"svm":svm.LinearSVC, "tree":tree.DecisionTreeClassifier, "nsc":NearestCentroid, "naive_bayes":GaussianNB, "glm": LogisticRegression, "sgdc":SGDClassifier,"mtElasticNet":MultiTaskElasticNet,"elasticNet":ElasticNet,"perceptron":Perceptron, "randForest":RandomForestClassifier, "svm-rbf":SVC}
 
     min_accuracy = 0
@@ -190,6 +203,7 @@ if __name__ == '__main__':
     n_repeats = 100    
     max_group_size = len(dataset.genes)
 
+    print "mas groups size: ", max_group_size
     accuracy_list = []
 
     all_signatures = {}

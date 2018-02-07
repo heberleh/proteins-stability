@@ -1,0 +1,1 @@
+R -f ./code/Simple_ranks/ranking_nsc.R
