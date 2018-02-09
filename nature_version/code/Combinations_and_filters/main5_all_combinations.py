@@ -136,9 +136,9 @@ if __name__ == '__main__':
 
     global x, y, n, k, ns, nk, max_len, min_acc, classifier_class, min_break_accuracy, dataset
 
-    dataset = Dataset("./dataset/independent_train.txt", scale=False, normalize=False, sep='\t')
+    dataset = Dataset("./dataset/proteins/independent_train.txt", scale=False, normalize=False, sep='\t')
 
-    dataset_test = Dataset("./dataset/independent_test.txt", scale=False, normalize=False, sep='\t')
+    dataset_test = Dataset("./dataset/proteins/independent_test.txt", scale=False, normalize=False, sep='\t')
 
     filter = True
     filter_name = "ttest"
@@ -149,7 +149,7 @@ if __name__ == '__main__':
             # Filtering train and test Datasets
             wil = WilcoxonRankSumTest(dataset)
             wil_z, wil_p = wil.run()            
-            with open('./results/combinations/wilcoxon_test.csv', 'w') as f:
+            with open('./results/proteins/combinations/wilcoxon_test.csv', 'w') as f:
                 f.write("gene,p-value\n")
                 for i in range(len(dataset.genes)):
                     f.write(dataset.genes[i]+","+str(wil_p[i])+"\n")        
@@ -161,7 +161,7 @@ if __name__ == '__main__':
             # Filtering train and test Datasets
             ttest = TTest(dataset)
             ttest_t, ttest_p = ttest.run()            
-            with open('./results/combinations/t_test.csv', 'w') as f:
+            with open('./results/proteins/combinations/t_test.csv', 'w') as f:
                 f.write("gene,p-value\n")
                 for i in range(len(dataset.genes)):
                     f.write(dataset.genes[i]+","+str(ttest_p[i])+"\n")        
@@ -237,7 +237,7 @@ if __name__ == '__main__':
     maxAcc = 0.0    
     maxF1 = 0.0
     for name in classifiers_names:
-        with open('./results/combinations/predictions_'+name+'.csv', 'w') as f:
+        with open('./results/proteins/combinations/predictions_'+name+'.csv', 'w') as f:
 
             line = "n, f1, acc, recall, precision, f1_independent, acc_independent, recall_independent, precision_independent, signature\n"
             f.write(line)               
@@ -426,7 +426,7 @@ if __name__ == '__main__':
         csv_file.close()
         
     for name in classifiers_names:
-        with open('./results/combinations/all_sig_dcv_acc_'+name+'.csv', 'w') as f:
+        with open('./results/proteins/combinations/all_sig_dcv_acc_'+name+'.csv', 'w') as f:
             signatures = all_signatures[name]["signatures"]  
             min_acc = 1
             max_acc = 0
