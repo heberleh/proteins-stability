@@ -42,7 +42,7 @@ require(combinat)
 
 # PARAMETERS:    train.txt
 # SEE THE train.txt AND FOLLOW THE PATTERN
-input_file_name <- "./dataset/proteins/independent_train.txt"
+input_file_name <- "./dataset/independent_train.txt"
 db <- read.table(input_file_name, header=FALSE, sep="\t")
 ttest <- TRUE
 
@@ -149,7 +149,7 @@ print(result@queues)
 cat("\ny:\n")
 cat(dataset.y)
 
-png("./results/proteins/plot_equivalent_signatures.png",width=950, height=550,res=100)
+png("./results/plot_equivalent_signatures.png",width=950, height=550,res=100)
 plot(result,mode="all")
 dev.off()
 
