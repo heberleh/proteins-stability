@@ -13,6 +13,7 @@ import time
 import itertools
 from multiprocessing import Pool, Lock, cpu_count
 #from sklearn.cross_validation import StratifiedKFold
+from sklearn.model_selection import StratifiedKFold
 from sklearn.model_selection import RepeatedStratifiedKFold
 from wilcoxon import WilcoxonRankSumTest
 from kruskal import KruskalRankSumTest3Classes
@@ -185,7 +186,7 @@ if __name__ == '__main__':
     #["svm","tree","nsc","naive_bayes","glm","sgdc","perceptron","svm-rbf"]#["svm","tree","nsc","naive_bayes","glm","sgdc","perceptron", "randForest"] #["svm","tree","nsc","naive_bayes"]
     classifiers_class = {"svm-linear":svm.LinearSVC, "tree":tree.DecisionTreeClassifier, "nsc":NearestCentroid, "naive_bayes":GaussianNB, "glm": LogisticRegression, "sgdc":SGDClassifier,"mtElasticNet":MultiTaskElasticNet,"elasticNet":ElasticNet,"perceptron":Perceptron, "randForest":RandomForestClassifier, "svm-rbf":SVC}
 
-    classifiers_names = ["svm-linear","svm-rbf","naive_bayes","glm"]
+    classifiers_names = ["svm-linear","svm-rbf","naive_bayes","glm"] #
 
     view_classifiers_names = {"svm-linear":"SVM (linear)","svm-rbf":"SVM (radial)", "glm":"Logistic Regression", "naive_bayes":"Gaussian Naive Bayes"}
 
@@ -203,19 +204,36 @@ if __name__ == '__main__':
 
     n_classes = len(unique(dataset.labels))
 
+    k = 8
+
     accuracy_list = []
-                 
+    skf = StratifiedKFold(k)
+    rskf = RepeatedStratifiedKFold(k,100)
+
+    mean_aucs = {}
+    for signature in signatures:
+        mean_aucs[str(signature)] = {}
+        for classifier_name in classifiers_names:
+            mean_aucs[str(signature)][classifier_name] = -1.0
+
+    aucs = {}
+    for signature in signatures:
+        aucs[str(signature)] = {}
+        for classifier_name in ["naive_bayes","glm"]:
+            aucs[str(signature)][classifier_name] = -1.0
+
     for classifier_name in classifiers_names:                     
         accs_independent = []
         matrix = []        
-                
-        ci = 1
+        
         for signature in signatures:
             figure(figsize=(11,8),dpi=90)
             plt.title('Receiver Operating Characteristic ('+view_classifiers_names[classifier_name]+')')
             genes_index = []
             for g in signature:                   
                 genes_index.append(dataset.genes.index(g))            
+
+            line = str(len(signature))+","
 
             x_train = dataset.matrix[:, genes_index]  # data matrix
             y_train = factorize(dataset.labels)[0]  # classes/labels of each sample from matrix x
@@ -240,13 +258,13 @@ if __name__ == '__main__':
                 classifier = SVC()
                 std_scale = preprocessing.StandardScaler().fit(x_train)
                 classifier.fit(std_scale.transform(x_train), y_train)                
-                independent_probs = classifier.decision_function(x_test)
+                independent_probs = classifier.decision_function(std_scale.transform(x_test))
 
             elif classifier_name == "svm-linear":
                 classifier = svm.LinearSVC()
                 std_scale = preprocessing.StandardScaler().fit(x_train)
                 classifier.fit(std_scale.transform(x_train), y_train)                
-                independent_probs = classifier.decision_function(x_test)
+                independent_probs = classifier.decision_function(std_scale.transform(x_test))
 
             # save roc score for signature Sig for Classifier Clas
             print classifier_name            
@@ -255,8 +273,7 @@ if __name__ == '__main__':
             # Curve
             fpr, tpr, thresholds = metrics.roc_curve(y_test, independent_probs)
             roc_auc = auc(fpr, tpr)       
-            plt.plot(fpr, tpr, label=str(signature)+" (AUC="+str(roc_auc)+")")       
-            ci += 1
+            plt.plot(fpr, tpr, label=str(signature)+" (AUC="+str(roc_auc)+")")                  
 
             plt.legend(loc='lower right')
             plt.plot([0,1],[0,1],'r--')
@@ -265,5 +282,106 @@ if __name__ == '__main__':
             plt.ylabel('True Positive Rate')
             plt.xlabel('False Positive Rate')
             plt.tight_layout()
-            savefig('./results/roc/'+'roc_'+str(signature)+'_________'+classifier_name+'_'+'.png')
+            savefig('./results/roc/'+'independent_roc_'+str(signature)+'_________'+classifier_name+'_'+'.png')
             plt.close()
+
+
+            if classifier_name == "naive_bayes" or classifier_name == "glm":
+                y_folds = []
+                probs_folds = []
+                for ktrain, ktest in skf.split(x_train, y_train):
+                    kx_train, kx_test = x_train[ktrain], x_train[ktest]
+                    ky_train, ky_test = y_train[ktrain], y_train[ktest]
+                    
+                    y_folds.extend(ky_test)
+
+                    if classifier_name == "naive_bayes":
+                        classifier = GaussianNB()
+                        std_scale = preprocessing.StandardScaler().fit(kx_train)
+                        classifier.fit(std_scale.transform(kx_train), ky_train)                
+                        independent_probs = classifier.predict_proba(std_scale.transform(kx_test))[:,1]
+
+                    elif classifier_name == "glm":
+                        classifier = LogisticRegression()
+                        std_scale = preprocessing.StandardScaler().fit(kx_train)
+                        classifier.fit(std_scale.transform(kx_train), ky_train)                
+                        independent_probs = classifier.predict_proba(std_scale.transform(kx_test))[:,1]
+                    
+                    probs_folds.extend(independent_probs)
+
+                figure(figsize=(11,8),dpi=90)
+                plt.title('Crosvalidation Receiver Operating Characteristic ('+view_classifiers_names[classifier_name]+')')
+                # Curve
+                fpr, tpr, thresholds = metrics.roc_curve(y_folds, probs_folds)
+                roc_auc = auc(fpr, tpr)      
+
+                aucs[str(signature)][classifier_name] = roc_auc
+
+                plt.plot(fpr, tpr, label=str(signature)+" (AUC="+str(roc_auc)+")")
+                
+                plt.legend(loc='lower right')
+                plt.plot([0,1],[0,1],'r--')
+                plt.xlim([-0.1,1.2])
+                plt.ylim([-0.1,1.2])
+                plt.ylabel('True Positive Rate')
+                plt.xlabel('False Positive Rate')
+                plt.tight_layout()
+                savefig('./results/roc/'+'cv_roc_'+str(signature)+'_________'+classifier_name+'_'+'.png')
+                plt.close()
+            
+            
+            tprs = []            
+            mean_fpr = np.linspace(0,1,100)            
+            for ktrain, ktest in rskf.split(x_train, y_train):
+                kx_train, kx_test = x_train[ktrain], x_train[ktest]
+                ky_train, ky_test = y_train[ktrain], y_train[ktest]
+                
+                classifier = None
+                if classifier_name == "svm-rbf":
+                    classifier = SVC()
+                    std_scale = preprocessing.StandardScaler().fit(kx_train)
+                    classifier.fit(std_scale.transform(kx_train), ky_train)                
+                    independent_probs = classifier.decision_function(std_scale.transform(kx_test))
+                elif classifier_name =="svm-linear":
+                    classifier = svm.LinearSVC()                    
+                    std_scale = preprocessing.StandardScaler().fit(kx_train)
+                    classifier.fit(std_scale.transform(kx_train), ky_train)                
+                    independent_probs = classifier.decision_function(std_scale.transform(kx_test))
+                elif classifier_name == "naive_bayes":
+                    classifier = GaussianNB()
+                    std_scale = preprocessing.StandardScaler().fit(kx_train)
+                    classifier.fit(std_scale.transform(kx_train), ky_train)                
+                    independent_probs = classifier.predict_proba(std_scale.transform(kx_test))[:,1]
+                elif classifier_name == "glm":
+                    classifier = LogisticRegression()
+                    std_scale = preprocessing.StandardScaler().fit(kx_train)
+                    classifier.fit(std_scale.transform(kx_train), ky_train)                
+                    independent_probs = classifier.predict_proba(std_scale.transform(kx_test))[:,1]
+                
+                fpr, tpr, t = roc_curve(ky_test, independent_probs)
+                tprs.append(interp(mean_fpr, fpr, tpr))
+        
+            mean_tpr = np.mean(tprs, axis=0)
+            mean_auc = auc(mean_fpr, mean_tpr)
+            mean_aucs[str(signature)][classifier_name] = mean_auc
+           
+
+
+    with open('./results/roc/crossvalidation_100rep_8fold_AUC.csv', 'w') as f:            
+        f.write("n")
+        for classifier_name in classifiers_names:          
+            f.write(","+classifier_name+"(mean)")
+        for classifier_name in ["glm","naive_bayes"]:
+            f.write(","+classifier_name+"(concat probs)")
+        f.write(",signature\n")
+
+        for signature in signatures:
+            f.write(str(len(signature)))
+            for classifier_name in classifiers_names:          
+                f.write(","+str(mean_aucs[str(signature)][classifier_name]))
+            for classifier_name in ["glm","naive_bayes"]:
+                f.write(","+str(aucs[str(signature)][classifier_name]))
+            for element in signature:
+                f.write(","+element)
+            f.write("\n")
+        
