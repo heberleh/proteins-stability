@@ -330,7 +330,8 @@ if __name__ == '__main__':
                 plt.close()
             
             
-            tprs = []            
+            tprs = []
+            aucsl = []          
             mean_fpr = np.linspace(0,1,100)            
             for ktrain, ktest in rskf.split(x_train, y_train):
                 kx_train, kx_test = x_train[ktrain], x_train[ktest]
@@ -360,14 +361,42 @@ if __name__ == '__main__':
                 
                 fpr, tpr, t = roc_curve(ky_test, independent_probs)
                 tprs.append(interp(mean_fpr, fpr, tpr))
+                roc_auc = auc(fpr,tpr)
+                aucsl.append(roc_auc)
         
-            mean_tpr = np.mean(tprs, axis=0)
+            mean_tpr = np.mean(tprs, axis=0) 
+            mean_tpr[-1] = 1.0
+            std_auc = np.std(aucsl)
             mean_auc = auc(mean_fpr, mean_tpr)
             mean_aucs[str(signature)][classifier_name] = mean_auc
+
+            figure(figsize=(11,8),dpi=90)
+            plt.title('Crosvalidation ROC - signature '+ str(signature)+' (Mean, '+view_classifiers_names[classifier_name]+')')
+
+            # Curve
+            fpr, tpr = mean_fpr, mean_tpr
+            roc_auc = auc(fpr, tpr)      
+
+            aucs[str(signature)][classifier_name] = roc_auc
+
+            plt.plot(fpr, tpr, label="Mean ROC (AUC = %0.2f $\pm$ %0.2f)" % (mean_auc, std_auc),lw=2,alpha=.8)
+            
+            plt.legend(loc='lower right')
+            plt.plot([0,1],[0,1],'r--')
+            plt.xlim([-0.1,1.2])
+            plt.ylim([-0.1,1.2])
+            plt.ylabel('True Positive Rate')
+            plt.xlabel('False Positive Rate')
+            plt.tight_layout()
+            savefig('./results/roc/'+'cv_roc_mean_'+str(signature)+'_________'+classifier_name+'_'+'.png')
+            plt.close()
+
+
+
            
 
 
-    with open('./results/roc/crossvalidation_100rep_8fold_AUC.csv', 'w') as f:            
+    with open('./results/proteins/roc/crossvalidation_100rep_8fold_AUC.csv', 'w') as f:            
         f.write("n")
         for classifier_name in classifiers_names:          
             f.write(","+classifier_name+"(mean)")
