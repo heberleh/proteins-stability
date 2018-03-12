@@ -1,0 +1,25 @@
+Rank, Classifier, Min. N, Max. Acc.
+rank_nsc.csv,nsc,27,0.555909090909
+rank_nsc.csv,svm-linear,11,0.460909090909
+rank_nsc.csv,svm-rbf,23,0.506818181818
+rank_nsc.csv,glm,15,0.469090909091
+rank_nsc.csv,naive-bayes,1,0.455454545455
+rank_nsc.csv,tree,9,0.465
+rank_svm_linear.csv,nsc,0,0.563181818182
+rank_svm_linear.csv,svm-linear,2,0.558181818182
+rank_svm_linear.csv,svm-rbf,33,0.547727272727
+rank_svm_linear.csv,glm,0,0.539545454545
+rank_svm_linear.csv,naive-bayes,13,0.541363636364
+rank_svm_linear.csv,tree,3,0.470909090909
+rank_svm_rbf.csv,nsc,3,0.568181818182
+rank_svm_rbf.csv,svm-linear,3,0.600454545455
+rank_svm_rbf.csv,svm-rbf,30,0.515
+rank_svm_rbf.csv,glm,4,0.598181818182
+rank_svm_rbf.csv,naive-bayes,3,0.520454545455
+rank_svm_rbf.csv,tree,2,0.480454545455
+rank_kruskal.csv,nsc,3,0.568181818182
+rank_kruskal.csv,svm-linear,3,0.600454545455
+rank_kruskal.csv,svm-rbf,34,0.546363636364
+rank_kruskal.csv,glm,3,0.579090909091
+rank_kruskal.csv,naive-bayes,6,0.524090909091
+rank_kruskal.csv,tree,4,0.474545454545

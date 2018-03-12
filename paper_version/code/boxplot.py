@@ -38,4 +38,24 @@ if __name__ == '__main__':
             title(view_classifiers_names[classifier_name] + ' accuracies from '+view_rankes_names[rank_name]+' rank')
             plt.tight_layout()
             savefig('./results/cv/'+'cv_'+rank_name.replace('.csv','')+'_'+classifier_name+'.png')
-            plt.close()        
+            plt.close()  
+
+
+            for i in range(len(matrix[0])):
+                means = mean(matrix[:,i])
+
+            plt.plot(fpr, tpr, label="Avg F1 scores")                  
+
+            plt.legend(loc='lower right')
+            plt.plot([0,1],[0,1],'r--')
+            plt.xlim([-0.1,1.2])
+            plt.ylim([-0.1,1.2])
+            plt.ylabel('F1')
+            plt.xlabel('Top-N')
+            plt.tight_layout()
+            savefig('./results/roc/'+'independent_roc_'+str(signature)+'_________'+classifier_name+'_'+'.png')
+            plt.close()
+
+
+
+            

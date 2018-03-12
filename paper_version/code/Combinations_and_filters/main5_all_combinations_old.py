@@ -15,7 +15,7 @@ from multiprocessing import Pool, Lock, cpu_count
 #from sklearn.cross_validation import StratifiedKFold
 from sklearn.model_selection import RepeatedStratifiedKFold
 from wilcoxon import WilcoxonRankSumTest
-from ttest import TTest
+from kruskal import KruskalRankSumTest3Classes
 from signature import Signature
 from possibleEdge import PossibleEdge
 from sklearn.cross_validation import KFold
@@ -102,7 +102,7 @@ def key(genes):
 
 
 def evaluate(args):
-    classifiers_class = {"svm":svm.LinearSVC, "tree":tree.DecisionTreeClassifier, "nsc":NearestCentroid, "naive_bayes":GaussianNB, "glm": LogisticRegression, "sgdc":SGDClassifier,"mtElasticNet":MultiTaskElasticNet,"elasticNet":ElasticNet,"perceptron":Perceptron, "randForest":RandomForestClassifier, "svm-rbf":SVC}
+    classifiers_class = {"svm-linear":svm.LinearSVC, "tree":tree.DecisionTreeClassifier, "nsc":NearestCentroid, "naive_bayes":GaussianNB, "glm": LogisticRegression, "sgdc":SGDClassifier,"mtElasticNet":MultiTaskElasticNet,"elasticNet":ElasticNet,"perceptron":Perceptron, "randForest":RandomForestClassifier, "svm-rbf":SVC}
 
     dataset, outer_folds, classifier_name = args[1], args[2], args[3]#, args[4], args[5]
     t = []
@@ -136,43 +136,29 @@ if __name__ == '__main__':
 
     global x, y, n, k, ns, nk, max_len, min_acc, classifier_class, min_break_accuracy, dataset
 
-    dataset = Dataset("./dataset/proteins/independent_train.txt", scale=False, normalize=False, sep='\t')
+    dataset = Dataset("./dataset/train_6_samples_independent.txt", scale=False, normalize=False, sep='\t')
 
-    dataset_test = Dataset("./dataset/proteins/independent_test.txt", scale=False, normalize=False, sep='\t')
+    dataset_test = Dataset("./dataset/test_6_samples_independent.txt", scale=False, normalize=False, sep='\t')
 
     filter = True
-    filter_name = "ttest"
-    cutoff = 0.1
 
     if filter:
-        if filter_name == "wilcoxon":
-            # Filtering train and test Datasets
-            wil = WilcoxonRankSumTest(dataset)
-            wil_z, wil_p = wil.run()            
-            with open('./results/proteins/combinations/wilcoxon_test.csv', 'w') as f:
-                f.write("gene,p-value\n")
-                for i in range(len(dataset.genes)):
-                    f.write(dataset.genes[i]+","+str(wil_p[i])+"\n")        
+        # Filtering train and test Datasets
+        krus = KruskalRankSumTest3Classes(dataset)
+        krus_h, krus_p = krus.run()
+        cutoff = 0.05
 
-            dataset = dataset.get_sub_dataset([dataset.genes[i] for i in range(len(dataset.genes)) if wil_p[i]<cutoff])
+        print "Genes with Kruskal < ", str(cutoff),": ", dataset.genes
+        with open('./results/combinations/kruskal_test.csv', 'w') as f:
+            f.write("gene,p-value\n")
+            for i in range(len(dataset.genes)):
+                f.write(dataset.genes[i]+","+str(krus_p[i])+"\n")  
 
-            dataset_test = dataset.get_sub_dataset([dataset_test.genes[i] for i in range(len(dataset_test.genes)) if wil_p[i]<cutoff])
-        elif filter_name == "ttest":
-            # Filtering train and test Datasets
-            ttest = TTest(dataset)
-            ttest_t, ttest_p = ttest.run()            
-            with open('./results/proteins/combinations/t_test.csv', 'w') as f:
-                f.write("gene,p-value\n")
-                for i in range(len(dataset.genes)):
-                    f.write(dataset.genes[i]+","+str(ttest_p[i])+"\n")        
+        dataset = dataset.get_sub_dataset([dataset.genes[i] for i in range(len(dataset.genes)) if krus_p[i]<cutoff])
 
-            dataset = dataset.get_sub_dataset([dataset.genes[i] for i in range(len(dataset.genes)) if ttest_p[i]<cutoff])
-
-            dataset_test = dataset.get_sub_dataset([dataset_test.genes[i] for i in range(len(dataset_test.genes)) if ttest_p[i]<cutoff])
-                
-
-
-    print "Genes with Wilcox < ", str(cutoff),": ", dataset.genes
+        dataset_test = dataset.get_sub_dataset([dataset_test.genes[i] for i in range(len(dataset_test.genes)) if krus_p[i]<cutoff])
+            
+        print "Genes with Kruskal < ", str(cutoff),": ", dataset.genes
 
     n_classes = len(unique(dataset.labels))
     print "Number of classes: ", str(n_classes)
@@ -192,18 +178,17 @@ if __name__ == '__main__':
     from sklearn.svm import SVC
 
     # classifiers that will be considered
-    classifiers_names = ["svm","svm-rbf","tree","nsc","naive_bayes","glm","sgdc","perceptron", "randForest"] #["svm","tree","nsc","naive_bayes"]
-    classifiers_class = {"svm":svm.LinearSVC, "tree":tree.DecisionTreeClassifier, "nsc":NearestCentroid, "naive_bayes":GaussianNB, "glm": LogisticRegression, "sgdc":SGDClassifier,"mtElasticNet":MultiTaskElasticNet,"elasticNet":ElasticNet,"perceptron":Perceptron, "randForest":RandomForestClassifier, "svm-rbf":SVC}
+    classifiers_names = ["nsc","svm-linear","svm-rbf", "tree"]#["svm","tree","nsc","naive_bayes","glm","sgdc","perceptron","svm-rbf"]#["svm","tree","nsc","naive_bayes","glm","sgdc","perceptron", "randForest"] #["svm","tree","nsc","naive_bayes"]
+    classifiers_class = {"svm-linear":svm.LinearSVC, "tree":tree.DecisionTreeClassifier, "nsc":NearestCentroid, "naive_bayes":GaussianNB, "glm": LogisticRegression, "sgdc":SGDClassifier,"mtElasticNet":MultiTaskElasticNet,"elasticNet":ElasticNet,"perceptron":Perceptron, "randForest":RandomForestClassifier, "svm-rbf":SVC}
 
     min_accuracy = 0
     static_min_accuracy = 0
     #min_accuracy = 0.8
     
-    k = 8  # k-fold cross validations - outer    
+    k = 7  # k-fold cross validations - outer    
     n_repeats = 100    
-    max_group_size = len(dataset.genes)
+    max_group_size = 4#len(dataset.genes)
 
-    print "mas groups size: ", max_group_size
     accuracy_list = []
 
     all_signatures = {}
@@ -237,7 +222,7 @@ if __name__ == '__main__':
     maxAcc = 0.0    
     maxF1 = 0.0
     for name in classifiers_names:
-        with open('./results/proteins/combinations/predictions_'+name+'.csv', 'w') as f:
+        with open('./results/combinations/predictions_'+name+'.csv', 'w') as f:
 
             line = "n, f1, acc, recall, precision, f1_independent, acc_independent, recall_independent, precision_independent, signature\n"
             f.write(line)               
@@ -279,9 +264,9 @@ if __name__ == '__main__':
                         predicted = result['p']
 
                         acc = metrics.accuracy_score(truth,predicted)
-                        f1 = metrics.f1_score(truth,predicted)
-                        precision = metrics.precision_score(truth,predicted)
-                        recall = metrics.recall_score(truth,predicted)
+                        f1 = metrics.f1_score(truth,predicted,average="weighted")
+                        precision = metrics.precision_score(truth,predicted,average="weighted")
+                        recall = metrics.recall_score(truth,predicted,average="weighted")
 
 
                         x_train = dataset.matrix[:, result["g"]]  # data matrix
@@ -296,9 +281,9 @@ if __name__ == '__main__':
                         independent_prediction = classifier.predict(std_scale.transform(x_test))
 
                         acc_independent = metrics.accuracy_score(y_test,independent_prediction)
-                        f1_independent = metrics.f1_score(y_test,independent_prediction)
-                        precision_independent = metrics.precision_score(y_test,independent_prediction)
-                        recall_independent = metrics.recall_score(y_test,independent_prediction)
+                        f1_independent = metrics.f1_score(y_test,independent_prediction,average="weighted")
+                        precision_independent = metrics.precision_score(y_test,independent_prediction,average="weighted")
+                        recall_independent = metrics.recall_score(y_test,independent_prediction,average="weighted")
 
                         if acc > maxAcc:
                             maxAcc = acc 
@@ -426,7 +411,7 @@ if __name__ == '__main__':
         csv_file.close()
         
     for name in classifiers_names:
-        with open('./results/proteins/combinations/all_sig_dcv_acc_'+name+'.csv', 'w') as f:
+        with open('./results/combinations/all_sig_dcv_acc_'+name+'.csv', 'w') as f:
             signatures = all_signatures[name]["signatures"]  
             min_acc = 1
             max_acc = 0
