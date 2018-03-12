@@ -330,7 +330,7 @@ if __name__ == '__main__':  # freeze_support()
 
     #         df.boxplot(by='Genes List')
 
-    #         fig = plt.gcf()
+    #         fig =  .gcf()
     #         plt.ylim(y_min, 1.02)
     #         fig.set_size_inches(15,15)
     #         plt.savefig("./results/crossvalidation/"+metric+"_mean_std_metric_of_"+str(globalN)+"_repetitions.PNG",dpi=400)

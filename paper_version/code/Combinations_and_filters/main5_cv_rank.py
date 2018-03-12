@@ -142,7 +142,7 @@ def split(arr, count):
 
 if __name__ == '__main__':
 
-    shuffle_labels = True
+    shuffle_labels = False
 
     start = time.time()
 
@@ -187,8 +187,8 @@ if __name__ == '__main__':
 
     with open('./results/cv/min_n_max_acc.csv', 'w') as n_file:
         n_file.write('Rank, Classifier, Min. N, Max. Acc.\n')  
+        
         for rank_name in rankes_names:
-
             rank = []
             with open('./dataset/'+rank_name, 'r') as csv_file:
                 reader = csv.reader(csv_file, delimiter=',')

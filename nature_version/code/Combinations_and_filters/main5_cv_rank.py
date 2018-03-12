@@ -142,7 +142,7 @@ def split(arr, count):
 
 if __name__ == '__main__':
 
-    shuffle_labels = True
+    shuffle_labels = False
 
     start = time.time()
 
