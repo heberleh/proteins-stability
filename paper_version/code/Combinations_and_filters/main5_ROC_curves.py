@@ -159,9 +159,9 @@ if __name__ == '__main__':
     global x, y, n, k, ns, nk, max_len, min_acc, classifier_class, min_break_accuracy, dataset
 
 
-    dataset = Dataset("./dataset/independent_train.txt", scale=False, normalize=False, sep='\t')
+    dataset = Dataset("./dataset/train_6_samples_independent.txt", scale=False, normalize=False, sep='\t')
 
-    dataset_test = Dataset("./dataset/independent_test.txt", scale=False, normalize=False, sep='\t')
+    dataset_test = Dataset("./dataset/test_6_samples_independent.txt", scale=False, normalize=False, sep='\t')
 
     if shuffle_labels:
         dataset.shuffle_labels()
@@ -180,13 +180,14 @@ if __name__ == '__main__':
     from sklearn.linear_model import LogisticRegression
     from sklearn.ensemble import RandomForestClassifier
     from sklearn.svm import SVC
+    from sklearn.preprocessing import label_binarize
 
     # classifiers that will be considered
-    classifiers_names = ["nsc","svm-linear","svm-rbf", "tree","perceptron","naive_bayes"]
+    classifiers_names = ["svm-linear","nsc","svm-rbf", "tree","perceptron","naive_bayes"]
     #["svm","tree","nsc","naive_bayes","glm","sgdc","perceptron","svm-rbf"]#["svm","tree","nsc","naive_bayes","glm","sgdc","perceptron", "randForest"] #["svm","tree","nsc","naive_bayes"]
     classifiers_class = {"svm-linear":svm.LinearSVC, "tree":tree.DecisionTreeClassifier, "nsc":NearestCentroid, "naive_bayes":GaussianNB, "glm": LogisticRegression, "sgdc":SGDClassifier,"mtElasticNet":MultiTaskElasticNet,"elasticNet":ElasticNet,"perceptron":Perceptron, "randForest":RandomForestClassifier, "svm-rbf":SVC}
 
-    classifiers_names = ["svm-linear","svm-rbf","naive_bayes","glm"] #
+    classifiers_names = ["svm-linear","naive_bayes","glm","svm-rbf"] #
 
     view_classifiers_names = {"svm-linear":"SVM (linear)","svm-rbf":"SVM (radial)", "glm":"Logistic Regression", "naive_bayes":"Gaussian Naive Bayes"}
 
@@ -204,7 +205,7 @@ if __name__ == '__main__':
 
     n_classes = len(unique(dataset.labels))
 
-    k = 8
+    k = 7
 
     accuracy_list = []
     skf = StratifiedKFold(k)
@@ -231,7 +232,9 @@ if __name__ == '__main__':
             plt.title('Receiver Operating Characteristic ('+view_classifiers_names[classifier_name]+')')
             genes_index = []
             for g in signature:                   
-                genes_index.append(dataset.genes.index(g))            
+                genes_index.append(dataset.genes.index(g))      
+
+           
 
             line = str(len(signature))+","
 
@@ -246,13 +249,13 @@ if __name__ == '__main__':
                 classifier = GaussianNB()
                 std_scale = preprocessing.StandardScaler().fit(x_train)
                 classifier.fit(std_scale.transform(x_train), y_train)                
-                independent_probs = classifier.predict_proba(std_scale.transform(x_test))[:,1]
+                independent_probs = classifier.predict_proba(std_scale.transform(x_test))
 
             elif classifier_name == "glm":
                 classifier = LogisticRegression()
                 std_scale = preprocessing.StandardScaler().fit(x_train)
                 classifier.fit(std_scale.transform(x_train), y_train)                
-                independent_probs = classifier.predict_proba(std_scale.transform(x_test))[:,1]
+                independent_probs = classifier.predict_proba(std_scale.transform(x_test))
 
             elif classifier_name == "svm-rbf":
                 classifier = SVC()
@@ -263,17 +266,48 @@ if __name__ == '__main__':
             elif classifier_name == "svm-linear":
                 classifier = svm.LinearSVC()
                 std_scale = preprocessing.StandardScaler().fit(x_train)
-                classifier.fit(std_scale.transform(x_train), y_train)                
+                classifier.fit(std_scale.transform(x_train), y_train)
                 independent_probs = classifier.decision_function(std_scale.transform(x_test))
 
             # save roc score for signature Sig for Classifier Clas
-            print classifier_name            
-            roc_score = roc_auc_score(y_test, independent_probs)
+            print classifier_name   
+            
+            # Compute macro-average ROC curve and ROC area
+            fpr = dict()
+            tpr = dict()
+            roc_auc = dict()
+            for i in range(n_classes):
+                y_test2 = []
+                for c in y_test:                    
+                    if c == i:
+                        y_test2.append(1)
+                    else:
+                        y_test2.append(0)
+                try:
+                    fpr[i], tpr[i], _ = roc_curve(y_test2, independent_probs[:,i])
+                    roc_auc[i] = auc(fpr[i], tpr[i])
+                except:
+                    print "Unexpected error:", sys.exc_info()[0]
+                    print y_test2
+                    print independent_probs
 
-            # Curve
-            fpr, tpr, thresholds = metrics.roc_curve(y_test, independent_probs)
-            roc_auc = auc(fpr, tpr)       
-            plt.plot(fpr, tpr, label=str(signature)+" (AUC="+str(roc_auc)+")")                  
+            # First aggregate all false positive rates
+            all_fpr = np.unique(np.concatenate([fpr[i] for i in range(n_classes)]))
+
+            # Then interpolate all ROC curves at this points
+            mean_tpr = np.zeros_like(all_fpr)
+            for i in range(n_classes):
+                mean_tpr += interp(all_fpr, fpr[i], tpr[i])
+
+            # Finally average it and compute AUC
+            mean_tpr /= n_classes
+
+            fpr["macro"] = all_fpr
+            tpr["macro"] = mean_tpr
+            roc_auc["macro"] = auc(fpr["macro"], tpr["macro"])
+
+            # Curve            
+            plt.plot(fpr["macro"], tpr["macro"], label=str(signature)+"macro-average ROC curve (AUC="+str(roc_auc["macro"])+")")                  
 
             plt.legend(loc='lower right')
             plt.plot([0,1],[0,1],'r--')
@@ -282,7 +316,11 @@ if __name__ == '__main__':
             plt.ylabel('True Positive Rate')
             plt.xlabel('False Positive Rate')
             plt.tight_layout()
-            savefig('./results/roc/'+'independent_roc_'+str(signature)+'_________'+classifier_name+'_'+'.png')
+            sig_name = str(signature) 
+            if len(sig_name) >20:
+                sig_name = sig_name[0:19]
+
+            savefig('./results/roc/'+'independent_roc_'+sig_name+'_________'+classifier_name+'_'+'.png')
             plt.close()
 
 
@@ -299,25 +337,63 @@ if __name__ == '__main__':
                         classifier = GaussianNB()
                         std_scale = preprocessing.StandardScaler().fit(kx_train)
                         classifier.fit(std_scale.transform(kx_train), ky_train)                
-                        independent_probs = classifier.predict_proba(std_scale.transform(kx_test))[:,1]
+                        independent_probs = classifier.predict_proba(std_scale.transform(kx_test))
 
                     elif classifier_name == "glm":
                         classifier = LogisticRegression()
                         std_scale = preprocessing.StandardScaler().fit(kx_train)
                         classifier.fit(std_scale.transform(kx_train), ky_train)                
-                        independent_probs = classifier.predict_proba(std_scale.transform(kx_test))[:,1]
+                        independent_probs = classifier.predict_proba(std_scale.transform(kx_test))
                     
-                    probs_folds.extend(independent_probs)
+                    for line in independent_probs:
+                        probs_folds.append(list(line))
+                    
 
                 figure(figsize=(11,8),dpi=90)
                 plt.title('Crosvalidation Receiver Operating Characteristic ('+view_classifiers_names[classifier_name]+')')
-                # Curve
-                fpr, tpr, thresholds = metrics.roc_curve(y_folds, probs_folds)
-                roc_auc = auc(fpr, tpr)      
+                
+                probs_folds = np.matrix(probs_folds)
+                
 
-                aucs[str(signature)][classifier_name] = roc_auc
+                # Compute macro-average ROC curve and ROC area
+                fpr = dict()
+                tpr = dict()
+                roc_auc = dict()
+                for i in range(n_classes):
+                    y_test2 = []
+                    for c in y_folds:                    
+                        if c == i:
+                            y_test2.append(1)
+                        else:
+                            y_test2.append(0)
 
-                plt.plot(fpr, tpr, label=str(signature)+" (AUC="+str(roc_auc)+")")
+                    try:
+                        fpr[i], tpr[i], _ = roc_curve(y_test2, probs_folds[:,i])
+                        roc_auc[i] = auc(fpr[i], tpr[i])
+                    except:
+                        print y_test2
+                        print probs_folds
+                        print probs_folds[:,i]
+
+
+                # First aggregate all false positive rates
+                all_fpr = np.unique(np.concatenate([fpr[i] for i in range(n_classes)]))
+
+                # Then interpolate all ROC curves at this points
+                mean_tpr = np.zeros_like(all_fpr)
+                for i in range(n_classes):
+                    mean_tpr += interp(all_fpr, fpr[i], tpr[i])
+
+                # Finally average it and compute AUC
+                mean_tpr /= n_classes
+
+                fpr["macro"] = all_fpr
+                tpr["macro"] = mean_tpr
+                roc_auc["macro"] = auc(fpr["macro"], tpr["macro"]) 
+
+                aucs[str(signature)][classifier_name] = roc_auc["macro"]
+
+                plt.plot(fpr["macro"], tpr["macro"], label=str(signature)+"macro-average (AUC="+str(roc_auc["macro"])+")")
                 
                 plt.legend(loc='lower right')
                 plt.plot([0,1],[0,1],'r--')
@@ -326,7 +402,10 @@ if __name__ == '__main__':
                 plt.ylabel('True Positive Rate')
                 plt.xlabel('False Positive Rate')
                 plt.tight_layout()
-                savefig('./results/roc/'+'cv_roc_'+str(signature)+'_________'+classifier_name+'_'+'.png')
+                sig_name = str(signature) 
+                if len(sig_name) >20:
+                    sig_name = sig_name[0:19]
+                savefig('./results/roc/'+'cv_roc_'+sig_name+'_________'+classifier_name+'_'+'.png')
                 plt.close()
             
             
@@ -352,17 +431,44 @@ if __name__ == '__main__':
                     classifier = GaussianNB()
                     std_scale = preprocessing.StandardScaler().fit(kx_train)
                     classifier.fit(std_scale.transform(kx_train), ky_train)                
-                    independent_probs = classifier.predict_proba(std_scale.transform(kx_test))[:,1]
+                    independent_probs = classifier.predict_proba(std_scale.transform(kx_test))
                 elif classifier_name == "glm":
                     classifier = LogisticRegression()
                     std_scale = preprocessing.StandardScaler().fit(kx_train)
                     classifier.fit(std_scale.transform(kx_train), ky_train)                
-                    independent_probs = classifier.predict_proba(std_scale.transform(kx_test))[:,1]
+                    independent_probs = classifier.predict_proba(std_scale.transform(kx_test))
                 
-                fpr, tpr, t = roc_curve(ky_test, independent_probs)
-                tprs.append(interp(mean_fpr, fpr, tpr))
-                roc_auc = auc(fpr,tpr)
-                aucsl.append(roc_auc)
+                 # Compute macro-average ROC curve and ROC area
+                fpr = dict()
+                tpr = dict()
+                roc_auc = dict()
+                for i in range(n_classes):
+                    y_test2 = []
+                    for c in ky_test:                    
+                        if c == i:
+                            y_test2.append(1)
+                        else:
+                            y_test2.append(0)
+                    fpr[i], tpr[i], _ = roc_curve(y_test2, independent_probs[:,i])
+                    roc_auc[i] = auc(fpr[i], tpr[i])
+
+                # First aggregate all false positive rates
+                all_fpr = np.unique(np.concatenate([fpr[i] for i in range(n_classes)]))
+
+                # Then interpolate all ROC curves at this points
+                mean_tpr = np.zeros_like(all_fpr)
+                for i in range(n_classes):
+                    mean_tpr += interp(all_fpr, fpr[i], tpr[i])
+
+                # Finally average it and compute AUC
+                mean_tpr /= n_classes
+
+                fpr["macro"] = all_fpr
+                tpr["macro"] = mean_tpr
+                roc_auc["macro"] = auc(fpr["macro"], tpr["macro"]) 
+
+                tprs.append(interp(mean_fpr, fpr["macro"], tpr["macro"]))               
+                aucsl.append(roc_auc["macro"])
         
             mean_tpr = np.mean(tprs, axis=0) 
             mean_tpr[-1] = 1.0
@@ -386,9 +492,11 @@ if __name__ == '__main__':
             plt.xlim([-0.1,1.2])
             plt.ylim([-0.1,1.2])
             plt.ylabel('True Positive Rate')
-            plt.xlabel('False Positive Rate')
-            plt.tight_layout()
-            savefig('./results/roc/'+'cv_roc_mean_'+str(signature)+'_________'+classifier_name+'_'+'.png')
+            plt.xlabel('False Positive Rate') 
+            sig_name = str(signature) 
+            if len(sig_name) >20:
+                sig_name = sig_name[0:19]      
+            savefig('./results/roc/'+'cv_roc_mean_'+sig_name+'_________'+classifier_name+'_'+'.png')
             plt.close()
 
 
@@ -396,7 +504,7 @@ if __name__ == '__main__':
            
 
 
-    with open('./results/proteins/roc/crossvalidation_100rep_8fold_AUC.csv', 'w') as f:            
+    with open('./results/roc/crossvalidation_100rep_8fold_AUC.csv', 'w') as f:            
         f.write("n")
         for classifier_name in classifiers_names:          
             f.write(","+classifier_name+"(mean)")
