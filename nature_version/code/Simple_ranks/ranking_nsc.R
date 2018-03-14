@@ -146,7 +146,8 @@ if (ttest){
       index_y = which(dataset.y == classes[2], arr.ind=TRUE)
       values_y = dataset.x[i,index_y]
 
-      ktest <- t.test(values_x, values_y, var.equal=TRUE, paired=FALSE)
+      #ktest <- t.test(values_x, values_y, var.equal=TRUE, paired=FALSE)
+      ktest <- wilcox.test(values_x, values_y)
       probs <- c(probs,as.numeric(ktest$p.value))
       cat(as.numeric(ktest[3][1]))
       cat("\n")
@@ -156,7 +157,7 @@ if (ttest){
   }
   result <- cbind(data.frame(1:length(rownames(dataset.x))),data.frame(rownames(dataset.x)),probs)
   colnames(result) <- c("index","name","p-value")
-  write.csv(result, file = "./results/double_cross_validation/ttest.csv")
+  write.csv(result, file = "./results/simple_rank/kruskal.csv")
 
   kindexes <- as.numeric(kindexes)
 
@@ -182,7 +183,7 @@ ranked_genes <- as.numeric(as.vector(nsc_result[,1]))
 
 result <- cbind(data.frame(ranked_genes),data.frame(rownames(dataset.x)[ranked_genes],nsc_result))
 colnames(result) <- c("index","rank?","name")
-write.csv(result, file = "./results/double_cross_validation/nsc/simple_rank.csv")
+write.csv(result, file = "./results/simple_rank/nsc_simple_rank.csv")
 
 
 

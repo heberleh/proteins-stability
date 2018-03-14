@@ -4,7 +4,7 @@
 
 #Installing required packages
 
-list.of.packages <- c("combinat", "doSNOW","snow", "rpart", "parallel", "MASS", "e1071")
+list.of.packages <- c("combinat", "doSNOW","snow", "rpart", "parallel", "MASS", "e1071", "caret")
 new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
 
 if(length(new.packages)) install.packages(new.packages,repos="http://brieger.esalq.usp.br/CRAN/")
@@ -129,7 +129,7 @@ svmrfeFeatureRanking = function(x,y){
 
     while(length(survivingFeaturesIndexes)>0){
         #train the support vector machine
-        svmModel = svm(x[, survivingFeaturesIndexes], y, cost = 10, cachesize=500,  scale=F, type="C-classification", kernel="radial" ) #linear, polynomial, radial basis, sigmoid
+        svmModel = svm(x[, survivingFeaturesIndexes], y, cost = 10, cachesize=500,  scale=F, type="C-classification", kernel="linear" ) #linear, polynomial, radial basis, sigmoid
 
         #compute the weight vector
         w = t(svmModel$coefs)%*%svmModel$SV
@@ -296,7 +296,8 @@ if (ttest){
       cat(index_y)
       cat("\n")
 
-      ktest <- t.test(values_x, values_y, var.equal=TRUE, paired=FALSE)
+      #ktest <- t.test(values_x, values_y, var.equal=TRUE, paired=FALSE)
+      ktest <- wilcox.test(values_x, values_y)
       probs <- c(probs,as.numeric(ktest$p.value))
       cat(as.numeric(ktest[3][1]))
       cat("\n")
@@ -308,7 +309,7 @@ if (ttest){
 
 result <- cbind(data.frame(1:length(rownames(dataset.x))),data.frame(rownames(dataset.x)),probs)
 colnames(result) <- c("index","name","p-value")
-write.csv(result, file = "./results/double_cross_validation/ttest.csv")
+write.csv(result, file = "./results/simple_rank/kruskal.csv")
 
   kindexes <- as.numeric(kindexes)
 
@@ -331,6 +332,6 @@ dc_selected_genes <- as.numeric(as.vector(rank))
 
 result <- cbind(data.frame(dc_selected_genes),data.frame(1:length(dc_selected_genes)),data.frame(rownames(dataset.x)[dc_selected_genes]))
 colnames(result) <- c("index","rank?","name")
-write.csv(result, file = "./results/double_cross_validation/svm/simple_rank.csv")
+write.csv(result, file = "./results/simple_rank/svm_linear_simple_rank.csv")
 
 

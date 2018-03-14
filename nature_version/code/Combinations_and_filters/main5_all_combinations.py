@@ -136,12 +136,12 @@ if __name__ == '__main__':
 
     global x, y, n, k, ns, nk, max_len, min_acc, classifier_class, min_break_accuracy, dataset
 
-    dataset = Dataset("./dataset/proteins/independent_train.txt", scale=False, normalize=False, sep='\t')
+    dataset = Dataset("./dataset/independent_train.txt", scale=False, normalize=False, sep='\t')
 
-    dataset_test = Dataset("./dataset/proteins/independent_test.txt", scale=False, normalize=False, sep='\t')
+    dataset_test = Dataset("./dataset/independent_test.txt", scale=False, normalize=False, sep='\t')
 
     filter = True
-    filter_name = "ttest"
+    filter_name = "wilcoxon"
     cutoff = 0.1
 
     if filter:
@@ -149,7 +149,7 @@ if __name__ == '__main__':
             # Filtering train and test Datasets
             wil = WilcoxonRankSumTest(dataset)
             wil_z, wil_p = wil.run()            
-            with open('./results/proteins/combinations/wilcoxon_test.csv', 'w') as f:
+            with open('./results/combinations/wilcoxon_test.csv', 'w') as f:
                 f.write("gene,p-value\n")
                 for i in range(len(dataset.genes)):
                     f.write(dataset.genes[i]+","+str(wil_p[i])+"\n")        
@@ -161,7 +161,7 @@ if __name__ == '__main__':
             # Filtering train and test Datasets
             ttest = TTest(dataset)
             ttest_t, ttest_p = ttest.run()            
-            with open('./results/proteins/combinations/t_test.csv', 'w') as f:
+            with open('./results/combinations/t_test.csv', 'w') as f:
                 f.write("gene,p-value\n")
                 for i in range(len(dataset.genes)):
                     f.write(dataset.genes[i]+","+str(ttest_p[i])+"\n")        
@@ -236,10 +236,9 @@ if __name__ == '__main__':
     start = time.time()
     maxAcc = 0.0    
     maxF1 = 0.0
-    for name in classifiers_names:
-        with open('./results/proteins/combinations/predictions_'+name+'.csv', 'w') as f:
-
-            line = "n, f1, acc, recall, precision, f1_independent, acc_independent, recall_independent, precision_independent, signature\n"
+    with open('./results/combinations/predictions_all_classifiers_n_signatures.csv', 'w') as f:
+        for name in classifiers_names:
+            line = "classifier, n, f1, acc, recall, precision, f1_independent, acc_independent, recall_independent, precision_independent, signature\n"
             f.write(line)               
             for sub_list_size in range(1, max_group_size+1):
                 genes_freq =[0 for i in range(len(dataset.genes))]
@@ -251,7 +250,7 @@ if __name__ == '__main__':
                 all_possible_groups = itertools.combinations(genes_index, sub_list_size)
                 n_possible_groups = nCr(len(genes_index),sub_list_size)       
             
-                print "Combination of ",len(genes_index),". There are ", n_possible_groups, "lists to be tested."
+                print "Combination of ",sub_list_size,". There are ", n_possible_groups, "lists to be tested."
                 
                 hasnext = True
                 executed = 0
@@ -305,7 +304,8 @@ if __name__ == '__main__':
                         if f1 > maxF1:
                             maxF1 = f1                       
 
-                        line = str(len(group))+","+\
+                        line =        name + "," +\
+                                      str(len(group))+","+\
                                       str(f1)+","+\
                                       str(acc)+","+\
                                       str(recall)+","+\
@@ -323,7 +323,7 @@ if __name__ == '__main__':
                     gc.collect()
                     executed = executed + len(current_args)
                     print "Restam ", str(n_possible_groups - executed), "grupos.\n"
-            f.close()
+        f.close()
   
     delta = time.time()-start
     last_individual_time = delta/float(n_possible_groups)
@@ -426,7 +426,7 @@ if __name__ == '__main__':
         csv_file.close()
         
     for name in classifiers_names:
-        with open('./results/proteins/combinations/all_sig_dcv_acc_'+name+'.csv', 'w') as f:
+        with open('./results/combinations/all_sig_dcv_acc_'+name+'.csv', 'w') as f:
             signatures = all_signatures[name]["signatures"]  
             min_acc = 1
             max_acc = 0
