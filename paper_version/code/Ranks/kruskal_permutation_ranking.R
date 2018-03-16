@@ -1,6 +1,6 @@
 
 #Installing required packages
-list.of.packages <- c("combinat", "doSNOW","snow", "rpart", "parallel", "MASS", "e1071")
+list.of.packages <- c("combinat", "doSNOW","snow", "rpart", "parallel", "MASS", "e1071", "dismo")
 new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
 
 if(length(new.packages)) install.packages(new.packages,repos="http://brieger.esalq.usp.br/CRAN/")
@@ -9,7 +9,7 @@ library("rpart")
 library("MASS")
 #library("class")
 library("e1071")
-#library("dismo")
+library("dismo")
 #library("caret")
 library("parallel")
 require(foreach)
@@ -81,8 +81,8 @@ permute.rows <- function (x)
 
 # PARAMETERS:    train.txt
 # SEE THE train.txt AND FOLLOW THE PATTERN
-input_file_name <- "./dataset/current/train.txt"
-db <- read.table(input_file_name, header=TRUE, sep="\t")
+input_file_name <- "./dataset/train_6_samples_independent.txt"
+db <- read.table(input_file_name, header=FALSE, sep="\t")
 
 nCluster <- detectCores()    # AUTOMATICALLY SELECT ALL POSSIBLE CORES FOR PARALLEL PROCESSING.
 #nCluster <- 8               # MANUALLY SET THE NUMBER OF CORES/NUCLEUS FOR PARALLEL PROCESSING.
@@ -94,74 +94,35 @@ TUNE <- FALSE
 #=========================== =============================== ==============================
 #=========================== =============================== ==============================
 
-
-
 fileConn<-file("log.txt")
 
-
-
-
-
-
-
-
+db <- t(db)
 #=========================== =============================== ==============================
 #=========================== ===== PRE-PROCESSING DATA ===== ==============================
-db2 <-t(db)
-dataset.x <- as.matrix(db2[3:nrow(db2),2:(ncol(db2))])
+
+print(db[1:5,1:10])
+
+dataset.x <- as.matrix(db[2:(nrow(db)),3:ncol(db)])
 class(dataset.x) <- "numeric"
-colnames(dataset.x)<-db2[2,2:ncol(db2)]
+colnames(dataset.x) <- db[1,3:ncol(db)]
 
-writeLines(paste(rownames(dataset.x)), fileConn)
-writeLines("\n\n", fileConn)
+thresholds_number <- nrow(dataset.x)
+dataset.y <- as.factor(as.matrix(db[2:nrow(db),2]))
+cat(dataset.y)
+dataset.genesnames <- colnames(dataset.x)
 
-# first line of original matrix is already col/rownames
-#print(db2[3:nrow(db2),1]) -> classes
-#print(db2[3:nrow(db2),2]) -> values
-dataset.y <- as.factor(db2[3:nrow(db2),1])
+dataset.y <- as.factor(db[2:nrow(db),2])
 
-writeLines("teste", fileConn)
-writeLines(paste("Classes: ", dataset.y), fileConn)
-
-
-
-
-writeLines(paste(table(dataset.y)), fileConn)
-
-# z-score? Models like SVM have padronization by z-score by default.
-# Do not use this z-score code, unless you really want and know what
-# you are doing.
-# part of the code padronizes by lines.
-# the other part padronizes by columns.
-#x = log(x)
-#scale samples with mean zero and standard deviation one
-#for(i in 1:nrow(x))x[i,] = (x[i,]-mean(x[i,]))/sd(x[i,])
-#scale features with mean zero and standard deviation one
-#for(i in 1:ncol(x))x[,i] = (x[,i]-mean(x[,i]))/sd(x[,i])
-#x = 2*atan(x/2)
-
-#featureRankedList = svmrfeFeatureRankingForMulticlass(dataset.x, dataset.y)
-
-# selected_outer = list()
-# final_outer_error = vector()
-# final_outer_error_min = vector()
-# final_outer_error_max = vector()
-# final_N = vector()
-# logdouble = list()
-#=========================== =============================== ==============================
-#=========================== =============================== ==============================
-
-
-
+print(dataset.x[1:3,1:7])
+print("-------")
+print(dataset.y)
+print("-------")
 
 #=========================== =============================== ==============================
 #=========================== =============================== ==============================
-# Defining the K-Fold cross-validation in outer-loop
-# Each test fold is independent from inner-loop, where rankings are being computed
-# We do not compute mean of K-Folds accuracy. We are interested in its distribution only.
-# Doing that we can analyse the stability of accuracy of the new ranking method
-# and the stability of new rankings generated as well
 
+#=========================== =============================== ==============================
+#=========================== =============================== ==============================
 folds <- balanced.folds(y=dataset.y)
 nfold <- length(folds)
 allrep <- list()
@@ -182,7 +143,7 @@ getDoParWorkers()
 #=========================== =============================== ==============================
 #=========================== ========= OUTER LOOP ========== ==============================
 # Run parallel computing of K-Fold
-stime <- system.time({
+#stime <- system.time({
 allrep <- foreach (i = 1:nfold, .combine="cbind", .packages = c("e1071","dismo","class","rpart","MASS")) %dopar%{
 #for (i in 1:nfold){ #non-parallel test
 
@@ -322,10 +283,14 @@ global_genes_freq <- rep(0, ncol(dataset.x))
   #print(genes_freq)
 
   # Store genes freq
-  genes_freq_matrix <- cbind(cbind(colnames(dataset.x),genes_freq),t(dataset.x))
-  colnames(genes_freq_matrix) <- append(c("protein","protein frequency"),rownames(dataset.x))
+  print( "wtf")
+  print(colnames(dataset.x))
+  print(genes_freq)
+  genes_freq_matrix <- cbind(colnames(dataset.x),genes_freq)
+  colnames(genes_freq_matrix) <- c("protein","protein frequency")
   write.matrix(genes_freq_matrix, file =paste("./results/kruskal_permuted_rank/genes_freq_fold_",i,".csv",collapse=""), sep=",")
 
+print("wth")
 
   # Update global_genes_freq
   global_genes_freq <- global_genes_freq + genes_freq
@@ -370,10 +335,13 @@ global_genes_freq <- rep(0, ncol(dataset.x))
 
 
   # Store genes freq
+  print("**************** colnames: ")
+  print(colnames(dataset.x))
   rand_freq_matrix <- cbind(colnames(dataset.x),genes_freq_at_random)
   colnames(rand_freq_matrix) <- c("protein","protein frequency")
   write.matrix(rand_freq_matrix, file =paste("./results/kruskal_permuted_rank/genes_freq_at_random_fold_",i,".csv",collapse=""), sep=",")
 
+  print("pass 1")
 
   # Rank the proteins by higher frequency
   ranking_index <- order(genes_freq, decreasing=T)
@@ -464,9 +432,9 @@ global_genes_freq <- rep(0, ncol(dataset.x))
 
   #sink()
 }#
-})[3]
+#})[3]
 stopCluster(cl)
-stime
+#stime
 # end K-Fold
 
 
@@ -533,9 +501,13 @@ total_freq_genes <- colSums(global_genes_freqs)
 print(dim(total_freq_genes))
 print(dim(gene_p_value))
 # Store genes freq, freq at random, and p-values
+
+print("pass 3")
 p_matrix <- cbind(cbind(cbind(cbind(colnames(dataset.x),complete_train_p_value),total_freq_genes),gene_p_value),cbind(cbind(cbind(t(global_genes_freqs),t(global_genes_random_freqs)), global_rank_accuracy),cross_acc))
 
 colnames(p_matrix) <- c("protein",c("complete_train_p_value",c("total_freq",c("p-value_orig_vs_random",append(append(append(i_order,rep('permuted',nfold)),i_order),rep('cv_inner',nfold))))))
+
+print("pass 4")
 
 write.matrix(p_matrix, file =paste("./results/kruskal_permuted_rank/genes_freq_all_folds.csv",collapse=""), sep=",")
 
@@ -544,177 +516,18 @@ global_n_values <- as.matrix(global_n_values)
 colnames(global_n_values) <- i_order
 write.matrix(rbind(global_n_values, bestAcc), file =paste("./results/kruskal_permuted_rank/selected_N_acc_each_folder.csv",collapse=""), sep=",")
 
+print("pass 5")
+
 colnames(cv_bestN) <- i_order
 write.matrix(rbind(cv_bestN, cv_bestAcc), file =paste("./results/kruskal_permuted_rank/selected_N_acc_each_folder_CV.csv",collapse=""), sep=",")
 
+print("pass 6")
 colnames(train_names) <- i_order
 write.matrix(train_names, file =paste("./results/kruskal_permuted_rank/sample_names_train_k-fold.csv",collapse=""), sep=",")
-
+print("pass 7")
 colnames(test_names) <- i_order
 write.matrix(test_names, file =paste("./results/kruskal_permuted_rank/sample_names_test_k-fold.csv",collapse=""), sep=",")
-
+print("pass 8")
 
 writeLines("\n", fileConn)
 close(fileConn)
-
-# Plot the global gene's frequency distribution versus random freq distr.
-
-
-# Scaterplot de  ranks finais de cada fold 2 a 2, quanto mais na diagonal, melhor.. como no trbaalho de ideker.
-# Definir forma de verificar estabilidade das listas... como quantificar? como dizer se é alta ou baixa?
-# Gerar permutações de dados, várias, e calcular estabilidade... como referência de baixa estbailidade.... verificar quão diferente é? vai ser mto diferente, não? -.- hum... q mais?
-
-# !!!!!!!!!!! Comparar estabilidade de Kruskal normal com a nova proposta.. via frqueências!!!!
-
-
-
-
-
-
-
-
-
-
-# double_error = vector()
-# all_N = vector()
-# for (rep in 1:repetition){
-#   double_error[rep] = allrep[[4,rep]]
-#   all_N[rep] = allrep[1,rep]
-# }
-
-# double_error = as.vector(unlist(double_error))
-# all_N = as.vector(unlist(all_N))
-# mean_double_error = mean(double_error)
-# min_double_error = min(double_error)
-# max_double_error = max(double_error)
-# dif_double_error = abs(double_error - mean_double_error)
-# min_dif = min(dif_double_error)
-# index_error = which(dif_double_error == min_dif)
-# min_N = min(all_N[index_error])
-# index_N = which(all_N == min_N)
-# index = intersect(index_N,index_error)
-# final_double_error = mean(double_error[index])
-
-# if(length(index) != 1){
-#   cat ("Mais de um modelo pode ser utilizado para calcular as métricas!")
-#   index = index[1]
-# }
-
-# index2 = (7*(index))
-# size = length(allrep[[index2]][[index]])
-# pred = list()
-# ref = list()
-# for (i in 1:size){
-#   obj = allrep[[index2]][[index]][[i]]
-#   pred[[i]] = obj$pred
-#   ref[[i]] = obj$ref
-# }
-# pred = as.vector(unlist(pred))
-# ref = as.vector(unlist(ref))
-
-
-# sink("./results/svm-rfe/caret_svm-rfe.txt")
-# cat("Average accuracy of  double cross-validation repetitions: ")
-# cat(mean_double_error)
-# cat("\n\n")
-# cat("Maximum accuracy between repetitions: ")
-# cat(max_double_error)
-# cat("\n\n")
-# cat("Minimum accuracy between repetitions: ")
-# cat(min_double_error)
-# cat("\n\n")
-# cat("Best model indexes: ")
-# cat(index_error)
-# cat("\n\n")
-# cat("All possible N according to selected models:")
-# cat(all_N[index_error])
-# cat("\n\n")
-# cat("Minimum N (selected final N): ")
-# cat(min_N)
-# cat("\n\n")
-# cat("Double-Cross-Validation accuracy: ")
-# cat(final_double_error)
-# cat("\n\n")
-
-# pred=factor(pred, levels=unique(dataset.y))
-# ref=factor(ref, levels=unique(dataset.y))
-
-# confusionMatrix(pred, ref, positive=NULL)
-# sink()
-
-# m = cbind(all_N, double_error)
-# write.csv(m,"./results/svm-rfe/all_n_and_double_error_repetition_svm-rfe.csv")
-
-# tuned = NULL
-# #Tuna para encontrar parâmetros com o conjunto completo
-# if (global_tune==TRUE){
-#   tuned <- tune.svm(x = dataset.x, y=dataset.y, gamma = 10^(-6:-1), cost = 10^(1:2))
-# }else{
-#   tuned$best.parameters[1] = 10^(-4)
-#   tuned$best.parameters[2] = 10
-# }
-
-# #Calcula SVM-RFE
-# aux = svmrfeFeatureRankingForMulticlass(dataset.x, dataset.y, tuned)
-# featureRankedList = aux$featureRankedList
-# mean_weights = aux$mean_weights[featureRankedList]
-# weights = aux$weights
-# weights = do.call(rbind, weights)
-# weights = weights[featureRankedList,]
-
-
-
-# #6-fold
-# nf <- {}
-# Accuracy <- {}
-# for(pow in 1550:1600){
-#   nfeatures = pow
-#   truePredictions = 0
-#   svmModel = svm(x[, featureRankedList[1:nfeatures]], y, cost = 10, gamma=0.0001, cachesize=500,  scale=T, type="C-classification", kernel="linear",cross=5)
-#   nf<-rbind(nf,nfeatures)
-#   Accuracy<-rbind(Accuracy,mean(svmModel$accuracies))
-# }
-# plot(nf,Accuracy)
-
-# x = dataset.x
-# names = colnames(subset(x,select=featureRankedList)) # ou... colnames(x[,featureRankedList])
-# x_ordered = cbind(names,t(x[,featureRankedList]))
-# merged = cbind(names,featureRankedList,1:length(names),weights) #merge(names,featureRankedList, by = "row.names", all = TRUE)
-#merged = as.matrix(merged[-1])
-
-#colnames para 2 classes (dataset4):
-#colnames(merged) <- c("gene name","index","rank","v1")
-
-#colnames para 2 classes (secretoma):
-#colnames(merged) <- c("gene name","index","rank","v1","v2")
-
-#colnames para 3 classes (secretoma):
-#colnames(merged) <- c("gene name","index","rank","v1","v2","v3")
-
-# #colnames para 4 classes:
-# colnames(merged) <- c("gene name","index","rank","v1","v2","v3","v4","v5","v6")
-
-# #colnames para 5 classes:
-# #colnames(merged) <- c("gene name","index","rank","v1","v2","v3","v4","v5","v6","v7","v8","v9","v10")
-
-# #colnames para 7 classes:
-# #colnames(merged) <- c("gene name","index","rank","v1","v2","v3","v4","v5","v6","v7","v8","v9","v10","v11","v12","v13","v14","v15","v16","v17","v18","v19","v20","v21")
-
-# merged = cbind(merged,x_ordered)
-
-# #write.matrix(merged, file = "big_matrix_svm-rfe.csv", sep = ",")
-# write.csv(merged, file = "./results/svm-rfe/big_matrix_svm-rfe.csv")
-
-# #write.matrix(x_ordered, file = "matrix_by_rank_scale.csv", sep = ",")
-
-#v = c(55,54,25,1578,108,24,1575,51,1528,26,23,1550,34,1521,23,27,13,18,1560,1554,1520,26,25,37,36,71,43,25,29,34,52,1547,29,42,1568,164)
-#d = density(v)
-
-#plot(d)
-#axis(1,at=36,labels=c("36"))
-
-
-# #for ranking validation with independent test
-# write.matrix(featureRankedList, file ="./results/svm-rfe/rank_index_svmrfe.csv", sep=",")
-# write(min_N, file="./results/svm-rfe/double_selected_N_svmrfe.txt")
-

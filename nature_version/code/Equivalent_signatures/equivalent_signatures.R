@@ -3,21 +3,30 @@
 # contact: henry at icmc usp br
 
 #Installing required packages
-#
 
+# sudo apt-get install r-cran-rcpp r-cran-rcppgsl r-cran-rcpproll
+# sudo apt-get install r-cran-fastmatch r-cran-mass r-cran-slam r-cran-quantreg r-cran-survival r-cran-nnetReading
+
+# bla <- "https://cran.r-project.org/src/contrib/MXM_1.3.2.tar.gz"
+# install.packages(bla,repos=NULL)
+# bla3 <- "https://cran.r-project.org/src/contrib/RcppZiggurat_0.1.4.tar.gz"
+# install.packages(bla3,repos=NULL)
 
 # slam_url <- "https://cran.r-project.org/src/contrib/Archive/slam/slam_0.1-37.tar.gz"
 # install.packages(slam_url,repos=NULL)
 
+# bla2 <- "https://cran.r-project.org/src/contrib/Rfast_1.8.8.tar.gz"
+# install.packages(bla2,repos=NULL)
+
+
 # relations_url <- "http://cran.fhcrc.org/src/contrib/relations_0.6-7.tar.gz"
 # install.packages(relations_url,repos=NULL)
 
-list.of.packages <- c('relations',"slam","hash","quantreg","survival","nnet","ordinal","MXM","combinat", "doSNOW","snow", "rpart", "parallel", "MASS", "e1071")
+
+list.of.packages <- c("relations","slam","hash","quantreg","survival","nnet","ordinal","combinat", "doSNOW","snow", "rpart", "parallel", "MASS", "e1071","MXM")
 new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
 
 if(length(new.packages)) install.packages(new.packages,repos="http://brieger.esalq.usp.br/CRAN/")
-
-
 
 library("parallel")
 library("relations")
@@ -93,7 +102,8 @@ if (ttest){
       cat(index_y)
       cat("\n")
 
-      ktest <- t.test(values_x, values_y, var.equal=TRUE, paired=FALSE)
+      #ktest <- t.test(values_x, values_y, var.equal=TRUE, paired=FALSE)
+      ktest <- wilcox.test(values_x, values_y)
       probs <- c(probs,as.numeric(ktest$p.value))
       cat(as.numeric(ktest[3][1]))
       cat("\n")
@@ -123,25 +133,27 @@ if (ttest){
 x <- t(dataset.x)
 
 
-#tuned <- cv.ses(dataset.y, x, kfolds=k, max_ks = c(5,4,3,2), task= "C", ncores=8)
+tuned <- cv.ses(dataset.y, x, kfolds=k, max_ks = c(5,4,3,2), task= "C", ncores=8)
 
 #cat(tuned$best_performance)
-#config <- tuned$best_configuration
+config <- tuned$best_configuration
 
 cat("maxk: ")
-#cat(config$max_k)
+cat(config$max_k)
 cat("\n")
 cat("significance level: ")
-#cat(config$a)
+cat(config$a)
 cat("\n")
-max_k <- 3#config$max_k
-threshold<- 0.1#config$a
+max_k <- config$max_k
+threshold<- config$a #0.1#
 
 
 # Finding signatures
-result <- SES(dataset.y, x, max_k=max_k, threshold=threshold, robust=robust)
+result <- SES(dataset.y, x, max_k=max_k, threshold=threshold)
 
 summary(result)
+
+result
 
 cat("signatures:\n")
 print(result@queues)
