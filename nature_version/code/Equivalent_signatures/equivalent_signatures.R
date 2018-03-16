@@ -51,7 +51,7 @@ require(combinat)
 
 # PARAMETERS:    train.txt
 # SEE THE train.txt AND FOLLOW THE PATTERN
-input_file_name <- "./dataset/independent_train.txt"
+input_file_name <- "./dataset/proteins/independent_train.txt"
 db <- read.table(input_file_name, header=FALSE, sep="\t")
 ttest <- TRUE
 
@@ -131,43 +131,38 @@ if (ttest){
 # Tune parameters
 
 x <- t(dataset.x)
-
-
-tuned <- cv.ses(dataset.y, x, kfolds=k, max_ks = c(5,4,3,2), task= "C", ncores=8)
+#tuned <- cv.ses(dataset.y, x, kfolds=k, max_ks = c(5,4,3,2), task= "C", ncores=8)
 
 #cat(tuned$best_performance)
-config <- tuned$best_configuration
+# config <- tuned$best_configuration
 
-cat("maxk: ")
-cat(config$max_k)
-cat("\n")
-cat("significance level: ")
-cat(config$a)
-cat("\n")
-max_k <- config$max_k
-threshold<- config$a #0.1#
-
+# cat("maxk: ")
+# cat(config$max_k)
+# cat("\n")
+# cat("significance level: ")
+# cat(config$a)
+# cat("\n")
+# max_k <- config$max_k
+# threshold<- config$a #0.1#
 
 # Finding signatures
-result <- SES(dataset.y, x, max_k=max_k, threshold=threshold)
+best_model <- cv.ses(dataset.y, x,  kfolds = 8, task='C', metric=auc.mxm, modeler=glm.mxm)
 
-summary(result)
+best_model$best_configuration
+best_model$best_performance
 
-result
 
-cat("signatures:\n")
-print(result@queues)
+best_model[[best_model$best_configuration$id]]
 
-cat("\ny:\n")
-cat(dataset.y)
-
-png("./results/plot_equivalent_signatures.png",width=950, height=550,res=100)
-plot(result,mode="all")
-dev.off()
+# cat("signatures:\n")
+# print(result@queues)
+# cat("\ny:\n")
+# cat(dataset.y)
+# png("./results/plot_equivalent_signatures.png",width=950, height=550,res=100)
+# plot(result,mode="all")
+# dev.off()
 
 cat(dataset.genesnames)
-
-
 
 # #final genes according to Double-Cross
 # dc_selected_genes <- as.numeric(as.vector(rank))

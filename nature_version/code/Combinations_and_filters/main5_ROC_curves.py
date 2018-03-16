@@ -159,9 +159,9 @@ if __name__ == '__main__':
     global x, y, n, k, ns, nk, max_len, min_acc, classifier_class, min_break_accuracy, dataset
 
 
-    dataset = Dataset("./dataset/independent_train.txt", scale=False, normalize=False, sep='\t')
+    dataset = Dataset("./dataset/proteins/independent_train.txt", scale=False, normalize=False, sep='\t')
 
-    dataset_test = Dataset("./dataset/independent_test.txt", scale=False, normalize=False, sep='\t')
+    dataset_test = Dataset("./dataset/proteins/independent_test.txt", scale=False, normalize=False, sep='\t')
 
     if shuffle_labels:
         dataset.shuffle_labels()
@@ -188,10 +188,10 @@ if __name__ == '__main__':
 
     classifiers_names = ["svm-linear","svm-rbf","naive_bayes","glm"] #
 
-    view_classifiers_names = {"svm-linear":"SVM (linear)","svm-rbf":"SVM (radial)", "glm":"Logistic Regression", "naive_bayes":"Gaussian Naive Bayes"}
+    view_classifiers_names = {"svm-linear":"SVM - Linear","svm-rbf":"SVM - Radial", "glm":"Logistic Regression", "naive_bayes":"Gaussian Naive Bayes"}
 
     signatures = []
-    with open('./dataset/important_signatures.csv', 'r') as csv_file:
+    with open('./dataset/proteins/important_signatures.csv', 'r') as csv_file:
         reader = csv.reader(csv_file, delimiter=',')
         for row in reader:
             signatures.append(row)
@@ -228,7 +228,7 @@ if __name__ == '__main__':
         
         for signature in signatures:
             figure(figsize=(11,8),dpi=90)
-            plt.title('Receiver Operating Characteristic ('+view_classifiers_names[classifier_name]+')')
+            plt.title(str(signature)+'ROC curve '+' ('+view_classifiers_names[classifier_name]+')')
             genes_index = []
             for g in signature:                   
                 genes_index.append(dataset.genes.index(g))            
@@ -273,16 +273,16 @@ if __name__ == '__main__':
             # Curve
             fpr, tpr, thresholds = metrics.roc_curve(y_test, independent_probs)
             roc_auc = auc(fpr, tpr)       
-            plt.plot(fpr, tpr, label=str(signature)+" (AUC="+str(roc_auc)+")")                  
+            plt.plot(fpr, tpr, label="(AUC = %0.3f)"%(roc_auc))                  
 
             plt.legend(loc='lower right')
             plt.plot([0,1],[0,1],'r--')
-            plt.xlim([-0.1,1.2])
-            plt.ylim([-0.1,1.2])
-            plt.ylabel('True Positive Rate')
-            plt.xlabel('False Positive Rate')
+            plt.xlim([-0.01,1.01])
+            plt.ylim([-0.01,1.01])  #sensitivity vs 1-Specificity.
+            plt.ylabel('Sensitivity')
+            plt.xlabel('1 - Specificity')
             plt.tight_layout()
-            savefig('./results/roc/'+'independent_roc_'+str(signature)+'_________'+classifier_name+'_'+'.png')
+            savefig('./results/proteins/roc/'+'independent_roc_'+str(signature)+'_________'+classifier_name+'_'+'.png')
             plt.close()
 
 
@@ -310,23 +310,23 @@ if __name__ == '__main__':
                     probs_folds.extend(independent_probs)
 
                 figure(figsize=(11,8),dpi=90)
-                plt.title('Crosvalidation Receiver Operating Characteristic ('+view_classifiers_names[classifier_name]+')')
+                plt.title(str(signature)+'ROC curve '+' ('+view_classifiers_names[classifier_name]+')')
                 # Curve
                 fpr, tpr, thresholds = metrics.roc_curve(y_folds, probs_folds)
                 roc_auc = auc(fpr, tpr)      
 
                 aucs[str(signature)][classifier_name] = roc_auc
-
-                plt.plot(fpr, tpr, label=str(signature)+" (AUC="+str(roc_auc)+")")
+                #label="Mean ROC (AUC = %0.2f $\pm$ %0.2f)" % (mean_auc, std_auc)
+                plt.plot(fpr, tpr, label="(AUC = %0.3f)"%(roc_auc))
                 
                 plt.legend(loc='lower right')
                 plt.plot([0,1],[0,1],'r--')
-                plt.xlim([-0.1,1.2])
-                plt.ylim([-0.1,1.2])
-                plt.ylabel('True Positive Rate')
-                plt.xlabel('False Positive Rate')
+                plt.xlim([-0.01,1.01])
+                plt.ylim([-0.01,1.01])  #sensitivity vs 1-Specificity.
+                plt.ylabel('Sensitivity')
+                plt.xlabel('1 - Specificity')
                 plt.tight_layout()
-                savefig('./results/roc/'+'cv_roc_'+str(signature)+'_________'+classifier_name+'_'+'.png')
+                savefig('./results/proteins/roc/'+'cv_roc_CONCAT_'+str(signature)+'_________'+classifier_name+'_'+'.png')
                 plt.close()
             
             
@@ -371,7 +371,7 @@ if __name__ == '__main__':
             mean_aucs[str(signature)][classifier_name] = mean_auc
 
             figure(figsize=(11,8),dpi=90)
-            plt.title('Crosvalidation ROC - signature '+ str(signature)+' (Mean, '+view_classifiers_names[classifier_name]+')')
+            plt.title(str(signature)+'ROC curve '+' ('+view_classifiers_names[classifier_name]+')')
 
             # Curve
             fpr, tpr = mean_fpr, mean_tpr
@@ -379,16 +379,17 @@ if __name__ == '__main__':
 
             aucs[str(signature)][classifier_name] = roc_auc
 
-            plt.plot(fpr, tpr, label="Mean ROC (AUC = %0.2f $\pm$ %0.2f)" % (mean_auc, std_auc),lw=2,alpha=.8)
+                                              #AUC = %0.2f $\pm$ %0.2f
+            plt.plot(fpr, tpr, label="Mean ROC (AUC = %0.3f)" % (mean_auc),lw=2,alpha=.8)
             
             plt.legend(loc='lower right')
             plt.plot([0,1],[0,1],'r--')
-            plt.xlim([-0.1,1.2])
-            plt.ylim([-0.1,1.2])
-            plt.ylabel('True Positive Rate')
-            plt.xlabel('False Positive Rate')
+            plt.xlim([-0.01,1.01])
+            plt.ylim([-0.01,1.01])  #sensitivity vs 1-Specificity.
+            plt.ylabel('Sensitivity')
+            plt.xlabel('1 - Specificity')
             plt.tight_layout()
-            savefig('./results/roc/'+'cv_roc_mean_'+str(signature)+'_________'+classifier_name+'_'+'.png')
+            savefig('./results/proteins/roc/'+'cv_roc_MEAN_'+str(signature)+'_________'+classifier_name+'_'+'.png')
             plt.close()
 
 

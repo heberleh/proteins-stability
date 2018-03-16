@@ -157,7 +157,7 @@ if (ttest){
   }
   result <- cbind(data.frame(1:length(rownames(dataset.x))),data.frame(rownames(dataset.x)),probs)
   colnames(result) <- c("index","name","p-value")
-  write.csv(result, file = "./results/simple_rank/kruskal.csv")
+  write.csv(result, file = "./results/simple_rank/wilcoxon.csv")
 
   kindexes <- as.numeric(kindexes)
 
