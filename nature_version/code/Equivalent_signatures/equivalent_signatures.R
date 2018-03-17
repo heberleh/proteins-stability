@@ -131,28 +131,24 @@ if (ttest){
 # Tune parameters
 
 x <- t(dataset.x)
-#tuned <- cv.ses(dataset.y, x, kfolds=k, max_ks = c(5,4,3,2), task= "C", ncores=8)
+tuned <- cv.ses(dataset.y, x, kfolds=k, max_ks = c(5,4,3,2), task= "C", ncores=8)
 
-#cat(tuned$best_performance)
-# config <- tuned$best_configuration
+cat(tuned$best_performance)
+config <- tuned$best_configuration
 
-# cat("maxk: ")
-# cat(config$max_k)
-# cat("\n")
-# cat("significance level: ")
-# cat(config$a)
-# cat("\n")
-# max_k <- config$max_k
-# threshold<- config$a #0.1#
+cat("maxk: ")
+cat(config$max_k)
+cat("\n")
+cat("significance level: ")
+cat(config$a)
+cat("\n")
+max_k <- config$max_k
+threshold<- config$a #0.1#
 
 # Finding signatures
-best_model <- cv.ses(dataset.y, x,  kfolds = 8, task='C', metric=auc.mxm, modeler=glm.mxm)
+result <- SES(dataset.y, x, max_k=max_k, threshold=threshold)
 
-best_model$best_configuration
-best_model$best_performance
-
-
-best_model[[best_model$best_configuration$id]]
+result
 
 # cat("signatures:\n")
 # print(result@queues)
