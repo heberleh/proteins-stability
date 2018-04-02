@@ -159,9 +159,9 @@ if __name__ == '__main__':
     global x, y, n, k, ns, nk, max_len, min_acc, classifier_class, min_break_accuracy, dataset
 
 
-    dataset = Dataset("./dataset/proteins/independent_train.txt", scale=False, normalize=False, sep='\t')
+    dataset = Dataset("./dataset/independent_train.txt", scale=False, normalize=False, sep='\t')
 
-    dataset_test = Dataset("./dataset/proteins/independent_test.txt", scale=False, normalize=False, sep='\t')
+    dataset_test = Dataset("./dataset/independent_test.txt", scale=False, normalize=False, sep='\t')
 
     if shuffle_labels:
         dataset.shuffle_labels()
@@ -186,12 +186,12 @@ if __name__ == '__main__':
     #["svm","tree","nsc","naive_bayes","glm","sgdc","perceptron","svm-rbf"]#["svm","tree","nsc","naive_bayes","glm","sgdc","perceptron", "randForest"] #["svm","tree","nsc","naive_bayes"]
     classifiers_class = {"svm-linear":svm.LinearSVC, "tree":tree.DecisionTreeClassifier, "nsc":NearestCentroid, "naive_bayes":GaussianNB, "glm": LogisticRegression, "sgdc":SGDClassifier,"mtElasticNet":MultiTaskElasticNet,"elasticNet":ElasticNet,"perceptron":Perceptron, "randForest":RandomForestClassifier, "svm-rbf":SVC}
 
-    classifiers_names = ["svm-linear","svm-rbf","naive_bayes","glm"] #
+    classifiers_names = ["naive_bayes","glm"] #"svm-linear","svm-rbf",
 
     view_classifiers_names = {"svm-linear":"SVM - Linear","svm-rbf":"SVM - Radial", "glm":"Logistic Regression", "naive_bayes":"Gaussian Naive Bayes"}
 
     signatures = []
-    with open('./dataset/proteins/important_signatures.csv', 'r') as csv_file:
+    with open('./dataset/important_signatures.csv', 'r') as csv_file:
         reader = csv.reader(csv_file, delimiter=',')
         for row in reader:
             signatures.append(row)
@@ -282,19 +282,31 @@ if __name__ == '__main__':
             plt.ylabel('Sensitivity')
             plt.xlabel('1 - Specificity')
             plt.tight_layout()
-            savefig('./results/proteins/roc/'+'independent_roc_'+str(signature)+'_________'+classifier_name+'_'+'.png')
+            savefig('./results/roc/'+'independent_roc_'+str(signature)+'_________'+classifier_name+'_'+'.png')
             plt.close()
+
+            
+
+
+
+
+
 
 
             if classifier_name == "naive_bayes" or classifier_name == "glm":
                 y_folds = []
                 probs_folds = []
-                for ktrain, ktest in skf.split(x_train, y_train):
-                    kx_train, kx_test = x_train[ktrain], x_train[ktest]
-                    ky_train, ky_test = y_train[ktrain], y_train[ktest]
-                    
-                    y_folds.extend(ky_test)
 
+                tprs = []
+                base_fpr = np.linspace(0, 1, 101)
+                plt.figure(figsize=(12, 11))
+
+                i = 0
+                independent_probs = []
+                for ktrain, ktest in rskf.split(x_train, y_train):
+                    kx_train, kx_test = x_train[ktrain], x_train[ktest]
+                    ky_train, ky_test = y_train[ktrain], y_train[ktest]                
+                                        
                     if classifier_name == "naive_bayes":
                         classifier = GaussianNB()
                         std_scale = preprocessing.StandardScaler().fit(kx_train)
@@ -306,29 +318,61 @@ if __name__ == '__main__':
                         std_scale = preprocessing.StandardScaler().fit(kx_train)
                         classifier.fit(std_scale.transform(kx_train), ky_train)                
                         independent_probs = classifier.predict_proba(std_scale.transform(kx_test))[:,1]
-                    
-                    probs_folds.extend(independent_probs)
 
-                figure(figsize=(11,8),dpi=90)
-                plt.title(str(signature)+'ROC curve '+' ('+view_classifiers_names[classifier_name]+')')
-                # Curve
-                fpr, tpr, thresholds = metrics.roc_curve(y_folds, probs_folds)
-                roc_auc = auc(fpr, tpr)      
+                    probs_folds.extend(independent_probs)
+                    y_folds.extend(ky_test)
+
+                    if i == k-1:
+                        fpr, tpr, _ = roc_curve(y_folds, probs_folds)
+                        plt.plot(fpr, tpr, 'gray', alpha=0.10)
+                        tpr = interp(base_fpr, fpr, tpr)
+                        tpr[0] = 0.0
+                        tprs.append(tpr)
+                    
+                        i = 0                        
+                        y_folds = []
+                        probs_folds = []
+
+                    else:
+                        i += 1                      
+
+                print "Probabilidades tamanho", len(probs_folds)
+                
+                plt.title(view_classifiers_names[classifier_name]+' ROC curve for '+str(signature))
+                                                                                
+                tprs = np.array(tprs)
+                mean_tprs = tprs.mean(axis=0)
+                std = tprs.std(axis=0)
+                tprs_upper = np.minimum(mean_tprs + std, 1)
+                tprs_lower = mean_tprs - std
+                
+                # mean_fprs = tprs.mean(axis=1)
+                roc_auc = auc(base_fpr, mean_tprs)
 
                 aucs[str(signature)][classifier_name] = roc_auc
-                #label="Mean ROC (AUC = %0.2f $\pm$ %0.2f)" % (mean_auc, std_auc)
-                plt.plot(fpr, tpr, label="(AUC = %0.3f)"%(roc_auc))
-                
+
+                plt.plot(base_fpr, mean_tprs, 'b', label="ROC (AUC = %0.3f)"%(roc_auc))
+                plt.fill_between(base_fpr, tprs_lower, tprs_upper, color='grey', alpha=0.3)
+
                 plt.legend(loc='lower right')
                 plt.plot([0,1],[0,1],'r--')
                 plt.xlim([-0.01,1.01])
                 plt.ylim([-0.01,1.01])  #sensitivity vs 1-Specificity.
                 plt.ylabel('Sensitivity')
                 plt.xlabel('1 - Specificity')
-                plt.tight_layout()
-                savefig('./results/proteins/roc/'+'cv_roc_CONCAT_'+str(signature)+'_________'+classifier_name+'_'+'.png')
+                # plt.tight_layout()
+                savefig('./results/roc/'+'cv_roc_CONCAT_'+str(signature)+'_________'+classifier_name+'_'+'.png')
                 plt.close()
-            
+
+
+
+
+
+
+
+
+
+
             
             tprs = []
             aucsl = []          
@@ -373,13 +417,8 @@ if __name__ == '__main__':
             figure(figsize=(11,8),dpi=90)
             plt.title(str(signature)+'ROC curve '+' ('+view_classifiers_names[classifier_name]+')')
 
-            # Curve
-            fpr, tpr = mean_fpr, mean_tpr
-            roc_auc = auc(fpr, tpr)      
-
-            aucs[str(signature)][classifier_name] = roc_auc
-
-                                              #AUC = %0.2f $\pm$ %0.2f
+        
+            #AUC = %0.2f $\pm$ %0.2f
             plt.plot(fpr, tpr, label="Mean ROC (AUC = %0.3f)" % (mean_auc),lw=2,alpha=.8)
             
             plt.legend(loc='lower right')
@@ -389,15 +428,11 @@ if __name__ == '__main__':
             plt.ylabel('Sensitivity')
             plt.xlabel('1 - Specificity')
             plt.tight_layout()
-            savefig('./results/proteins/roc/'+'cv_roc_MEAN_'+str(signature)+'_________'+classifier_name+'_'+'.png')
+            savefig('./results/roc/'+'cv_roc_MEAN_'+str(signature)+'_________'+classifier_name+'_'+'.png')
             plt.close()
 
 
-
-           
-
-
-    with open('./results/proteins/roc/crossvalidation_100rep_8fold_AUC.csv', 'w') as f:            
+    with open('./results/roc/crossvalidation_100rep_8fold_AUC.csv', 'w') as f:            
         f.write("n")
         for classifier_name in classifiers_names:          
             f.write(","+classifier_name+"(mean)")
