@@ -192,8 +192,23 @@ if __name__ == '__main__':
     from sklearn.svm import SVC
 
     # classifiers that will be considered
-    classifiers_names = ["svm","svm-rbf","tree","nsc","naive_bayes","glm","sgdc","perceptron", "randForest"] #["svm","tree","nsc","naive_bayes"]
-    classifiers_class = {"svm":svm.LinearSVC, "tree":tree.DecisionTreeClassifier, "nsc":NearestCentroid, "naive_bayes":GaussianNB, "glm": LogisticRegression, "sgdc":SGDClassifier,"mtElasticNet":MultiTaskElasticNet,"elasticNet":ElasticNet,"perceptron":Perceptron, "randForest":RandomForestClassifier, "svm-rbf":SVC}
+    classifiers_names = ["bag_nsc_corr", "bag_nsc_eucl", "nsc_eucl", "nsc_corr", "svm-rbf", "tree"]# ["svm","svm-rbf","tree","nsc","naive_bayes","glm","sgdc","perceptron", "randForest"] #["svm","tree","nsc","naive_bayes"]
+    classifiers_class = {
+                        "svm":svm.LinearSVC, 
+                        "tree":tree.DecisionTreeClassifier, 
+                        "nsc":NearestCentroid, 
+                        "naive_bayes":GaussianNB, 
+                        "glm": LogisticRegression, 
+                        "sgdc":SGDClassifier,
+                        "mtElasticNet":MultiTaskElasticNet,
+                        "elasticNet":ElasticNet,
+                        "perceptron":Perceptron, 
+                        "randForest":RandomForestClassifier, 
+                        "svm-rbf":SVC
+                        "bag_nsc_corr": , 
+                        "bag_nsc_eucl": , 
+                        "nsc_eucl": , 
+                        "nsc_corr": ,}
 
     min_accuracy = 0
     static_min_accuracy = 0
