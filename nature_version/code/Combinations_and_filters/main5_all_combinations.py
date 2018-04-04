@@ -146,9 +146,9 @@ def evaluate(args):
             elif name == "bag_kneighbor":
                 classifier = BaggingClassifier(KNeighborsClassifier())
             elif name == "bag_tree":
-                classifier = BaggingClassifier(tree.DecisionTreeClassifier())
+                classifier = BaggingClassifier(tree.DecisionTreeClassifier(),random_state=7)
             elif name == "bag_svm_rbf":
-                classifier = BaggingClassifier(SVC())
+                classifier = BaggingClassifier(SVC(),random_state=7)
             
             std_scale = preprocessing.StandardScaler().fit(x_train)
             classifier.fit(std_scale.transform(x_train), y_train)
@@ -252,7 +252,7 @@ if __name__ == '__main__':
 
     # classifiers that will be considered "bag_nsc_corr",  "nsc_corr",
     #"bag_nsc_corr", "bag_nsc_eucl", "nsc_eucl", "nsc_corr", "bag_kneighbor", "bag_tree", "bag_svm_rbf"
-    classifiers_names = ["bag_nsc_eucl"]#,"nsc"]#"svm-rbf", "tree",  "bag_svm_rbf", "bag_tree", "bag_kneighbor"]# ["svm","svm-rbf","tree","nsc","naive_bayes","glm","sgdc","perceptron", "randForest"] #["svm","tree","nsc","naive_bayes"]
+    classifiers_names = ["nsc","svm-rbf","tree","bag_tree","bag_nsc_eucl","bag_svm_rbf"]#,"nsc"]#"svm-rbf", "tree",  "bag_svm_rbf", "bag_tree", "bag_kneighbor"]# ["svm","svm-rbf","tree","nsc","naive_bayes","glm","sgdc","perceptron", "randForest"] #["svm","tree","nsc","naive_bayes"]
     classifiers_class = {
                         "svm":svm.LinearSVC, 
                         "tree":tree.DecisionTreeClassifier, 
@@ -268,11 +268,15 @@ if __name__ == '__main__':
                         }
 
     view_classifiers_names = {
-                            "svm-linear":"SVM - Linear",
-                            "svm-rbf":"SVM - Radial", 
+                            "svm-linear":"Linear SVM",
+                            "svm-rbf":"RBF SVM",
+                            "tree": "Decision Tree",
+                            "nsc": "Nearest Centroid"
                             "glm":"Logistic Regression", 
                             "naive_bayes":"Gaussian Naive Bayes",
-                            "bag_nsc_eucl": "NSC Ensemble"
+                            "bag_nsc_eucl": "NSC Ensemble",
+                            "bag_tree": "Decision Tree Ensemble",
+                            "bag_svm_rbf": "RBF SVM Ensemble"
                             }                   
 
     min_accuracy = 0
@@ -311,7 +315,7 @@ if __name__ == '__main__':
     #     if n_possible_groups > 300:
     #         n_splits = n_possible_groups/2.5
 
-    pool = Pool(processes=n_cpu)
+    pool = Pool(processes=n_cpu-2)
     
     start = time.time()
     maxAcc = 0.0    
@@ -375,7 +379,7 @@ if __name__ == '__main__':
                             for i in range(len(fpr_l)):                                
                                 tpr = tpr_l[i]
                                 fpr = fpr_l[i]
-                                gray_line, = plt.plot(fpr, tpr, 'gray', alpha=0.3)
+                                gray_line, = plt.plot(fpr, tpr, 'gray', alpha=0.11)
 
                                 tpr = interp(base_fpr, fpr, tpr)
                                 tpr[0] = 0.0
@@ -429,13 +433,13 @@ if __name__ == '__main__':
                         if name == "bag_nsc_corr":
                             classifier = BaggingClassifier(NearestCentroid(metric='correlation'))
                         elif name == "bag_nsc_eucl":
-                            classifier = BaggingClassifier(NearestCentroid(), max_samples=0.9)
+                            classifier = BaggingClassifier(NearestCentroid(),random_state=7)
                         elif name == "bag_kneighbor":
-                            classifier = BaggingClassifier(KNeighborsClassifier(), max_samples=0.9)
+                            classifier = BaggingClassifier(KNeighborsClassifier(),random_state=7)
                         elif name == "bag_tree":
-                            classifier = BaggingClassifier(tree.DecisionTreeClassifier(), max_samples=0.9)
+                            classifier = BaggingClassifier(tree.DecisionTreeClassifier(),random_state=7)
                         elif name == "bag_svm_rbf":
-                            classifier = BaggingClassifier(SVC(), max_samples=0.9)
+                            classifier = BaggingClassifier(SVC(),random_state=7)
                         else:    
                             classifier = classifiers_class[name]()
                         
@@ -565,13 +569,13 @@ if __name__ == '__main__':
                 if name == "bag_nsc_corr":
                     classifier = BaggingClassifier(NearestCentroid(metric='correlation'))
                 elif name == "bag_nsc_eucl":
-                    classifier = BaggingClassifier(NearestCentroid(), max_samples=0.9)
+                    classifier = BaggingClassifier(NearestCentroid(),random_state=7)
                 elif name == "bag_kneighbor":
-                    classifier = BaggingClassifier(KNeighborsClassifier(), max_samples=0.9)
+                    classifier = BaggingClassifier(KNeighborsClassifier())
                 elif name == "bag_tree":
-                    classifier = BaggingClassifier(tree.DecisionTreeClassifier(), max_samples=0.9)
+                    classifier = BaggingClassifier(tree.DecisionTreeClassifier(),)
                 elif name == "bag_svm_rbf":
-                    classifier = BaggingClassifier(SVC(), max_samples=0.9)
+                    classifier = BaggingClassifier(SVC())
                 else:    
                     classifier = classifiers_class[name]()
                 # standardize attributes to mean 0 and desv 1 (z-score)
