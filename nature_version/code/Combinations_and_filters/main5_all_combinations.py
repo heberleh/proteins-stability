@@ -27,6 +27,14 @@ import numpy as np
 import gc
 import csv
 
+from sklearn.ensemble import BaggingClassifier 
+from sklearn.neighbors import KNeighborsClassifier
+
+from sklearn.metrics import roc_auc_score, roc_curve, auc
+import matplotlib.pyplot as plt
+
+from pylab import interp, savefig
+
 import math
 
 def nCr(n,r):
@@ -104,9 +112,16 @@ def key(genes):
 def evaluate(args):
     classifiers_class = {"svm":svm.LinearSVC, "tree":tree.DecisionTreeClassifier, "nsc":NearestCentroid, "naive_bayes":GaussianNB, "glm": LogisticRegression, "sgdc":SGDClassifier,"mtElasticNet":MultiTaskElasticNet,"elasticNet":ElasticNet,"perceptron":Perceptron, "randForest":RandomForestClassifier, "svm-rbf":SVC}
 
-    dataset, outer_folds, classifier_name = args[1], args[2], args[3]#, args[4], args[5]
+    alternatives_classifiers = ["bag_nsc_eucl", "bag_kneighbor", "bag_tree", "bag_svm_rbf"]
+
+    dataset, outer_folds, name, k = args[1], args[2], args[3], args[4]#, args[5]
     t = []
     p = []
+    fpr_l = []
+    tpr_l = []
+    y_folds = []
+    probs_folds = []  
+    i = 0  
     for train_index, test_index in outer_folds: #bootstrap? (100 iterations...)
         newdataset1 = dataset.get_sub_dataset_by_samples(train_index)        
         test_dataset1 = dataset.get_sub_dataset_by_samples(test_index)
@@ -116,29 +131,73 @@ def evaluate(args):
 
         x_test = test_dataset1.matrix[:, args[0]]
         y_test = factorize(test_dataset1.labels)[0]
+          
+        if name in alternatives_classifiers:
+            classifier = None
+            #This algorithm encompasses several works from the literature. When random subsets of the dataset 
+            # are drawn as random subsets of the samples, then this algorithm is known as Pasting [R154]. 
+            # If samples are drawn with replacement, then the method is known as Bagging [R155]. When 
+            # random subsets of the dataset are drawn as random subsets of the features, then the method 
+            # is known as Random Subspaces [R156]. Finally, when base estimators are built on subsets of 
+            # both samples and features, then the method is known as Random Patches [R157].
 
-        classifier = classifiers_class[classifier_name]()
-        std_scale = preprocessing.StandardScaler().fit(x_train)
-        classifier.fit(std_scale.transform(x_train), y_train)
+            if name == "bag_nsc_eucl":
+                classifier = BaggingClassifier(NearestCentroid())#,n_estimators=20
+            elif name == "bag_kneighbor":
+                classifier = BaggingClassifier(KNeighborsClassifier())
+            elif name == "bag_tree":
+                classifier = BaggingClassifier(tree.DecisionTreeClassifier())
+            elif name == "bag_svm_rbf":
+                classifier = BaggingClassifier(SVC())
+            
+            std_scale = preprocessing.StandardScaler().fit(x_train)
+            classifier.fit(std_scale.transform(x_train), y_train)
+            t.extend(y_test)
+            p.extend(classifier.predict(std_scale.transform(x_test)))
+           
+            independent_probs = classifier.predict_proba(std_scale.transform(x_test))[:,1]
+            probs_folds.extend(independent_probs)
+            y_folds.extend(y_test)
+
+        else:            
+            classifier = classifiers_class[name]()
+            std_scale = preprocessing.StandardScaler().fit(x_train)
+            classifier.fit(std_scale.transform(x_train), y_train)
         
-        t.extend(y_test)
-        p.extend(classifier.predict(std_scale.transform(x_test)))
-    return {'g':args[0], 't':t, 'p':p}
-    
+            t.extend(y_test)
+            p.extend(classifier.predict(std_scale.transform(x_test)))
+
+        if i == k-1:
+            i = 0
+            if name in alternatives_classifiers:
+                fpr, tpr, _ = roc_curve(y_folds, probs_folds)                
+                fpr_l.append(fpr)
+                tpr_l.append(tpr)            
+                y_folds = []
+                probs_folds = []
+        else:
+            i += 1
+
+    return {'g':args[0], 't':t, 'p':p, 'fpr_l':fpr_l, 'tpr_l':tpr_l}     
+
+
 
 def split(arr, count):
      return [arr[i::count] for i in range(count)]
 
 
 if __name__ == '__main__':
+    
+    path_results = "./results/proteins/"
+    path_dataset = "./dataset/proteins/"
 
     start = time.time()
 
     global x, y, n, k, ns, nk, max_len, min_acc, classifier_class, min_break_accuracy, dataset
 
-    dataset = Dataset("./dataset/proteins/independent_train.txt", scale=False, normalize=False, sep='\t')
+    dataset = Dataset(path_dataset+"independent_train.txt", scale=False, normalize=False, sep='\t')
 
-    dataset_test = Dataset("./dataset/proteins/independent_test.txt", scale=False, normalize=False, sep='\t')
+    dataset_test = Dataset(path_dataset+"independent_test.txt", scale=False, normalize=False, sep='\t')
 
     filter = True
     filter_name = "wilcoxon"
@@ -149,7 +208,7 @@ if __name__ == '__main__':
             # Filtering train and test Datasets
             wil = WilcoxonRankSumTest(dataset)
             wil_z, wil_p = wil.run()            
-            with open('./results/proteins/combinations/wilcoxon_test.csv', 'w') as f:
+            with open(path_results+'combinations/wilcoxon_test.csv', 'w') as f:
                 f.write("gene,p-value\n")
                 for i in range(len(dataset.genes)):
                     f.write(dataset.genes[i]+","+str(wil_p[i])+"\n")        
@@ -161,7 +220,7 @@ if __name__ == '__main__':
             # Filtering train and test Datasets
             ttest = TTest(dataset)
             ttest_t, ttest_p = ttest.run()            
-            with open('./results/proteins/combinations/t_test.csv', 'w') as f:
+            with open(path_results+'combinations/t_test.csv', 'w') as f:
                 f.write("gene,p-value\n")
                 for i in range(len(dataset.genes)):
                     f.write(dataset.genes[i]+","+str(ttest_p[i])+"\n")        
@@ -191,8 +250,9 @@ if __name__ == '__main__':
     from sklearn.ensemble import RandomForestClassifier
     from sklearn.svm import SVC
 
-    # classifiers that will be considered
-    classifiers_names = ["bag_nsc_corr", "bag_nsc_eucl", "nsc_eucl", "nsc_corr", "svm-rbf", "tree"]# ["svm","svm-rbf","tree","nsc","naive_bayes","glm","sgdc","perceptron", "randForest"] #["svm","tree","nsc","naive_bayes"]
+    # classifiers that will be considered "bag_nsc_corr",  "nsc_corr",
+    #"bag_nsc_corr", "bag_nsc_eucl", "nsc_eucl", "nsc_corr", "bag_kneighbor", "bag_tree", "bag_svm_rbf"
+    classifiers_names = ["bag_nsc_eucl"]#,"nsc"]#"svm-rbf", "tree",  "bag_svm_rbf", "bag_tree", "bag_kneighbor"]# ["svm","svm-rbf","tree","nsc","naive_bayes","glm","sgdc","perceptron", "randForest"] #["svm","tree","nsc","naive_bayes"]
     classifiers_class = {
                         "svm":svm.LinearSVC, 
                         "tree":tree.DecisionTreeClassifier, 
@@ -205,10 +265,15 @@ if __name__ == '__main__':
                         "perceptron":Perceptron, 
                         "randForest":RandomForestClassifier, 
                         "svm-rbf":SVC
-                        "bag_nsc_corr": , 
-                        "bag_nsc_eucl": , 
-                        "nsc_eucl": , 
-                        "nsc_corr": ,}
+                        }
+
+    view_classifiers_names = {
+                            "svm-linear":"SVM - Linear",
+                            "svm-rbf":"SVM - Radial", 
+                            "glm":"Logistic Regression", 
+                            "naive_bayes":"Gaussian Naive Bayes",
+                            "bag_nsc_eucl": "NSC Ensemble"
+                            }                   
 
     min_accuracy = 0
     static_min_accuracy = 0
@@ -251,10 +316,12 @@ if __name__ == '__main__':
     start = time.time()
     maxAcc = 0.0    
     maxF1 = 0.0
-    with open('./results/proteins/combinations/predictions_all_classifiers_n_signatures.csv', 'w') as f:
+    with open(path_results+'combinations/predictions_all_classifiers_n_signatures.csv', 'w') as f:
         for name in classifiers_names:
-            line = "classifier, n, f1, acc, recall, precision, f1_independent, acc_independent, recall_independent, precision_independent, signature\n"
-            f.write(line)               
+            line = "classifier, n, f1, acc, recall, precision, auc_cv_mean, f1_independent, acc_independent, recall_independent, precision_independent, auc_independent, signature\n"
+            f.write(line)
+            print "Classifier name", name
+
             for sub_list_size in range(1, max_group_size+1):
                 genes_freq =[0 for i in range(len(dataset.genes))]
                             
@@ -276,7 +343,7 @@ if __name__ == '__main__':
                         try:
                             g = next(all_possible_groups)               
                             #dataset, outer_folds, classifier_name        
-                            current_args.append((g, dataset, outer_folds, name)) 
+                            current_args.append((g, dataset, outer_folds, name, k)) 
                         except:
                             hasnext = False
                             break
@@ -285,12 +352,57 @@ if __name__ == '__main__':
                     result_part = pool.map(evaluate, current_args)
 
                     gc.collect()
+                    
                     for i in range(len(result_part)):            
                         result = result_part[i]
 
                         group = [dataset.genes[i] for i in result["g"]]
                         truth = result['t']
                         predicted = result['p']
+
+                        auc_cv_mean = -1.0
+                        if 'bag' in name:
+                            fpr_l = result['fpr_l']
+                            tpr_l = result['tpr_l']
+
+                          
+                            plt.figure(figsize=(12, 11))                       
+                            plt.title(view_classifiers_names[name]+' ROC curve for '+str(group))    
+                            
+                            base_fpr = np.linspace(0, 1, 101)
+                            tprs = []
+                            for i in range(len(fpr_l)):                                
+                                tpr = tpr_l[i]
+                                fpr = fpr_l[i]
+                                plt.plot(fpr, tpr, 'gray', alpha=0.3, label="Rep-i ROC")
+
+                                tpr = interp(base_fpr, fpr, tpr)
+                                tpr[0] = 0.0
+                                tprs.append(tpr)
+
+                            tprs = np.array(tprs)
+                            mean_tprs = tprs.mean(axis=0)
+                            std = tprs.std(axis=0)
+                            tprs_upper = np.minimum(mean_tprs + std, 1)
+                            tprs_lower = mean_tprs - std        
+
+                            # mean_fprs = tprs.mean(axis=1)     
+
+                            roc_auc = auc(base_fpr, mean_tprs)                                            
+                            plt.plot(base_fpr, mean_tprs, 'b', label="Mean ROC (AUC = %0.3f)"%(roc_auc))
+                            plt.fill_between(base_fpr, tprs_lower, tprs_upper, color='grey', alpha=0.3)
+                            plt.legend(loc='lower right')
+                            plt.plot([0,1],[0,1],'r--')
+                            plt.xlim([-0.01,1.01])
+                            plt.ylim([-0.01,1.01])  #sensitivity vs 1-Specificity.
+                            plt.ylabel('Sensitivity')
+                            plt.xlabel('1 - Specificity')
+                            # plt.tight_layout()
+                            savefig(path_results+'roc/'+'cv_roc_CONCAT_'+str(group)+'_________'+name+'_'+'.png')
+                            plt.close()
+
+                            auc_cv_mean = roc_auc
+
 
                         acc = metrics.accuracy_score(truth,predicted)
                         f1 = metrics.f1_score(truth,predicted)
@@ -304,15 +416,57 @@ if __name__ == '__main__':
                         x_test = dataset_test.matrix[:, result["g"]]
                         y_test = factorize(dataset_test.labels)[0]
 
-                        classifier = classifiers_class[name]()
+                        classifier = None
+                        if name == "bag_nsc_corr":
+                            classifier = BaggingClassifier(NearestCentroid(metric='correlation'))
+                        elif name == "bag_nsc_eucl":
+                            classifier = BaggingClassifier(NearestCentroid(), max_samples=0.9)
+                        elif name == "bag_kneighbor":
+                            classifier = BaggingClassifier(KNeighborsClassifier(), max_samples=0.9)
+                        elif name == "bag_tree":
+                            classifier = BaggingClassifier(tree.DecisionTreeClassifier(), max_samples=0.9)
+                        elif name == "bag_svm_rbf":
+                            classifier = BaggingClassifier(SVC(), max_samples=0.9)
+                        else:    
+                            classifier = classifiers_class[name]()
+                        
                         std_scale = preprocessing.StandardScaler().fit(x_train)
                         classifier.fit(std_scale.transform(x_train), y_train)                       
                         independent_prediction = classifier.predict(std_scale.transform(x_test))
+                        y_probas = classifier.predict(std_scale.transform(x_test))
 
                         acc_independent = metrics.accuracy_score(y_test,independent_prediction)
                         f1_independent = metrics.f1_score(y_test,independent_prediction)
                         precision_independent = metrics.precision_score(y_test,independent_prediction)
                         recall_independent = metrics.recall_score(y_test,independent_prediction)
+
+                        auc_independent = -1.0
+                        if 'bag' in name:
+                            independent_probs = classifier.predict_proba(std_scale.transform(x_test))[:,1]
+                            auc_independent = roc_auc_score(y_test, independent_probs)
+                            fpr, tpr, _ = roc_curve(y_test, independent_probs) 
+
+                            plt.figure(figsize=(12, 11))
+                            plt.title(view_classifiers_names[name]+' ROC curve for '+str(group))
+                            
+                            base_fpr = np.linspace(0, 1, 101)
+                            tpr = interp(base_fpr, fpr, tpr)
+                            tpr[0] = 0.0
+
+                            roc_auc = auc(base_fpr, tpr)
+                            plt.plot(base_fpr, tpr, 'b', label="ROC (AUC = %0.3f)"%(roc_auc))
+                            plt.legend(loc='lower right')
+                            plt.plot([0,1],[0,1],'r--')
+                            plt.xlim([-0.01,1.01])
+                            plt.ylim([-0.01,1.01])  #sensitivity vs 1-Specificity.
+                            plt.ylabel('Sensitivity')
+                            plt.xlabel('1 - Specificity')
+                            # plt.tight_layout()
+                            savefig(path_results+'roc/'+'roc_independent_'+str(group)+'_________'+name+'_'+'.png')
+                            plt.close()
+
+
+
 
                         if acc > maxAcc:
                             maxAcc = acc 
@@ -325,10 +479,12 @@ if __name__ == '__main__':
                                       str(acc)+","+\
                                       str(recall)+","+\
                                       str(precision)+","+\
+                                      str(auc_cv_mean)+","+\
                                       str(f1_independent)+","+\
                                       str(acc_independent)+","+\
                                       str(recall_independent)+","+\
-                                      str(precision_independent)
+                                      str(precision_independent)+","+\
+                                      str(auc_independent)
                         #"n, f1, acc, recall, precision, signature\n"                               
                         for g in group:
                             line = line + "," + str(g)
@@ -396,7 +552,19 @@ if __name__ == '__main__':
                 x_te = x_test[:,genes_index]
                 y_te = y_test
 
-                classifier = classifiers_class[name]()
+                classifier = None
+                if name == "bag_nsc_corr":
+                    classifier = BaggingClassifier(NearestCentroid(metric='correlation'))
+                elif name == "bag_nsc_eucl":
+                    classifier = BaggingClassifier(NearestCentroid(), max_samples=0.9)
+                elif name == "bag_kneighbor":
+                    classifier = BaggingClassifier(KNeighborsClassifier(), max_samples=0.9)
+                elif name == "bag_tree":
+                    classifier = BaggingClassifier(tree.DecisionTreeClassifier(), max_samples=0.9)
+                elif name == "bag_svm_rbf":
+                    classifier = BaggingClassifier(SVC(), max_samples=0.9)
+                else:    
+                    classifier = classifiers_class[name]()
                 # standardize attributes to mean 0 and desv 1 (z-score)
                 std_scale = preprocessing.StandardScaler().fit(x_tr)
                 classifier.fit(std_scale.transform(x_tr), y_tr)
@@ -413,35 +581,10 @@ if __name__ == '__main__':
                     signature.add_pair_truth_prediced(y_te,predicted)                        
                     signatures.append(signature)
         
-    
-        # if len(all_signature_genes) > 0:
-        #     genes_index = []
-        #     for i in range(len(dataset.genes)):
-        #         for gene in all_signature_genes:
-        #             if dataset.genes[i] == gene:
-        #                 genes_index.append(i)
-
-        #     x_tr = x_train[:,genes_index]  # data matrix
-        #     y_tr = y_train
-        #     x_te = x_test[:,genes_index]
-        #     y_te = y_test
-
-        #     classifier = tree.DecisionTreeClassifier()
-        #     # standardize attributes to mean 0 and desv 1 (z-score)
-        #     std_scale = preprocessing.StandardScaler().fit(x_tr)
-        #     classifier.fit(std_scale.transform(x_tr), y_tr)
-        #     accuracy = metrics.accuracy_score(y_te, classifier.predict(std_scale.transform(x_te)))  
-            
-        #     with open('./results/combinations/kfold_test_with_all_signature_genes.csv', 'a') as f:
-        #         f.write(str(len(all_signature_genes))+","+str(accuracy))
-        #         for gene in all_signature_genes:
-        #             f.write(","+gene)
-        #         f.write("\n")
-        #         f.close()
         csv_file.close()
         
     for name in classifiers_names:
-        with open('./results/proteins/combinations/all_sig_dcv_acc_'+name+'.csv', 'w') as f:
+        with open(path_results+'combinations/all_sig_dcv_acc_'+name+'.csv', 'w') as f:
             signatures = all_signatures[name]["signatures"]  
             min_acc = 1
             max_acc = 0
@@ -461,218 +604,3 @@ if __name__ == '__main__':
                 f.write("\n")
             f.close()
     
-
-
-
-    
-    # print "\n\n Time to complete the algorithm", (time.time() - start)/60, "minutes."
-
-    # with open('./results/combinations/signatures_combinations.csv', 'w') as f:
-    #     f.write("n,avg_acc,stddev_acc,ind_avg_acc,ind_stddev_acc,weight,signature\n")       
-    #     for signature in all_signatures:
-    #         print "accs", signature.get_independent_test_accs()
-    #         mean_acc=0.0
-    #         std_acc=0.0
-    #         mean_independent_acc=0.0
-    #         std_independent_acc=0.0
-    #         if signature.get_weight() == 1: 
-    #             mean_acc= signature.get_accs()[0]
-    #             std_acc=0
-    #             mean_independent_acc=signature.get_independent_test_accs()[0]
-    #             std_independent_acc=0
-    #         else:
-    #             mean_acc=np.mean(signature.get_accs())
-    #             std_acc=np.std(signature.get_accs())
-    #             mean_independent_acc=np.mean(signature.get_independent_test_accs())
-    #             std_independent_acc=np.std(signature.get_independent_test_accs()) 
-
-    #         f.write(
-    #             str(signature.get_n())+","+
-    #             str(mean_acc)+","+
-    #             str(std_acc)+","+
-    #             str(mean_independent_acc)+","+
-    #             str(std_independent_acc)+","+
-    #             str(signature.get_weight()))
-
-    #         for gene in signature.genes:
-    #             f.write(","+gene)
-    #         f.write("\n")
-    #     f.close()
-    
-    
-    # intersection_of_all_independent_proteins = kfold_independent_proteins[0]    
-    # union_of_all_independent_proteins = set()
-    # for key in kfold_independent_proteins:        
-
-    #     union_of_all_independent_proteins = union_of_all_independent_proteins | kfold_independent_proteins[key]
-
-    #     intersection_of_all_independent_proteins = intersection_of_all_independent_proteins & kfold_independent_proteins[key]
-
-
-    # intersection_of_all_signature_proteins = kfold_signature_proteins[0]    
-    # union_of_all_signature_proteins = set()
-    # for key in kfold_signature_proteins:        
-
-    #     union_of_all_signature_proteins = union_of_all_signature_proteins | kfold_signature_proteins[key]
-
-    #     intersection_of_all_signature_proteins = intersection_of_all_signature_proteins & kfold_signature_proteins[key]
-
-
-    # with open('./results/combinations/independent_test_set.csv', 'w') as f:
-    #     f.write("type,acc,n,proteins\n")  
-    
-    #     # test independent dataset
-        
-    #     #__________________________________________________
-    #     # with intersection of "most independent proteins"
-    #     if len(intersection_of_all_independent_proteins) > 0:
-    #         genes_index = []
-    #         for i in range(len(dataset.genes)):
-    #             for gene in intersection_of_all_independent_proteins:
-    #                 if dataset.genes[i] == gene:
-    #                     genes_index.append(i)
-
-    #         x_tr = x_train[:,genes_index]  # data matrix
-    #         y_tr = y_train
-    #         x_te = x_test[:,genes_index]
-    #         y_te = y_test
-
-    #         classifier = tree.DecisionTreeClassifier()
-    #         # standardize attributes to mean 0 and desv 1 (z-score)
-    #         std_scale = preprocessing.StandardScaler().fit(x_tr)
-    #         classifier.fit(std_scale.transform(x_tr), y_tr)
-    #         accuracy = metrics.accuracy_score(y_te, classifier.predict(std_scale.transform(x_te)))
-            
-    #         f.write("intersection_of_all_independent_proteins,"+str(accuracy)+","
-    #         +str(len(intersection_of_all_independent_proteins)))
-    #         for gene in intersection_of_all_independent_proteins:
-    #             f.write(","+gene)
-    #         f.write("\n")
-        
-        
-    #     #__________________________________________________
-    #     # with union of "most independent proteins"
-    #     if len(union_of_all_independent_proteins) > 0:
-    #         genes_index = []
-    #         for i in range(len(dataset.genes)):
-    #             for gene in union_of_all_independent_proteins:
-    #                 if dataset.genes[i] == gene:
-    #                     genes_index.append(i)
-
-    #         x_tr = x_train[:,genes_index]  # data matrix
-    #         y_tr = y_train
-    #         x_te = x_test[:,genes_index]
-    #         y_te = y_test
-
-    #         classifier = tree.DecisionTreeClassifier()
-    #         # standardize attributes to mean 0 and desv 1 (z-score)
-    #         std_scale = preprocessing.StandardScaler().fit(x_tr)
-    #         classifier.fit(std_scale.transform(x_tr), y_tr)
-    #         accuracy = metrics.accuracy_score(y_te, classifier.predict(std_scale.transform(x_te)))
-
-    #         f.write("union_of_all_independent_proteins,"+str(accuracy)+","
-    #         +str(len(union_of_all_independent_proteins)))
-    #         for gene in union_of_all_independent_proteins:
-    #             f.write(","+gene)
-    #         f.write("\n")
-
-    #     #__________________________________________________
-    #     # with intersection of "union of signature proteins"
-    #     if len(intersection_of_all_signature_proteins) > 0:
-    #         genes_index = []
-    #         for i in range(len(dataset.genes)):
-    #             for gene in intersection_of_all_signature_proteins:
-    #                 if dataset.genes[i] == gene:
-    #                     genes_index.append(i)
-
-    #         x_tr = x_train[:,genes_index]  # data matrix
-    #         y_tr = y_train
-    #         x_te = x_test[:,genes_index]
-    #         y_te = y_test
-
-    #         classifier = tree.DecisionTreeClassifier()
-    #         # standardize attributes to mean 0 and desv 1 (z-score)
-    #         std_scale = preprocessing.StandardScaler().fit(x_tr)
-    #         classifier.fit(std_scale.transform(x_tr), y_tr)
-    #         accuracy = metrics.accuracy_score(y_te, classifier.predict(std_scale.transform(x_te)))
-            
-    #         f.write("intersection_of_all_signature_proteins,"+str(accuracy)+","
-    #         +str(len(intersection_of_all_signature_proteins)))
-    #         for gene in intersection_of_all_signature_proteins:
-    #             f.write(","+gene)
-    #         f.write("\n")        
-
-    #     #__________________________________________________
-    #     # with union of "union of signature proteins"
-    #     if len(union_of_all_signature_proteins) > 0:
-    #         genes_index = []
-    #         for i in range(len(dataset.genes)):
-    #             for gene in union_of_all_signature_proteins:
-    #                 if dataset.genes[i] == gene:
-    #                     genes_index.append(i)
-
-    #         x_tr = x_train[:,genes_index]  # data matrix
-    #         y_tr = y_train
-    #         x_te = x_test[:,genes_index]
-    #         y_te = y_test
-
-    #         classifier = tree.DecisionTreeClassifier()
-    #         # standardize attributes to mean 0 and desv 1 (z-score)
-    #         std_scale = preprocessing.StandardScaler().fit(x_tr)
-    #         classifier.fit(std_scale.transform(x_tr), y_tr)
-    #         accuracy = metrics.accuracy_score(y_te, classifier.predict(std_scale.transform(x_te)))
-        
-    #         f.write("union_of_all_signature_proteins,"+str(accuracy)+","
-    #         +str(len(union_of_all_signature_proteins)))
-    #         for gene in union_of_all_signature_proteins:
-    #             f.write(","+gene)
-    #         f.write("\n")
-
-        
-        # if len(union_of_all_independent_proteins) > 2:
-        #     newdataset5 = newdataset1.get_sub_dataset([gene for gene in union_of_all_independent_proteins])           
-
-        #     filename = evaluate_genes(dataset=newdataset5, min_accuracy=static_min_accuracy, n=n, k=kinner, min_group_size=1, max_group_size=3,classifiers_names=classifiers_names)
-            
-            
-        #     possible_edges = []
-        #     with open(filename, 'r') as csv_file:
-        #         reader = csv.reader(csv_file, delimiter=",")
-        #         reader.next()                
-        #         f.write("signature,acc,n,signatures formed by union_of_all_independent_proteins crosvalidated externally\n")            
-        #         for row in reader:
-        #             f.write(","+str(row[1])+",")
-        #             genes = []
-        #             for col in range(2,len(row)):
-        #                 genes.append(row[col])
-        #             f.write(str(len(genes)))
-        #             for gene in genes:
-        #                 f.write(","+gene)
-        #             f.write("\n")
-
-        #             if len(genes) == 3:
-        #                 edge0 = PossibleEdge(genes[0],genes[1]) #out 2
-        #                 edge1 = PossibleEdge(genes[1],genes[2]) #out 0                        
-        #                 edge2 = PossibleEdge(genes[0],genes[2]) #out 1
-                        
-        #                 if edge0 not in possible_edges:
-        #                     possible_edges.append(edge0)
-        #                 else:
-        #                     possible_edges[possible_edges.index(edge0)].increment_count()
-
-        #                 if edge1 not in possible_edges:
-        #                     possible_edges.append(edge1)
-        #                 else:
-        #                     possible_edges[possible_edges.index(edge1)].increment_count()
-
-        #                 if edge2 not in possible_edges:
-        #                     possible_edges.append(edge2)
-        #                 else:
-        #                     possible_edges[possible_edges.index(edge2)].increment_count()                    
-
-        #     with open('./results/combinations/possible_interactions_union_of_all_independent_proteins.csv', 'w') as f2:
-        #         f2.write("source,target,weight\n")
-        #         for edge in possible_edges:
-        #             f2.write(edge.source+","+edge.target+","+str(edge.count)+"\n")
-        #         f2.close
-        # f.close()
