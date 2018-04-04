@@ -32,7 +32,7 @@ from sklearn.neighbors import KNeighborsClassifier
 
 from sklearn.metrics import roc_auc_score, roc_curve, auc
 import matplotlib.pyplot as plt
-
+import matplotlib.lines as mlines
 from pylab import interp, savefig
 
 import math
@@ -142,7 +142,7 @@ def evaluate(args):
             # both samples and features, then the method is known as Random Patches [R157].
 
             if name == "bag_nsc_eucl":
-                classifier = BaggingClassifier(NearestCentroid())#,n_estimators=20
+                classifier = BaggingClassifier(NearestCentroid(),random_state=7)#,n_estimators=20
             elif name == "bag_kneighbor":
                 classifier = BaggingClassifier(KNeighborsClassifier())
             elif name == "bag_tree":
@@ -188,8 +188,8 @@ def split(arr, count):
 
 if __name__ == '__main__':
     
-    path_results = "./results/proteins/"
-    path_dataset = "./dataset/proteins/"
+    path_results = "./results/"
+    path_dataset = "./dataset/"
 
     start = time.time()
 
@@ -280,7 +280,7 @@ if __name__ == '__main__':
     #min_accuracy = 0.8
     
     k = 8  # k-fold cross validations - outer    
-    n_repeats = 100    
+    n_repeats = 100   
     max_group_size = len(dataset.genes)
 
     print "mas groups size: ", max_group_size
@@ -370,11 +370,12 @@ if __name__ == '__main__':
                             plt.title(view_classifiers_names[name]+' ROC curve for '+str(group))    
                             
                             base_fpr = np.linspace(0, 1, 101)
-                            tprs = []
+                            tprs = []  
+                            gray_line = None                          
                             for i in range(len(fpr_l)):                                
                                 tpr = tpr_l[i]
                                 fpr = fpr_l[i]
-                                plt.plot(fpr, tpr, 'gray', alpha=0.3, label="Rep-i ROC")
+                                gray_line, = plt.plot(fpr, tpr, 'gray', alpha=0.3)
 
                                 tpr = interp(base_fpr, fpr, tpr)
                                 tpr[0] = 0.0
@@ -388,8 +389,16 @@ if __name__ == '__main__':
 
                             # mean_fprs = tprs.mean(axis=1)     
 
-                            roc_auc = auc(base_fpr, mean_tprs)                                            
-                            plt.plot(base_fpr, mean_tprs, 'b', label="Mean ROC (AUC = %0.3f)"%(roc_auc))
+                            roc_auc = auc(base_fpr, mean_tprs)                                      
+
+                            # gray_line = mlines.Line2D([], [], color='gray', alpha=0.5, label="Rep-i ROC")
+                            
+                            blue_line, = plt.plot(base_fpr, mean_tprs, 'b')#, label="Mean ROC (AUC = %0.3f)"%(roc_auc))
+                            label="Mean ROC (AUC = %0.3f)"%(roc_auc)
+                            plt.rc('font', **{'family':'serif','serif':['Palatino']})
+                            
+                            plt.legend((gray_line, blue_line),("Rep-i ROC", label), loc=4)
+
                             plt.fill_between(base_fpr, tprs_lower, tprs_upper, color='grey', alpha=0.3)
                             plt.legend(loc='lower right')
                             plt.plot([0,1],[0,1],'r--')
