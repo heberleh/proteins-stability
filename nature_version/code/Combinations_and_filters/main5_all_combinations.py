@@ -4,38 +4,45 @@ Created on Sat Nov 20
 
 @author: Henry
 """
-from pandas import factorize
-from dataset import Dataset
-#from wilcoxon import WilcoxonRankSumTest
-#from kruskal import KruskalRankSumTest3Classes
-from numpy import min, unique
-import time
+import csv
+import gc
 import itertools
-from multiprocessing import Pool, Lock, cpu_count
+import math
+import time
+from datetime import datetime
+from multiprocessing import Lock, Pool, cpu_count
+
+import matplotlib.lines as mlines
+import matplotlib.pyplot as plt
+import numpy as np
+
+from numpy import mean, median, min, std, unique
+from pandas import factorize
+from pylab import interp, savefig
+from sklearn import metrics, preprocessing, svm, tree
+from sklearn.cross_validation import KFold
+from sklearn.ensemble import (BaggingClassifier, GradientBoostingClassifier,
+                              RandomForestClassifier)
+from sklearn.linear_model import (ElasticNet, LogisticRegression,
+                                  MultiTaskElasticNet,
+                                  PassiveAggressiveClassifier, Perceptron,
+                                  SGDClassifier)
+from sklearn.metrics import auc, roc_auc_score, roc_curve
 #from sklearn.cross_validation import StratifiedKFold
 from sklearn.model_selection import RepeatedStratifiedKFold
-from wilcoxon import WilcoxonRankSumTest
-from ttest import TTest
-from signature import Signature
-from possibleEdge import PossibleEdge
-from sklearn.cross_validation import KFold
-from sklearn import preprocessing
-from numpy import mean, std, median
-from sklearn import metrics
-from datetime import datetime
-import numpy as np
-import gc
-import csv
-
-from sklearn.ensemble import BaggingClassifier 
+from sklearn.naive_bayes import GaussianNB
 from sklearn.neighbors import KNeighborsClassifier
+from sklearn.neighbors.nearest_centroid import NearestCentroid
+from sklearn.svm import SVC
 
-from sklearn.metrics import roc_auc_score, roc_curve, auc
-import matplotlib.pyplot as plt
-import matplotlib.lines as mlines
-from pylab import interp, savefig
+from dataset import Dataset
+from possibleEdge import PossibleEdge
+from signature import Signature
+from ttest import TTest
+from wilcoxon import WilcoxonRankSumTest
+#from wilcoxon import WilcoxonRankSumTest
+#from kruskal import KruskalRankSumTest3Classes
 
-import math
 
 def nCr(n,r):
     f = math.factorial
@@ -108,7 +115,7 @@ class CrossValidation():
 def key(genes):
     return sum([2**i for i in genes])
 
-def buildClassifier(name=name):
+def buildClassifier(name):
     classifier = None
     if name == "svm" or name == "linear-svm":
         classifier = svm.LinearSVC()
@@ -147,7 +154,7 @@ def buildClassifier(name=name):
         predict_proba = False  #?
         decision_function = False #?    
     elif name == "randForest":
-        classifier = RandomForestClassifier()
+        classifier = RandomForestClassifier(n_estimators=15,max_features=None, random_state=7)
         predict_proba = True
         decision_function = False  
     elif name == "svm-rbf":
@@ -215,7 +222,10 @@ def evaluate(args):
             independent_probs = classifier.predict_proba(std_scale.transform(x_test))[:,1]
             probs_folds.extend(independent_probs)
             y_folds.extend(y_test)
-        
+        elif decision_function:            
+            independent_probs = classifier.decision_function(std_scale.transform(x_test))
+            probs_folds.extend(independent_probs)
+            y_folds.extend(y_test)                    
 
         if i == k-1:
             i = 0
@@ -231,7 +241,7 @@ def evaluate(args):
             t = []
             p = []
 
-            if predict_proba:                
+            if predict_proba or decision_function:                
                 fpr, tpr, _ = roc_curve(y_folds, probs_folds)                
                 fpr_l.append(fpr)
                 tpr_l.append(tpr)            
@@ -253,8 +263,8 @@ def split(arr, count):
 
 if __name__ == '__main__':
     
-    path_results = "./results/"
-    path_dataset = "./dataset/"
+    path_results = "./results/proteins/"
+    path_dataset = "./dataset/proteins/"
 
     start = time.time()
 
@@ -301,26 +311,7 @@ if __name__ == '__main__':
     n_classes = len(unique(dataset.labels))
     print "Number of classes: ", str(n_classes)
 
-    # loading classifiers
-    from sklearn.naive_bayes import GaussianNB
-    from sklearn.neighbors.nearest_centroid import NearestCentroid
-    from sklearn import tree
-    from sklearn import svm
-    from sklearn.linear_model import SGDClassifier, Perceptron
-    from sklearn.linear_model import PassiveAggressiveClassifier
-    from sklearn.linear_model import LogisticRegression
-    from sklearn.linear_model import ElasticNet
-    from sklearn.linear_model import MultiTaskElasticNet
-    from sklearn.linear_model import LogisticRegression
-    from sklearn.ensemble import RandomForestClassifier
-    from sklearn.ensemble import GradientBoostingClassifier
-    from sklearn.svm import SVC
-
-
-    # classifiers that will be considered "bag_nsc_corr",  "nsc_corr",
-    #"bag_nsc_corr", "bag_nsc_eucl", "nsc_eucl", "nsc_corr", "bag_kneighbor", "bag_tree", "bag_svm_rbf"
-    classifiers_names = ["nsc","tree","glm","randForest","svm-rbf","svm","naive_bayes","perceptron"]
-    #"nsc","bag_nsc_eucl", "tree"]#,"bag_tree"]#,"bag_nsc_eucl","bag_svm_rbf"]#,"nsc"]#"svm-rbf", "tree",  "bag_svm_rbf", "bag_tree", "bag_kneighbor"]# ["svm","svm-rbf","tree","nsc","naive_bayes","glm","sgdc","perceptron", "randForest"] #["svm","tree","nsc","naive_bayes"]
+    
     # classifiers_class = {
     #                     "gbm": GradientBoostingClassifier,
     #                     "svm":svm.LinearSVC, 
@@ -336,6 +327,12 @@ if __name__ == '__main__':
     #                     "svm-rbf":SVC
     #                     }
 
+    # classifiers that will be considered "bag_nsc_corr",  "nsc_corr",
+    #"bag_nsc_corr", "bag_nsc_eucl", "nsc_eucl", "nsc_corr", "bag_kneighbor", "bag_tree", "bag_svm_rbf"
+    #classifiers_names = ["nsc","tree","glm","randForest","svm-rbf","svm","naive_bayes","perceptron"]
+    classifiers_names = ["randForest"]
+    #"nsc","bag_nsc_eucl", "tree"]#,"bag_tree"]#,"bag_nsc_eucl","bag_svm_rbf"]#,"nsc"]#"svm-rbf", "tree",  "bag_svm_rbf", "bag_tree", "bag_kneighbor"]# ["svm","svm-rbf","tree","nsc","naive_bayes","glm","sgdc","perceptron", "randForest"] #["svm","tree","nsc","naive_bayes"]
+
     view_classifiers_names = {
                             "svm-linear":"Linear SVM",
                             "svm-rbf":"RBF SVM",
@@ -350,12 +347,10 @@ if __name__ == '__main__':
                             "randForest": "Random Forest"
                             }                   
 
-    min_accuracy = 0
-    static_min_accuracy = 0
-    #min_accuracy = 0.8
     
     k = 10  # k-fold cross validations - outer    
     n_repeats = 100
+    min_acc_ROC = 0
     max_group_size = len(dataset.genes)
 
     print "mas groups size: ", max_group_size
@@ -381,7 +376,7 @@ if __name__ == '__main__':
     #n_splits = int(n_possible_groups/40)#1000*(3/(sub_list_size*1.0)))
     n_cpu = cpu_count()
     
-    n_splits = n_cpu*3
+    n_splits = n_cpu
     # if (n_splits > n_possible_groups/2):
     #     if n_possible_groups > 300:
     #         n_splits = n_possible_groups/2.5
@@ -435,8 +430,22 @@ if __name__ == '__main__':
                         # truth = result['t']
                         # predicted = result['p']
                         processed_tpr = result['p_tpr']
+                        
+                        acc = np.mean(result['accs']) #metrics.accuracy_score(truth,predicted)
+                        acc_std = np.std(result['accs'])
+                        acc_min = np.min(result['accs'])
+                        acc_max = np.max(result['accs'])
+
+                        f1 = np.mean(result['f1s']) #metrics.f1_score(truth,predicted)
+                        f1_std = np.std(result['f1s'])
+                        f1_min = np.min(result['f1s'])
+                        f1_max = np.max(result['f1s'])
+
+                        precision = np.mean(result['precisions']) #metrics.precision_score(truth,predicted)
+                        recall = np.mean(result['recalls']) #metrics.recall_score(truth,predicted)
+
                         auc_cv_mean = -1.0
-                        if processed_tpr:
+                        if acc > min_acc_ROC and processed_tpr:
                             fpr_l = result['fpr_l']
                             tpr_l = result['tpr_l']
                           
@@ -463,13 +472,12 @@ if __name__ == '__main__':
 
                             # mean_fprs = tprs.mean(axis=1)     
 
-                            roc_auc = auc(base_fpr, mean_tprs)                                      
+                            roc_auc = auc(base_fpr, mean_tprs)                                   
 
                             # gray_line = mlines.Line2D([], [], color='gray', alpha=0.5, label="Rep-i ROC")
                             
                             blue_line, = plt.plot(base_fpr, mean_tprs, 'b')#, label="Mean ROC (AUC = %0.3f)"%(roc_auc))
-                            label="Mean ROC (AUC = %0.3f)"%(roc_auc)
-                            plt.rc('font', **{'family':'serif','serif':['Palatino']})
+                            label="Mean ROC (AUC = %0.3f)"%(roc_auc)                           
                             
                             plt.legend((gray_line, blue_line),("Rep-i ROC", label), loc=4)
 
@@ -485,16 +493,6 @@ if __name__ == '__main__':
                             plt.close()
 
                             auc_cv_mean = roc_auc
-
-
-                        acc = np.mean(result['accs']) #metrics.accuracy_score(truth,predicted)
-                        acc_std = np.std(result['accs']) 
-
-                        f1 = np.mean(result['f1s']) #metrics.f1_score(truth,predicted)
-                        f1_std = np.std(result['f1s'])
-
-                        precision = np.mean(result['precisions']) #metrics.precision_score(truth,predicted)
-                        recall = np.mean(result['recalls']) #metrics.recall_score(truth,predicted)
 
 
                         x_train = dataset.matrix[:, result["g"]]  # data matrix
@@ -514,8 +512,13 @@ if __name__ == '__main__':
                         recall_independent = metrics.recall_score(y_test,independent_prediction)
 
                         auc_independent = -1.0
-                        if predict_proba:
-                            independent_probs = classifier.predict_proba(std_scale.transform(x_test))[:,1]
+                        if acc > min_acc_ROC and (predict_proba or decision_function):
+                            independent_probs = None
+                            if predict_proba:
+                                independent_probs = classifier.predict_proba(std_scale.transform(x_test))[:,1]
+                            else:
+                                independent_probs = classifier.decision_function(std_scale.transform(x_test))
+                                
                             auc_independent = roc_auc_score(y_test, independent_probs)
                             fpr, tpr, _ = roc_curve(y_test, independent_probs) 
 
@@ -539,8 +542,6 @@ if __name__ == '__main__':
                             plt.close()
 
 
-
-
                         if acc > maxAcc:
                             maxAcc = acc 
                         if f1 > maxF1:
@@ -550,8 +551,12 @@ if __name__ == '__main__':
                                       str(len(group))+","+\
                                       str(f1)+","+\
                                       str(f1_std)+","+\
+                                      str(f1_min)+","+\
+                                      str(f1_max)+","+\
                                       str(acc)+","+\
                                       str(acc_std)+","+\
+                                      str(acc_min)+","+\
+                                      str(acc_max)+","+\
                                       str(recall)+","+\
                                       str(precision)+","+\
                                       str(auc_cv_mean)+","+\
