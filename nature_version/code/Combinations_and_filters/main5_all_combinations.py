@@ -108,11 +108,78 @@ class CrossValidation():
 def key(genes):
     return sum([2**i for i in genes])
 
+def buildClassifier(name=name):
+    classifier = None
+    if name == "svm" or name == "linear-svm":
+        classifier = svm.LinearSVC()
+        predict_proba = False
+        decision_function = True
+    elif name == "tree":
+        classifier =  tree.DecisionTreeClassifier()
+        predict_proba = True
+        decision_function = False
+    elif name == "nsc":
+        classifier = NearestCentroid()
+        predict_proba = False
+        decision_function = False    
+    elif name == "naive_bayes":
+        classifier = GaussianNB()
+        predict_proba = True
+        decision_function = False
+    elif name == "glm":
+        classifier = LogisticRegression()
+        predict_proba = True
+        decision_function = False        
+    elif name == "sgdc":
+        classifier = SGDClassifier()
+        predict_proba = False # ?
+        decision_function = False # ?        
+    elif name == "mtElasticNet":
+        classifier = MultiTaskElasticNet()
+        predict_proba = False  #?
+        decision_function = False #?         
+    elif name == "elasticNet":
+        classifier = ElasticNet()
+        predict_proba = False  #?
+        decision_function = False #?       
+    elif name == "perceptron":
+        classifier = Perceptron()
+        predict_proba = False  #?
+        decision_function = False #?    
+    elif name == "randForest":
+        classifier = RandomForestClassifier()
+        predict_proba = True
+        decision_function = False  
+    elif name == "svm-rbf":
+        classifier = SVC()
+        predict_proba = False
+        decision_function = True        
+    elif name == "gbm": 
+        classifier = GradientBoostingClassifier()
+        predict_proba = True
+        decision_function = False
+
+        # "bag_nsc_eucl", "bag_kneighbor", "bag_tree", "bag_svm_rbf"
+        #     if name in has_predict_proba:
+        #     classifier = None
+        # if name == "bag_nsc_eucl":
+        #     classifier = BaggingClassifier(NearestCentroid(),random_state=7)#,n_estimators=20
+        # elif name == "bag_kneighbor":
+        #     classifier = BaggingClassifier(KNeighborsClassifier())
+        # elif name == "bag_tree":
+        #     classifier = BaggingClassifier(tree.DecisionTreeClassifier(),random_state=7)
+        # elif name == "bag_svm_rbf":
+        #     classifier = BaggingClassifier(SVC(),random_state=7)
+        # else:
+        #     classifier = classifiers_class[name]()
+                
+    return (classifier, predict_proba, decision_function)        
+
 
 def evaluate(args):
-    classifiers_class = {"svm":svm.LinearSVC, "tree":tree.DecisionTreeClassifier, "nsc":NearestCentroid, "naive_bayes":GaussianNB, "glm": LogisticRegression, "sgdc":SGDClassifier,"mtElasticNet":MultiTaskElasticNet,"elasticNet":ElasticNet,"perceptron":Perceptron, "randForest":RandomForestClassifier, "svm-rbf":SVC}
+    # classifiers_class = {"svm":svm.LinearSVC, "tree":tree.DecisionTreeClassifier, "nsc":NearestCentroid, "naive_bayes":GaussianNB, "glm": LogisticRegression, "sgdc":SGDClassifier,"mtElasticNet":MultiTaskElasticNet,"elasticNet":ElasticNet,"perceptron":Perceptron, "randForest":RandomForestClassifier, "svm-rbf":SVC, "gbm": GradientBoostingClassifier}
 
-    alternatives_classifiers = ["bag_nsc_eucl", "bag_kneighbor", "bag_tree", "bag_svm_rbf"]
+    # has_predict_proba = ["randForest","bag_nsc_eucl", "bag_kneighbor", "bag_tree", "bag_svm_rbf"]
 
     dataset, outer_folds, name, k = args[1], args[2], args[3], args[4]#, args[5]
     t = []
@@ -120,8 +187,13 @@ def evaluate(args):
     fpr_l = []
     tpr_l = []
     y_folds = []
-    probs_folds = []  
+    probs_folds = [] 
+    accs = []
+    f1s = []
+    precisions = []
+    recalls = []
     i = 0  
+    processed_tpr = False
     for train_index, test_index in outer_folds: #bootstrap? (100 iterations...)
         newdataset1 = dataset.get_sub_dataset_by_samples(train_index)        
         test_dataset1 = dataset.get_sub_dataset_by_samples(test_index)
@@ -132,53 +204,46 @@ def evaluate(args):
         x_test = test_dataset1.matrix[:, args[0]]
         y_test = factorize(test_dataset1.labels)[0]
           
-        if name in alternatives_classifiers:
-            classifier = None
-            #This algorithm encompasses several works from the literature. When random subsets of the dataset 
-            # are drawn as random subsets of the samples, then this algorithm is known as Pasting [R154]. 
-            # If samples are drawn with replacement, then the method is known as Bagging [R155]. When 
-            # random subsets of the dataset are drawn as random subsets of the features, then the method 
-            # is known as Random Subspaces [R156]. Finally, when base estimators are built on subsets of 
-            # both samples and features, then the method is known as Random Patches [R157].
+        classifier, predict_proba, decision_function = buildClassifier(name)
 
-            if name == "bag_nsc_eucl":
-                classifier = BaggingClassifier(NearestCentroid(),random_state=7)#,n_estimators=20
-            elif name == "bag_kneighbor":
-                classifier = BaggingClassifier(KNeighborsClassifier())
-            elif name == "bag_tree":
-                classifier = BaggingClassifier(tree.DecisionTreeClassifier(),random_state=7)
-            elif name == "bag_svm_rbf":
-                classifier = BaggingClassifier(SVC(),random_state=7)
-            
-            std_scale = preprocessing.StandardScaler().fit(x_train)
-            classifier.fit(std_scale.transform(x_train), y_train)
-            t.extend(y_test)
-            p.extend(classifier.predict(std_scale.transform(x_test)))
-           
+        std_scale = preprocessing.StandardScaler().fit(x_train)
+        classifier.fit(std_scale.transform(x_train), y_train)
+        t.extend(y_test)
+        p.extend(classifier.predict(std_scale.transform(x_test)))
+
+        if predict_proba:   
             independent_probs = classifier.predict_proba(std_scale.transform(x_test))[:,1]
             probs_folds.extend(independent_probs)
             y_folds.extend(y_test)
-
-        else:            
-            classifier = classifiers_class[name]()
-            std_scale = preprocessing.StandardScaler().fit(x_train)
-            classifier.fit(std_scale.transform(x_train), y_train)
         
-            t.extend(y_test)
-            p.extend(classifier.predict(std_scale.transform(x_test)))
 
         if i == k-1:
             i = 0
-            if name in alternatives_classifiers:
+
+            acc = metrics.accuracy_score(t,p)
+            f1 = metrics.f1_score(t,p)
+            precision = metrics.precision_score(t,p)
+            recall = metrics.recall_score(t,p)
+            accs.append(acc)
+            f1s.append(f1)
+            precisions.append(precision)
+            recalls.append(recall)
+            t = []
+            p = []
+
+            if predict_proba:                
                 fpr, tpr, _ = roc_curve(y_folds, probs_folds)                
                 fpr_l.append(fpr)
                 tpr_l.append(tpr)            
                 y_folds = []
-                probs_folds = []
+                probs_folds = []              
         else:
             i += 1
 
-    return {'g':args[0], 't':t, 'p':p, 'fpr_l':fpr_l, 'tpr_l':tpr_l}     
+        if predict_proba or decision_function:
+            processed_tpr = True
+
+    return {'g':args[0], 'accs':accs, 'f1s': f1s, 'precisions': precisions,'recalls':recalls ,'fpr_l':fpr_l, 'tpr_l':tpr_l, 'p_tpr':processed_tpr}     
 
 
 
@@ -248,43 +313,49 @@ if __name__ == '__main__':
     from sklearn.linear_model import MultiTaskElasticNet
     from sklearn.linear_model import LogisticRegression
     from sklearn.ensemble import RandomForestClassifier
+    from sklearn.ensemble import GradientBoostingClassifier
     from sklearn.svm import SVC
+
 
     # classifiers that will be considered "bag_nsc_corr",  "nsc_corr",
     #"bag_nsc_corr", "bag_nsc_eucl", "nsc_eucl", "nsc_corr", "bag_kneighbor", "bag_tree", "bag_svm_rbf"
-    classifiers_names = ["nsc","svm-rbf","tree","bag_tree","bag_nsc_eucl","bag_svm_rbf"]#,"nsc"]#"svm-rbf", "tree",  "bag_svm_rbf", "bag_tree", "bag_kneighbor"]# ["svm","svm-rbf","tree","nsc","naive_bayes","glm","sgdc","perceptron", "randForest"] #["svm","tree","nsc","naive_bayes"]
-    classifiers_class = {
-                        "svm":svm.LinearSVC, 
-                        "tree":tree.DecisionTreeClassifier, 
-                        "nsc":NearestCentroid, 
-                        "naive_bayes":GaussianNB, 
-                        "glm": LogisticRegression, 
-                        "sgdc":SGDClassifier,
-                        "mtElasticNet":MultiTaskElasticNet,
-                        "elasticNet":ElasticNet,
-                        "perceptron":Perceptron, 
-                        "randForest":RandomForestClassifier, 
-                        "svm-rbf":SVC
-                        }
+    classifiers_names = ["nsc","tree","glm","randForest","svm-rbf","svm","naive_bayes","perceptron"]
+    #"nsc","bag_nsc_eucl", "tree"]#,"bag_tree"]#,"bag_nsc_eucl","bag_svm_rbf"]#,"nsc"]#"svm-rbf", "tree",  "bag_svm_rbf", "bag_tree", "bag_kneighbor"]# ["svm","svm-rbf","tree","nsc","naive_bayes","glm","sgdc","perceptron", "randForest"] #["svm","tree","nsc","naive_bayes"]
+    # classifiers_class = {
+    #                     "gbm": GradientBoostingClassifier,
+    #                     "svm":svm.LinearSVC, 
+    #                     "tree":tree.DecisionTreeClassifier, 
+    #                     "nsc":NearestCentroid, 
+    #                     "naive_bayes":GaussianNB, 
+    #                     "glm": LogisticRegression, 
+    #                     "sgdc":SGDClassifier,
+    #                     "mtElasticNet":MultiTaskElasticNet,
+    #                     "elasticNet":ElasticNet,
+    #                     "perceptron":Perceptron, 
+    #                     "randForest":RandomForestClassifier, 
+    #                     "svm-rbf":SVC
+    #                     }
 
     view_classifiers_names = {
                             "svm-linear":"Linear SVM",
                             "svm-rbf":"RBF SVM",
                             "tree": "Decision Tree",
-                            "nsc": "Nearest Centroid"
+                            "nsc": "Nearest Centroid",
                             "glm":"Logistic Regression", 
                             "naive_bayes":"Gaussian Naive Bayes",
                             "bag_nsc_eucl": "NSC Ensemble",
                             "bag_tree": "Decision Tree Ensemble",
-                            "bag_svm_rbf": "RBF SVM Ensemble"
+                            "bag_svm_rbf": "RBF SVM Ensemble",
+                            "gbm": "Gradient Boosting Classifier",
+                            "randForest": "Random Forest"
                             }                   
 
     min_accuracy = 0
     static_min_accuracy = 0
     #min_accuracy = 0.8
     
-    k = 8  # k-fold cross validations - outer    
-    n_repeats = 100   
+    k = 10  # k-fold cross validations - outer    
+    n_repeats = 100
     max_group_size = len(dataset.genes)
 
     print "mas groups size: ", max_group_size
@@ -310,19 +381,19 @@ if __name__ == '__main__':
     #n_splits = int(n_possible_groups/40)#1000*(3/(sub_list_size*1.0)))
     n_cpu = cpu_count()
     
-    n_splits = n_cpu*10
+    n_splits = n_cpu*3
     # if (n_splits > n_possible_groups/2):
     #     if n_possible_groups > 300:
     #         n_splits = n_possible_groups/2.5
 
-    pool = Pool(processes=n_cpu-2)
+    pool = Pool(processes=n_cpu)
     
     start = time.time()
     maxAcc = 0.0    
     maxF1 = 0.0
     with open(path_results+'combinations/predictions_all_classifiers_n_signatures.csv', 'w') as f:
         for name in classifiers_names:
-            line = "classifier, n, f1, acc, recall, precision, auc_cv_mean, f1_independent, acc_independent, recall_independent, precision_independent, auc_independent, signature\n"
+            line = "classifier, n, f1, f1 sd, acc, acc sd, recall, precision, auc_cv_mean, f1_independent, acc_independent, recall_independent, precision_independent, auc_independent, signature\n"
             f.write(line)
             print "Classifier name", name
 
@@ -361,14 +432,13 @@ if __name__ == '__main__':
                         result = result_part[i]
 
                         group = [dataset.genes[i] for i in result["g"]]
-                        truth = result['t']
-                        predicted = result['p']
-
+                        # truth = result['t']
+                        # predicted = result['p']
+                        processed_tpr = result['p_tpr']
                         auc_cv_mean = -1.0
-                        if 'bag' in name:
+                        if processed_tpr:
                             fpr_l = result['fpr_l']
                             tpr_l = result['tpr_l']
-
                           
                             plt.figure(figsize=(12, 11))                       
                             plt.title(view_classifiers_names[name]+' ROC curve for '+str(group))    
@@ -417,10 +487,14 @@ if __name__ == '__main__':
                             auc_cv_mean = roc_auc
 
 
-                        acc = metrics.accuracy_score(truth,predicted)
-                        f1 = metrics.f1_score(truth,predicted)
-                        precision = metrics.precision_score(truth,predicted)
-                        recall = metrics.recall_score(truth,predicted)
+                        acc = np.mean(result['accs']) #metrics.accuracy_score(truth,predicted)
+                        acc_std = np.std(result['accs']) 
+
+                        f1 = np.mean(result['f1s']) #metrics.f1_score(truth,predicted)
+                        f1_std = np.std(result['f1s'])
+
+                        precision = np.mean(result['precisions']) #metrics.precision_score(truth,predicted)
+                        recall = np.mean(result['recalls']) #metrics.recall_score(truth,predicted)
 
 
                         x_train = dataset.matrix[:, result["g"]]  # data matrix
@@ -429,32 +503,18 @@ if __name__ == '__main__':
                         x_test = dataset_test.matrix[:, result["g"]]
                         y_test = factorize(dataset_test.labels)[0]
 
-                        classifier = None
-                        if name == "bag_nsc_corr":
-                            classifier = BaggingClassifier(NearestCentroid(metric='correlation'))
-                        elif name == "bag_nsc_eucl":
-                            classifier = BaggingClassifier(NearestCentroid(),random_state=7)
-                        elif name == "bag_kneighbor":
-                            classifier = BaggingClassifier(KNeighborsClassifier(),random_state=7)
-                        elif name == "bag_tree":
-                            classifier = BaggingClassifier(tree.DecisionTreeClassifier(),random_state=7)
-                        elif name == "bag_svm_rbf":
-                            classifier = BaggingClassifier(SVC(),random_state=7)
-                        else:    
-                            classifier = classifiers_class[name]()
+                        classifier, predict_proba, decision_function = buildClassifier(name=name)
                         
                         std_scale = preprocessing.StandardScaler().fit(x_train)
                         classifier.fit(std_scale.transform(x_train), y_train)                       
-                        independent_prediction = classifier.predict(std_scale.transform(x_test))
-                        y_probas = classifier.predict(std_scale.transform(x_test))
-
+                        independent_prediction = classifier.predict(std_scale.transform(x_test))                        
                         acc_independent = metrics.accuracy_score(y_test,independent_prediction)
                         f1_independent = metrics.f1_score(y_test,independent_prediction)
                         precision_independent = metrics.precision_score(y_test,independent_prediction)
                         recall_independent = metrics.recall_score(y_test,independent_prediction)
 
                         auc_independent = -1.0
-                        if 'bag' in name:
+                        if predict_proba:
                             independent_probs = classifier.predict_proba(std_scale.transform(x_test))[:,1]
                             auc_independent = roc_auc_score(y_test, independent_probs)
                             fpr, tpr, _ = roc_curve(y_test, independent_probs) 
@@ -489,7 +549,9 @@ if __name__ == '__main__':
                         line =        name + "," +\
                                       str(len(group))+","+\
                                       str(f1)+","+\
+                                      str(f1_std)+","+\
                                       str(acc)+","+\
+                                      str(acc_std)+","+\
                                       str(recall)+","+\
                                       str(precision)+","+\
                                       str(auc_cv_mean)+","+\
@@ -521,99 +583,3 @@ if __name__ == '__main__':
     gc.collect()
 
     exit()
-
-    # *N,acc_tree,groups
-    # 1,0.833333333333,CON__P00761
-    # 1,0.833333333333,P02769_BSA        
-    independent_genes1_with_high_acc = set()        
-
-    for name in classifiers_names:
-        maxAcc = static_min_accuracy
-        signatures_data = all_signatures[name]            
-        signatures = signatures_data["signatures"]
-
-        with open(filename, 'r') as csv_file:
-            reader = csv.reader(csv_file, delimiter=",")
-            reader.next()
-            for row in reader:            
-                if float(row[signatures_data["idx"]]) > maxAcc:
-                    maxAcc = float(row[signatures_data["idx"]])
-            csv_file.close()
-        
-        print "New max acc for classifier ", name, ":", maxAcc           
-
-        # for each signature...   
-        with open(filename, 'r') as csv_file:
-            reader = csv.reader(csv_file, delimiter=",")
-            reader.next()
-            print "Signatures: "            
-            for row in reader:  
-                acc = row[signatures_data["idx"]]              
-                genes = []
-                for col in range(len(classifiers_names)+1,len(row)):
-                    genes.append(row[col])                       
-                signature = Signature(genes)
-                            
-                genes_index = []
-                for i in range(len(dataset.genes)):
-                    for gene in genes:
-                        if dataset.genes[i] == gene:
-                            genes_index.append(i)
-                
-                x_tr = x_train[:,genes_index]  # data matrix
-                y_tr = y_train
-                x_te = x_test[:,genes_index]
-                y_te = y_test
-
-                classifier = None
-                if name == "bag_nsc_corr":
-                    classifier = BaggingClassifier(NearestCentroid(metric='correlation'))
-                elif name == "bag_nsc_eucl":
-                    classifier = BaggingClassifier(NearestCentroid(),random_state=7)
-                elif name == "bag_kneighbor":
-                    classifier = BaggingClassifier(KNeighborsClassifier())
-                elif name == "bag_tree":
-                    classifier = BaggingClassifier(tree.DecisionTreeClassifier(),)
-                elif name == "bag_svm_rbf":
-                    classifier = BaggingClassifier(SVC())
-                else:    
-                    classifier = classifiers_class[name]()
-                # standardize attributes to mean 0 and desv 1 (z-score)
-                std_scale = preprocessing.StandardScaler().fit(x_tr)
-                classifier.fit(std_scale.transform(x_tr), y_tr)
-                # accuracy = metrics.accuracy_score(y_te, classifier.predict(std_scale.transform(x_te)))
-                predicted = classifier.predict(std_scale.transform(x_te))
-
-                found = False
-                for sig in signatures:
-                    if sig == signature:
-                        sig.add_pair_truth_prediced(y_te,predicted)
-                        found = True
-                        break
-                if not found:
-                    signature.add_pair_truth_prediced(y_te,predicted)                        
-                    signatures.append(signature)
-        
-        csv_file.close()
-        
-    for name in classifiers_names:
-        with open(path_results+'combinations/all_sig_dcv_acc_'+name+'.csv', 'w') as f:
-            signatures = all_signatures[name]["signatures"]  
-            min_acc = 1
-            max_acc = 0
-
-
-            f.write("max acc,"+min_acc+"\n")
-            f.write("min acc,"+max_acc+"\n")
-            f.write("size, avg dcv acc, std dcv acc, signature\n")
-                    
-            for signature in signatures:
-                f.write(str(signature.get_n())+","
-                        +str(np.mean(signature.get_independent_test_accs()))+","
-                        +str(np.std(signature.get_independent_test_accs()))                        
-                        )
-                for gene in signature.genes:
-                    f.write(","+gene)
-                f.write("\n")
-            f.close()
-    
