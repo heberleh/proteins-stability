@@ -154,7 +154,7 @@ def buildClassifier(name):
         predict_proba = False  #?
         decision_function = False #?    
     elif name == "randForest":
-        classifier = RandomForestClassifier(n_estimators=15,max_features=None, random_state=7)
+        classifier = RandomForestClassifier()
         predict_proba = True
         decision_function = False  
     elif name == "svm-rbf":
@@ -263,8 +263,8 @@ def split(arr, count):
 
 if __name__ == '__main__':
     
-    path_results = "./results/proteins/"
-    path_dataset = "./dataset/proteins/"
+    path_results = "./results/"
+    path_dataset = "./dataset/"
 
     start = time.time()
 
@@ -388,7 +388,7 @@ if __name__ == '__main__':
     maxF1 = 0.0
     with open(path_results+'combinations/predictions_all_classifiers_n_signatures.csv', 'w') as f:
         for name in classifiers_names:
-            line = "classifier, n, f1, f1 sd, acc, acc sd, recall, precision, auc_cv_mean, f1_independent, acc_independent, recall_independent, precision_independent, auc_independent, signature\n"
+            line = "classifier, n, f1, f1 sd, f1 min, f1 max, acc, acc sd, acc min, acc max, recall, precision, auc_cv_mean, f1_independent, acc_independent, recall_independent, precision_independent, auc_independent, signature\n"
             f.write(line)
             print "Classifier name", name
 
