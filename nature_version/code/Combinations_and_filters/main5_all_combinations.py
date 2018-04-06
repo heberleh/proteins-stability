@@ -15,7 +15,6 @@ from multiprocessing import Lock, Pool, cpu_count
 import matplotlib.lines as mlines
 import matplotlib.pyplot as plt
 import numpy as np
-
 from numpy import mean, median, min, std, unique
 from pandas import factorize
 from pylab import interp, savefig
@@ -27,7 +26,7 @@ from sklearn.linear_model import (ElasticNet, LogisticRegression,
                                   MultiTaskElasticNet,
                                   PassiveAggressiveClassifier, Perceptron,
                                   SGDClassifier)
-from sklearn.metrics import auc, roc_auc_score, roc_curve
+from sklearn.metrics import auc, confusion_matrix, roc_auc_score, roc_curve
 #from sklearn.cross_validation import StratifiedKFold
 from sklearn.model_selection import RepeatedStratifiedKFold
 from sklearn.naive_bayes import GaussianNB
@@ -40,6 +39,7 @@ from possibleEdge import PossibleEdge
 from signature import Signature
 from ttest import TTest
 from wilcoxon import WilcoxonRankSumTest
+
 #from wilcoxon import WilcoxonRankSumTest
 #from kruskal import KruskalRankSumTest3Classes
 
@@ -196,9 +196,11 @@ def evaluate(args):
     y_folds = []
     probs_folds = [] 
     accs = []
+    aucs = []
     f1s = []
     precisions = []
     recalls = []
+    specificities = []
     i = 0  
     processed_tpr = False
     for train_index, test_index in outer_folds: #bootstrap? (100 iterations...)
@@ -234,17 +236,22 @@ def evaluate(args):
             f1 = metrics.f1_score(t,p)
             precision = metrics.precision_score(t,p)
             recall = metrics.recall_score(t,p)
+            tn, fp, fn, tp = confusion_matrix(t, p).ravel()
+            specificity = tn*1.0 / (tn+fp)
+
             accs.append(acc)
             f1s.append(f1)
             precisions.append(precision)
             recalls.append(recall)
+            specificities.append(specificity)            
             t = []
             p = []
 
             if predict_proba or decision_function:                
                 fpr, tpr, _ = roc_curve(y_folds, probs_folds)                
                 fpr_l.append(fpr)
-                tpr_l.append(tpr)            
+                tpr_l.append(tpr)
+                aucs.append(auc(fpr, tpr))            
                 y_folds = []
                 probs_folds = []              
         else:
@@ -253,7 +260,7 @@ def evaluate(args):
         if predict_proba or decision_function:
             processed_tpr = True
 
-    return {'g':args[0], 'accs':accs, 'f1s': f1s, 'precisions': precisions,'recalls':recalls ,'fpr_l':fpr_l, 'tpr_l':tpr_l, 'p_tpr':processed_tpr}     
+    return {'g':args[0], 'accs':accs, 'f1s': f1s, 'precisions': precisions,'recalls':recalls , 'specificities':specificities ,'fpr_l':fpr_l, 'tpr_l':tpr_l, 'p_tpr':processed_tpr, 'aucs':aucs}     
 
 
 
@@ -388,7 +395,8 @@ if __name__ == '__main__':
     maxF1 = 0.0
     with open(path_results+'combinations/predictions_all_classifiers_n_signatures.csv', 'w') as f:
         for name in classifiers_names:
-            line = "classifier, n, f1, f1 sd, f1 min, f1 max, acc, acc sd, acc min, acc max, recall, precision, auc_cv_mean, f1_independent, acc_independent, recall_independent, precision_independent, auc_independent, signature\n"
+            line = "Classifier, N, Accuracy Mean, Accuracy SD, AUC Mean, AUC SD, F1, F1 SD, Sensitivity Mean, Sensitivity SD, Specificity Mean, Specificity SD, Precision Mean, Precision SD, Accuracy Independent Test, AUC Independent Test, F1 Independent Test, Sensitivity Independent Test, Specificity Independent Test, Precision Independent Test, Signature\n"
+
             f.write(line)
             print "Classifier name", name
 
@@ -432,17 +440,21 @@ if __name__ == '__main__':
                         processed_tpr = result['p_tpr']
                         
                         acc = np.mean(result['accs']) #metrics.accuracy_score(truth,predicted)
-                        acc_std = np.std(result['accs'])
-                        acc_min = np.min(result['accs'])
-                        acc_max = np.max(result['accs'])
+                        acc_std = np.std(result['accs'])                        
 
                         f1 = np.mean(result['f1s']) #metrics.f1_score(truth,predicted)
                         f1_std = np.std(result['f1s'])
-                        f1_min = np.min(result['f1s'])
-                        f1_max = np.max(result['f1s'])
 
                         precision = np.mean(result['precisions']) #metrics.precision_score(truth,predicted)
+                        precision_std = np.std(result['precisions'])
+
                         recall = np.mean(result['recalls']) #metrics.recall_score(truth,predicted)
+                        recall_std = np.std(result['recalls'])
+
+                        specificity = np.mean(result['specificities'])
+                        specificity_std = np.std(result['specificities'])
+
+                        auc_std = np.std(result['aucs'])
 
                         auc_cv_mean = -1.0
                         if acc > min_acc_ROC and processed_tpr:
@@ -454,36 +466,43 @@ if __name__ == '__main__':
                             
                             base_fpr = np.linspace(0, 1, 101)
                             tprs = []  
-                            gray_line = None                          
+                            gray_line = None
+                                                   
                             for i in range(len(fpr_l)):                                
                                 tpr = tpr_l[i]
                                 fpr = fpr_l[i]
-                                gray_line, = plt.plot(fpr, tpr, 'gray', alpha=0.11)
+                                # gray_line, = plt.plot(fpr, tpr, 'gray', alpha=0.11)
 
                                 tpr = interp(base_fpr, fpr, tpr)
                                 tpr[0] = 0.0
                                 tprs.append(tpr)
+                                 
 
                             tprs = np.array(tprs)
                             mean_tprs = tprs.mean(axis=0)
-                            std = tprs.std(axis=0)
-                            tprs_upper = np.minimum(mean_tprs + std, 1)
-                            tprs_lower = mean_tprs - std        
+                            std_tprs = tprs.std(axis=0)
+                            tprs_upper = np.minimum(mean_tprs + std_tprs, 1)
+                            tprs_lower = np.maximum(mean_tprs - std_tprs, 0)#mean_tprs - std        
 
                             # mean_fprs = tprs.mean(axis=1)     
 
-                            roc_auc = auc(base_fpr, mean_tprs)                                   
+                            mean_roc_auc = auc(base_fpr, mean_tprs)                                   
 
                             # gray_line = mlines.Line2D([], [], color='gray', alpha=0.5, label="Rep-i ROC")
                             
-                            blue_line, = plt.plot(base_fpr, mean_tprs, 'b')#, label="Mean ROC (AUC = %0.3f)"%(roc_auc))
-                            label="Mean ROC (AUC = %0.3f)"%(roc_auc)                           
-                            
-                            plt.legend((gray_line, blue_line),("Rep-i ROC", label), loc=4)
+                            plt.plot([0, 1], [0, 1], linestyle='--', lw=1, color='r', label='Random', alpha=.8)
 
-                            plt.fill_between(base_fpr, tprs_lower, tprs_upper, color='grey', alpha=0.3)
+                            plt.fill_between(base_fpr, tprs_lower, tprs_upper, color='grey', alpha=0.2, label=r'$\pm$ 1 std. dev.')
+                            
+                            blue_line, = plt.plot(base_fpr, mean_tprs, 'b',label=r'Mean ROC (AUC = %0.3f $\pm$ %0.3f)' % (mean_roc_auc, auc_std),
+                            lw=2, alpha=.7)#, label="Mean ROC (AUC = %0.3f)"%(roc_auc))
+                            # label="Mean ROC (AUC = %0.3f)"%(roc_auc)                                                       
+                            # plt.legend((blue_line),(label), loc=4)
+                           
+
                             plt.legend(loc='lower right')
-                            plt.plot([0,1],[0,1],'r--')
+                            # plt.plot([0,1],[0,1],'r--')
+                            
                             plt.xlim([-0.01,1.01])
                             plt.ylim([-0.01,1.01])  #sensitivity vs 1-Specificity.
                             plt.ylabel('Sensitivity')
@@ -492,7 +511,7 @@ if __name__ == '__main__':
                             savefig(path_results+'roc/'+'cv_roc_CONCAT_'+str(group)+'_________'+name+'_'+'.png')
                             plt.close()
 
-                            auc_cv_mean = roc_auc
+                            auc_cv_mean = mean_roc_auc
 
 
                         x_train = dataset.matrix[:, result["g"]]  # data matrix
@@ -510,6 +529,9 @@ if __name__ == '__main__':
                         f1_independent = metrics.f1_score(y_test,independent_prediction)
                         precision_independent = metrics.precision_score(y_test,independent_prediction)
                         recall_independent = metrics.recall_score(y_test,independent_prediction)
+                        
+                        tn, fp, fn, tp = confusion_matrix(y_test, independent_prediction).ravel()
+                        specificity_independent = tn*1.0 / (tn+fp)                        
 
                         auc_independent = -1.0
                         if acc > min_acc_ROC and (predict_proba or decision_function):
@@ -530,9 +552,10 @@ if __name__ == '__main__':
                             tpr[0] = 0.0
 
                             roc_auc = auc(base_fpr, tpr)
+                            plt.plot([0, 1], [0, 1], linestyle='--', lw=1, color='r', label='Random', alpha=.8)
                             plt.plot(base_fpr, tpr, 'b', label="ROC (AUC = %0.3f)"%(roc_auc))
                             plt.legend(loc='lower right')
-                            plt.plot([0,1],[0,1],'r--')
+                            # plt.plot([0,1],[0,1],'r--')                            
                             plt.xlim([-0.01,1.01])
                             plt.ylim([-0.01,1.01])  #sensitivity vs 1-Specificity.
                             plt.ylabel('Sensitivity')
@@ -547,24 +570,27 @@ if __name__ == '__main__':
                         if f1 > maxF1:
                             maxF1 = f1                       
 
-                        line =        name + "," +\
+                        line = name + "," +\
                                       str(len(group))+","+\
-                                      str(f1)+","+\
-                                      str(f1_std)+","+\
-                                      str(f1_min)+","+\
-                                      str(f1_max)+","+\
                                       str(acc)+","+\
                                       str(acc_std)+","+\
-                                      str(acc_min)+","+\
-                                      str(acc_max)+","+\
-                                      str(recall)+","+\
-                                      str(precision)+","+\
                                       str(auc_cv_mean)+","+\
-                                      str(f1_independent)+","+\
+                                      str(auc_std)+","+\
+                                      str(f1)+","+\
+                                      str(f1_std)+","+\
+                                      str(recall)+","+\
+                                      str(recall_std)+","+\
+                                      str(specificity)+","+\
+                                      str(specificity_std)+","+\
+                                      str(precision)+","+\
+                                      str(precision_std)+","+\
                                       str(acc_independent)+","+\
+                                      str(auc_independent)+","+\
+                                      str(f1_independent)+","+\
                                       str(recall_independent)+","+\
-                                      str(precision_independent)+","+\
-                                      str(auc_independent)
+                                      str(specificity_independent)+","+\
+                                      str(precision_independent)
+                                      
                         #"n, f1, acc, recall, precision, signature\n"                               
                         for g in group:
                             line = line + "," + str(g)
