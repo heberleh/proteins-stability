@@ -280,10 +280,11 @@ if __name__ == '__main__':
     dataset = Dataset(path_dataset+"independent_train.txt", scale=False, normalize=False, sep='\t')
 
     dataset_test = Dataset(path_dataset+"independent_test.txt", scale=False, normalize=False, sep='\t')
+    #dataset_test = dataset
 
     filter = True
     filter_name = "wilcoxon"
-    cutoff = 0.1
+    cutoff = 1
 
     if filter:
         if filter_name == "wilcoxon":
