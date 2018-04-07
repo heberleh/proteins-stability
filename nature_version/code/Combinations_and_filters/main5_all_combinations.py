@@ -297,7 +297,7 @@ if __name__ == '__main__':
 
             dataset = dataset.get_sub_dataset([dataset.genes[i] for i in range(len(dataset.genes)) if wil_p[i]<cutoff])
 
-            dataset_test = dataset.get_sub_dataset([dataset_test.genes[i] for i in range(len(dataset_test.genes)) if wil_p[i]<cutoff])
+            dataset_test = dataset_test.get_sub_dataset([dataset_test.genes[i] for i in range(len(dataset_test.genes)) if wil_p[i]<cutoff])
         elif filter_name == "ttest":
             # Filtering train and test Datasets
             ttest = TTest(dataset)
@@ -309,7 +309,7 @@ if __name__ == '__main__':
 
             dataset = dataset.get_sub_dataset([dataset.genes[i] for i in range(len(dataset.genes)) if ttest_p[i]<cutoff])
 
-            dataset_test = dataset.get_sub_dataset([dataset_test.genes[i] for i in range(len(dataset_test.genes)) if ttest_p[i]<cutoff])
+            dataset_test = dataset_test.get_sub_dataset([dataset_test.genes[i] for i in range(len(dataset_test.genes)) if ttest_p[i]<cutoff])
                 
 
 
@@ -390,16 +390,24 @@ if __name__ == '__main__':
 
     pool = Pool(processes=n_cpu)
     
+    independent_test_only = True
+
     start = time.time()
     maxAcc = 0.0    
     maxF1 = 0.0
-    with open(path_results+'combinations/predictions_all_classifiers_n_signatures.csv', 'w') as f:
+    with open(path_results+'combinations/predictions_all_classifiers_n_signatures.csv', 'w')as f:            
         for name in classifiers_names:
-            line = "Classifier, N, Accuracy Mean, Accuracy SD, AUC Mean, AUC SD, F1, F1 SD, Sensitivity Mean, Sensitivity SD, Specificity Mean, Specificity SD, Precision Mean, Precision SD, Accuracy Independent Test, AUC Independent Test, F1 Independent Test, Sensitivity Independent Test, Specificity Independent Test, Precision Independent Test, Signature\n"
+            
+            line = ""
+            if independent_test_only:
+                line = "Classifier, N, Accuracy Independent Test, AUC Independent Test, F1 Independent Test, Sensitivity Independent Test, Specificity Independent Test, Precision Independent Test, Signature\n"
+            else:
+                line = "Classifier, N, Accuracy Mean, Accuracy SD, AUC Mean, AUC SD, F1, F1 SD, Sensitivity Mean, Sensitivity SD, Specificity Mean, Specificity SD, Precision Mean, Precision SD, Accuracy Independent Test, AUC Independent Test, F1 Independent Test, Sensitivity Independent Test, Specificity Independent Test, Precision Independent Test, Signature\n"
 
             f.write(line)
             print "Classifier name", name
 
+            
             for sub_list_size in range(1, max_group_size+1):
                 genes_freq =[0 for i in range(len(dataset.genes))]
                             
@@ -414,163 +422,185 @@ if __name__ == '__main__':
                 
                 hasnext = True
                 executed = 0
+                group = None
+                group_indexes = None
                 groups_found_count = 0
                 while(hasnext):
                     current_args = []
-                    for rep in range(n_splits):
+                    if independent_test_only:
                         try:
-                            g = next(all_possible_groups)               
-                            #dataset, outer_folds, classifier_name        
-                            current_args.append((g, dataset, outer_folds, name, k)) 
+                            g = next(all_possible_groups)         
+                            if independent_test_only:
+                                group = [dataset.genes[i] for i in g]
+                                group_indexes = g   
                         except:
                             hasnext = False
-                            break
+                            break                               
+                    else:
+                        for rep in range(n_splits):
+                            try:
+                                g = next(all_possible_groups)                                
+                                #dataset, outer_folds, classifier_name        
+                                current_args.append((g, dataset, outer_folds, name, k)) 
+                            except:
+                                hasnext = False
+                                break                        
                     gc.collect()
-                
-                    result_part = pool.map(evaluate, current_args)
 
-                    gc.collect()
                     
-                    for i in range(len(result_part)):            
-                        result = result_part[i]
+                    if not independent_test_only:
+                        result_part = pool.map(evaluate, current_args)
+                        gc.collect()                    
+                        for i in range(len(result_part)):            
+                            result = result_part[i]
 
-                        group = [dataset.genes[i] for i in result["g"]]
-                        # truth = result['t']
-                        # predicted = result['p']
-                        processed_tpr = result['p_tpr']
-                        
-                        acc = np.mean(result['accs']) #metrics.accuracy_score(truth,predicted)
-                        acc_std = np.std(result['accs'])                        
-
-                        f1 = np.mean(result['f1s']) #metrics.f1_score(truth,predicted)
-                        f1_std = np.std(result['f1s'])
-
-                        precision = np.mean(result['precisions']) #metrics.precision_score(truth,predicted)
-                        precision_std = np.std(result['precisions'])
-
-                        recall = np.mean(result['recalls']) #metrics.recall_score(truth,predicted)
-                        recall_std = np.std(result['recalls'])
-
-                        specificity = np.mean(result['specificities'])
-                        specificity_std = np.std(result['specificities'])
-
-                        auc_std = np.std(result['aucs'])
-
-                        auc_cv_mean = -1.0
-                        if acc > min_acc_ROC and processed_tpr:
-                            fpr_l = result['fpr_l']
-                            tpr_l = result['tpr_l']
-                          
-                            plt.figure(figsize=(12, 11))                       
-                            plt.title(view_classifiers_names[name]+' ROC curve for '+str(group))    
+                            group = [dataset.genes[i] for i in result["g"]]
+                            group_indexes = result['g']
+                            # truth = result['t']
+                            # predicted = result['p']
+                            processed_tpr = result['p_tpr']
                             
-                            base_fpr = np.linspace(0, 1, 101)
-                            tprs = []  
-                            gray_line = None
-                                                   
-                            for i in range(len(fpr_l)):                                
-                                tpr = tpr_l[i]
-                                fpr = fpr_l[i]
-                                # gray_line, = plt.plot(fpr, tpr, 'gray', alpha=0.11)
+                            acc = np.mean(result['accs']) #metrics.accuracy_score(truth,predicted)
+                            acc_std = np.std(result['accs'])                        
 
-                                tpr = interp(base_fpr, fpr, tpr)
-                                tpr[0] = 0.0
-                                tprs.append(tpr)
-                                 
-
-                            tprs = np.array(tprs)
-                            mean_tprs = tprs.mean(axis=0)
-                            std_tprs = tprs.std(axis=0)
-                            tprs_upper = np.minimum(mean_tprs + std_tprs, 1)
-                            tprs_lower = np.maximum(mean_tprs - std_tprs, 0)#mean_tprs - std        
-
-                            # mean_fprs = tprs.mean(axis=1)     
-
-                            mean_roc_auc = auc(base_fpr, mean_tprs)                                   
-
-                            # gray_line = mlines.Line2D([], [], color='gray', alpha=0.5, label="Rep-i ROC")
+                            f1 = np.mean(result['f1s']) #metrics.f1_score(truth,predicted)
+                            f1_std = np.std(result['f1s'])
                             
-                            plt.plot([0, 1], [0, 1], linestyle='--', lw=1, color='r', label='Random', alpha=.8)
+                            if acc > maxAcc:
+                                maxAcc = acc 
+                            if f1 > maxF1:
+                                maxF1 = f1      
 
-                            plt.fill_between(base_fpr, tprs_lower, tprs_upper, color='grey', alpha=0.2, label=r'$\pm$ 1 std. dev.')
+                            precision = np.mean(result['precisions']) #metrics.precision_score(truth,predicted)
+                            precision_std = np.std(result['precisions'])
+
+                            recall = np.mean(result['recalls']) #metrics.recall_score(truth,predicted)
+                            recall_std = np.std(result['recalls'])
+
+                            specificity = np.mean(result['specificities'])
+                            specificity_std = np.std(result['specificities'])
+
+                            auc_std = np.std(result['aucs'])
+
+                            auc_cv_mean = -1.0
+                            if acc > min_acc_ROC and processed_tpr:
+                                fpr_l = result['fpr_l']
+                                tpr_l = result['tpr_l']
                             
-                            blue_line, = plt.plot(base_fpr, mean_tprs, 'b',label=r'Mean ROC (AUC = %0.3f $\pm$ %0.3f)' % (mean_roc_auc, auc_std),
-                            lw=2, alpha=.7)#, label="Mean ROC (AUC = %0.3f)"%(roc_auc))
-                            # label="Mean ROC (AUC = %0.3f)"%(roc_auc)                                                       
-                            # plt.legend((blue_line),(label), loc=4)
-                           
-
-                            plt.legend(loc='lower right')
-                            # plt.plot([0,1],[0,1],'r--')
-                            
-                            plt.xlim([-0.01,1.01])
-                            plt.ylim([-0.01,1.01])  #sensitivity vs 1-Specificity.
-                            plt.ylabel('Sensitivity')
-                            plt.xlabel('1 - Specificity')
-                            # plt.tight_layout()
-                            savefig(path_results+'roc/'+'cv_roc_CONCAT_'+str(group)+'_________'+name+'_'+'.png')
-                            plt.close()
-
-                            auc_cv_mean = mean_roc_auc
-
-
-                        x_train = dataset.matrix[:, result["g"]]  # data matrix
-                        y_train = factorize(dataset.labels)[0]  # classes/labels of each sample from matrix x
-
-                        x_test = dataset_test.matrix[:, result["g"]]
-                        y_test = factorize(dataset_test.labels)[0]
-
-                        classifier, predict_proba, decision_function = buildClassifier(name=name)
-                        
-                        std_scale = preprocessing.StandardScaler().fit(x_train)
-                        classifier.fit(std_scale.transform(x_train), y_train)                       
-                        independent_prediction = classifier.predict(std_scale.transform(x_test))                        
-                        acc_independent = metrics.accuracy_score(y_test,independent_prediction)
-                        f1_independent = metrics.f1_score(y_test,independent_prediction)
-                        precision_independent = metrics.precision_score(y_test,independent_prediction)
-                        recall_independent = metrics.recall_score(y_test,independent_prediction)
-                        
-                        tn, fp, fn, tp = confusion_matrix(y_test, independent_prediction).ravel()
-                        specificity_independent = tn*1.0 / (tn+fp)                        
-
-                        auc_independent = -1.0
-                        if acc > min_acc_ROC and (predict_proba or decision_function):
-                            independent_probs = None
-                            if predict_proba:
-                                independent_probs = classifier.predict_proba(std_scale.transform(x_test))[:,1]
-                            else:
-                                independent_probs = classifier.decision_function(std_scale.transform(x_test))
+                                plt.figure(figsize=(12, 11))                       
+                                plt.title(view_classifiers_names[name]+' ROC curve for '+str(group))    
                                 
-                            auc_independent = roc_auc_score(y_test, independent_probs)
-                            fpr, tpr, _ = roc_curve(y_test, independent_probs) 
+                                base_fpr = np.linspace(0, 1, 101)
+                                tprs = []  
+                                gray_line = None
+                                                    
+                                for i in range(len(fpr_l)):                                
+                                    tpr = tpr_l[i]
+                                    fpr = fpr_l[i]
+                                    # gray_line, = plt.plot(fpr, tpr, 'gray', alpha=0.11)
 
-                            plt.figure(figsize=(12, 11))
-                            plt.title(view_classifiers_names[name]+' ROC curve for '+str(group))
+                                    tpr = interp(base_fpr, fpr, tpr)
+                                    tpr[0] = 0.0
+                                    tprs.append(tpr)
+                                    
+
+                                tprs = np.array(tprs)
+                                mean_tprs = tprs.mean(axis=0)
+                                std_tprs = tprs.std(axis=0)
+                                tprs_upper = np.minimum(mean_tprs + std_tprs, 1)
+                                tprs_lower = np.maximum(mean_tprs - std_tprs, 0)#mean_tprs - std        
+
+                                # mean_fprs = tprs.mean(axis=1)     
+
+                                mean_roc_auc = auc(base_fpr, mean_tprs)                                   
+
+                                # gray_line = mlines.Line2D([], [], color='gray', alpha=0.5, label="Rep-i ROC")
+                                
+                                plt.plot([0, 1], [0, 1], linestyle='--', lw=1, color='r', label='Random', alpha=.8)
+
+                                plt.fill_between(base_fpr, tprs_lower, tprs_upper, color='grey', alpha=0.2, label=r'$\pm$ 1 std. dev.')
+                                
+                                blue_line, = plt.plot(base_fpr, mean_tprs, 'b',label=r'Mean ROC (AUC = %0.3f $\pm$ %0.3f)' % (mean_roc_auc, auc_std),
+                                lw=2, alpha=.7)#, label="Mean ROC (AUC = %0.3f)"%(roc_auc))
+                                # label="Mean ROC (AUC = %0.3f)"%(roc_auc)                         
+                                # plt.legend((blue_line),(label), loc=4)                            
+                                plt.legend(loc='lower right')
+                                # plt.plot([0,1],[0,1],'r--')
+                                
+                                plt.xlim([-0.01,1.01])
+                                plt.ylim([-0.01,1.01])  #sensitivity vs 1-Specificity.
+                                plt.ylabel('Sensitivity')
+                                plt.xlabel('1 - Specificity')
+                                # plt.tight_layout()
+                                savefig(path_results+'roc/'+'cv_roc_CONCAT_'+str(group)+'_________'+name+'_'+'.png')
+                                plt.close()
+
+                                auc_cv_mean = mean_roc_auc
+
+
+                    x_train = dataset.matrix[:, group_indexes]  # data matrix
+                    y_train = factorize(dataset.labels)[0]  # classes/labels of each sample from matrix x
+
+                    x_test = dataset_test.matrix[:, group_indexes]
+                    y_test = factorize(dataset_test.labels)[0]
+
+                    classifier, predict_proba, decision_function = buildClassifier(name=name)
+                    
+                    std_scale = preprocessing.StandardScaler().fit(x_train)
+                    classifier.fit(std_scale.transform(x_train), y_train)                       
+                    independent_prediction = classifier.predict(std_scale.transform(x_test))                        
+                    acc_independent = metrics.accuracy_score(y_test,independent_prediction)
+                    f1_independent = metrics.f1_score(y_test,independent_prediction)
+                    precision_independent = metrics.precision_score(y_test,independent_prediction)
+                    recall_independent = metrics.recall_score(y_test,independent_prediction)
+                    
+                    tn, fp, fn, tp = confusion_matrix(y_test, independent_prediction).ravel()
+                    specificity_independent = tn*1.0 / (tn+fp)                        
+
+                    auc_independent = -1.0
+                    if acc_independent > min_acc_ROC and (predict_proba or decision_function):
+                        independent_probs = None
+                        if predict_proba:
+                            independent_probs = classifier.predict_proba(std_scale.transform(x_test))[:,1]
+                        else:
+                            independent_probs = classifier.decision_function(std_scale.transform(x_test))
                             
-                            base_fpr = np.linspace(0, 1, 101)
-                            tpr = interp(base_fpr, fpr, tpr)
-                            tpr[0] = 0.0
+                        auc_independent = roc_auc_score(y_test, independent_probs)
+                        fpr, tpr, _ = roc_curve(y_test, independent_probs) 
 
-                            roc_auc = auc(base_fpr, tpr)
-                            plt.plot([0, 1], [0, 1], linestyle='--', lw=1, color='r', label='Random', alpha=.8)
-                            plt.plot(base_fpr, tpr, 'b', label="ROC (AUC = %0.3f)"%(roc_auc))
-                            plt.legend(loc='lower right')
-                            # plt.plot([0,1],[0,1],'r--')                            
-                            plt.xlim([-0.01,1.01])
-                            plt.ylim([-0.01,1.01])  #sensitivity vs 1-Specificity.
-                            plt.ylabel('Sensitivity')
-                            plt.xlabel('1 - Specificity')
-                            # plt.tight_layout()
-                            savefig(path_results+'roc/'+'roc_independent_'+str(group)+'_________'+name+'_'+'.png')
-                            plt.close()
+                        plt.figure(figsize=(12, 11))
+                        plt.title(view_classifiers_names[name]+' ROC curve for '+str(group))
+                        
+                        base_fpr = np.linspace(0, 1, 101)
+                        tpr = interp(base_fpr, fpr, tpr)
+                        tpr[0] = 0.0
 
+                        roc_auc = auc(base_fpr, tpr)
+                        plt.plot([0, 1], [0, 1], linestyle='--', lw=1, color='r', label='Random', alpha=.8)
+                        plt.plot(base_fpr, tpr, 'b', label="ROC (AUC = %0.3f)"%(roc_auc))
+                        plt.legend(loc='lower right')
+                        # plt.plot([0,1],[0,1],'r--')                            
+                        plt.xlim([-0.01,1.01])
+                        plt.ylim([-0.01,1.01])  #sensitivity vs 1-Specificity.
+                        plt.ylabel('Sensitivity')
+                        plt.xlabel('1 - Specificity')
+                        # plt.tight_layout()
+                        savefig(path_results+'roc/'+'roc_independent_'+str(group)+'_________'+name+'_'+'.png')
+                        plt.close()
 
-                        if acc > maxAcc:
-                            maxAcc = acc 
-                        if f1 > maxF1:
-                            maxF1 = f1                       
+                 
 
-                        line = name + "," +\
+                        if independent_test_only:
+                            line = name + "," +\
+                                      str(len(group))+","+\
+                                      str(acc_independent)+","+\
+                                      str(auc_independent)+","+\
+                                      str(f1_independent)+","+\
+                                      str(recall_independent)+","+\
+                                      str(specificity_independent)+","+\
+                                      str(precision_independent)
+                        else:                            
+                            line = name + "," +\
                                       str(len(group))+","+\
                                       str(acc)+","+\
                                       str(acc_std)+","+\
