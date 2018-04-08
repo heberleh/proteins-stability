@@ -9,6 +9,9 @@ from sklearn import preprocessing
 from numpy import matrix
 import csv
 import numpy as np
+from imblearn.combine import SMOTEENN
+from imblearn.combine import SMOTETomek
+from imblearn.over_sampling import SMOTE
 
 
 class Dataset(object):
@@ -18,7 +21,6 @@ class Dataset(object):
         self.samples = None
         self.matrix = None
         self.labels = None
-
 
         if filename != None:
             self.name = filename.replace(".csv","")
@@ -108,3 +110,83 @@ class Dataset(object):
         print self.labels
         np.random.shuffle(self.labels)
         print self.labels
+
+    #imbalanced-class over-and-under sampling
+    def getSmoteEnn(self,invert = False):       
+        #G. Batista, R. C. Prati, M. C. Monard. “A study of the behavior of several methods for balancing machine learning training data,” ACM Sigkdd Explorations Newsletter 6 (1), 20-29, 2004. 
+        smote_enn = SMOTEENN(random_state=0)
+        X = self.matrix
+        y = self.labels        
+        X_resampled, y_resampled = smote_enn.fit_sample(X, y)
+        
+        y_r = np.array(y_resampled)
+        inds = []
+        if invert: 
+            inds = y_r.argsort()[::-1] #N0 before N+
+        else:
+            inds = y_r.argsort()    
+        X_resampled = X_resampled[inds,]
+        y_resampled = y_resampled[inds]
+
+        new_dataset = Dataset()
+        new_dataset.genes = self.genes
+        new_dataset.matrix = X_resampled
+        new_dataset.labels = y_resampled
+        new_dataset.samples = [str(i) for i in range(len(new_dataset.matrix))]
+        new_dataset.name = self.name+"_smote_enn"
+        return new_dataset
+
+    def getSmoteTomek(self, invert = False):
+        smote_tomek = SMOTETomek(random_state=0)
+
+        X = self.matrix
+        y = self.labels
+        X_resampled, y_resampled = smote_tomek.fit_sample(X, y)
+
+        
+        y_r = np.array(y_resampled)
+        inds = []        
+        if invert: 
+            inds = y_r.argsort()[::-1] #N0 before N+
+        else:
+            inds = y_r.argsort()
+            
+        X_resampled = X_resampled[inds,]
+        y_resampled = y_resampled[inds]
+
+        new_dataset = Dataset()
+        new_dataset.genes = self.genes
+        new_dataset.matrix = X_resampled
+        new_dataset.labels = y_resampled
+        new_dataset.samples = [str(i) for i in range(len(new_dataset.matrix))]
+        new_dataset.name = self.name+"_smote_tomek"
+
+        return new_dataset
+
+
+    def getSmote(self, invert = False):
+        smote = SMOTE(random_state=0)
+
+        X = self.matrix
+        y = self.labels
+        X_resampled, y_resampled = smote.fit_sample(X, y)
+
+        
+        y_r = np.array(y_resampled)
+        inds = []        
+        if invert: 
+            inds = y_r.argsort()[::-1] #N0 before N+
+        else:
+            inds = y_r.argsort()
+            
+        X_resampled = X_resampled[inds,]
+        y_resampled = y_resampled[inds]
+
+        new_dataset = Dataset()
+        new_dataset.genes = self.genes
+        new_dataset.matrix = X_resampled
+        new_dataset.labels = y_resampled
+        new_dataset.samples = [str(i) for i in range(len(new_dataset.matrix))]
+        new_dataset.name = self.name+"_smote"
+
+        return new_dataset        
