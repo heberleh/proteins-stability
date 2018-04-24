@@ -298,8 +298,8 @@ def multidimensional_scaling(data, labels, title, filename, colors, n_iterations
 
 if __name__ == '__main__':
     
-    path_results = "./results/proteins/"
-    path_dataset = "./dataset/proteins/"
+    path_results = "./results/"
+    path_dataset = "./dataset/"
 
     start = time.time()
 
@@ -311,8 +311,8 @@ if __name__ == '__main__':
     #dataset_test = dataset
     
     smote_enn = False
-    smote_tomek = False
-    smote = True
+    smote_tomek = True
+    smote = False
     
     newdataset1 = None
     if smote_enn:
