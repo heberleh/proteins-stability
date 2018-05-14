@@ -311,7 +311,7 @@ if __name__ == '__main__':
     #dataset_test = dataset
     
     smote_enn = False
-    smote_tomek = True
+    smote_tomek = False
     smote = False
     
     newdataset1 = None
@@ -343,7 +343,7 @@ if __name__ == '__main__':
     
     max_group_size = -1 # make max_group_size == len(dataset.genes)
     #max_group_size = 3 # limit the size of signature (max_group_size)
-    filter = True
+    filter = False
     filter_name = "wilcoxon"
     cutoff = 0.10
 
@@ -361,12 +361,12 @@ if __name__ == '__main__':
     n_splits = n_cpu
 
     selected_genes = []
-    selected_genes_true = False
+    selected_genes_true = True
     if selected_genes_true:
         if 'proteins' in path_results:        
             selected_genes = ["LKHA4"]
         else:
-            selected_genes = ["Pep8", "Pep12", "Pep9"]
+            selected_genes = ["Pep12", "Pep13", "Pep14"]
         
     if len(selected_genes) > 0:
         dataset = dataset.get_sub_dataset(selected_genes)
