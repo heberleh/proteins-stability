@@ -322,10 +322,11 @@ if __name__ == '__main__':
     elif smote:
         newdataset1 = dataset.getSmote(invert=True)
 
-    print "------------------------------------------------------"
-    print "Number of samples: "+ str(len(newdataset1.labels))
-    print newdataset1.labels
-    print "------------------------------------------------------"
+    if newdataset1:
+        print "------------------------------------------------------"
+        print "Number of samples: "+ str(len(newdataset1.labels))
+        print newdataset1.labels
+        print "------------------------------------------------------"
 
     colors = ['red' if l == 'N+' else 'blue' for l in dataset.labels]
     multidimensional_scaling(data=dataset.get_scaled_data(), labels=dataset.labels, title="Original training set", filename="original_training", colors=colors, n_iterations=10000)
