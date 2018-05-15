@@ -65,6 +65,7 @@ if __name__ == '__main__':
     filename = path_dataset+"scores_0_6.txt"
     data = []
     alpha = 0.05
+    pairs = True
 
     with open(filename, 'rb') as csv_file:
         reader = csv.reader(csv_file, delimiter=',')
@@ -77,9 +78,9 @@ if __name__ == '__main__':
                 v1 = []
                 v2 = []
                 for j in range(1,len(first_row)):
-                    v1.append(int(first_row[j]))
+                    v1.append(float(first_row[j]))
                 for j in range(1,len(second_row)):
-                    v2.append(int(second_row[j]))
+                    v2.append(float(second_row[j]))
 
                 sample = {first_row[0]:v1, second_row[0]:v2}
                 data.append(sample)
@@ -89,7 +90,11 @@ if __name__ == '__main__':
     
     with open(path_results+'scores_0_6_report.txt', 'w') as f:
         report = ""
-        table = "samples, test, p-value\n"
+        table = "samples, test, p-value"
+        if pairs:
+            table += ", T"
+        table+="\n"
+
         for sample in data:
             f.write("\n\n\n==========================================================\n\n")
             f.write("Report for ")
@@ -126,7 +131,8 @@ This function tests the null hypothesis that a sample comes from a normal distri
 
             p_value = None
             test_name = None
-            if min(ps) >= alpha:
+            T = None
+            if min(ps) >= alpha and not pairs:
                 test_name = "T-test"
                 f.write("Selected statistical test: T-test\n")
                 f.write("""
@@ -137,7 +143,7 @@ This is a two-sided test for the null hypothesis that 2 independent samples have
 
                 t_statistic, p_value = stats.ttest_ind(np.array(samples[0]), np.array(samples[1]),equal_var = True)
             
-            else:
+            elif min(ps) < alpha and not pairs:
                 test_name = "Wilcoxon rank-sum test"
                 f.write("Selected statistical test: Wilcoxon rank-sum test\n")
                 f.write("""
@@ -146,9 +152,35 @@ The Wilcoxon rank-sum test tests the null hypothesis that two sets of measuremen
 This test should be used to compare two samples from continuous distributions. It does not handle ties between measurements in x and y.\n\n""")
                 z_statistic, p_value = stats.ranksums(np.array(samples[0]), np.array(samples[1]))
 
-            f.write("Means for "+samples_names+": "+"%.2f" % mean(samples[0])+" against "+"%.2f" % mean(samples[1])+"\n")
+                f.write("Means for "+samples_names+": "+"%.2f" % mean(samples[0])+" against "+"%.2f" % mean(samples[1])+"\n")
+            elif min(ps) < alpha and pairs:
+                test_name = "Wilcoxon signed-rank test"
+                f.write("Selected statistical test: Wilcoxon signed-rank test\n")
+                f.write("""
+Note about the statistical test:
+The Wilcoxon signed-rank test tests the null hypothesis that two related paired samples come from the same distribution. In particular, it tests whether the distribution of the differences x - y is symmetric about zero. It is a non-parametric version of the paired T-test.\n\n
+
+Siegel used the symbol T for a value related to, but not the same as, W {\displaystyle W} W. In consequence, the test is sometimes referred to as the Wilcoxon T test, and the test statistic is reported as a value of T.
+
+As demonstrated in the example, when the difference between the groups is zero, the observations are discarded. This is of particular concern if the samples are taken from a discrete distribution. In these scenarios the modification to the Wilcoxon test by Pratt 1959, provides an alternative which incorporates the zero differences.[4][5] This modification is more robust for data on an ordinal scale.[5] (https://en.wikipedia.org/wiki/Wilcoxon_signed-rank_test)\n\n""")
+                T, p_value = stats.wilcoxon(np.array(samples[0]), np.array(samples[1]), zero_method='pratt', correction=False)
+
+                f.write("sum(v1-v2) "+samples_names+": "+"%.4f" % sum(np.array(samples[0])-np.array(samples[1]))+"\n\n")
+                f.write("sum(v1): "+"%.4f" % sum(samples[0])+"\n\n")
+                f.write("sum(v2): "+"%.4f" % sum(samples[1])+"\n\n")
+
+                f.write("Means for "+samples_names+": "+"%.2f" % mean(samples[0])+" against "+"%.2f" % mean(samples[1])+"\n\n")
+                f.write("Medians for "+samples_names+": "+ str(np.array(median(samples[0])))+" against "+ str(median(np.array(samples[1])))+"\n\n")
+                f.write("STDs for "+samples_names+": "+"%.2f" % std(samples[0])+" against "+"%.2f" % std(samples[1])+"\n\n")
+                f.write("The sum of the ranks of the differences above or below zero, whichever is smaller: ")
+                f.write(str(T))
+                f.write("\n")
+
             f.write("The p-value found for " + samples_names + " is "+str(p_value))
-            table += samples_names + ", "+ test_name+ ", "+ str(p_value) + "\n"
+            table += samples_names + ", "+ test_name+ ", "+ str(p_value)
+            if (pairs):
+                table += ", " + str(T)
+            table += "\n"
             f.write("\n")
         
         f.write("\n\n\n =============== complete table ============== \n\n")
