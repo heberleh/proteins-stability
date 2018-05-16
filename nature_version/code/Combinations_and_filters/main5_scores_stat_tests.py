@@ -162,6 +162,8 @@ The Wilcoxon signed-rank test tests the null hypothesis that two related paired 
 
 Siegel used the symbol T for a value related to, but not the same as, W {\displaystyle W} W. In consequence, the test is sometimes referred to as the Wilcoxon T test, and the test statistic is reported as a value of T.
 
+The original Wilcoxon's proposal used a different statistic. Denoted by Siegel as the T statistic, it is the smaller of the two sums of ranks of given sign; in the example given below, therefore, T would equal 3+4+5+6=18. Low values of T are required for significance. As will be obvious from the example below, T is easier to calculate by hand than W and the test is equivalent to the two-sided test described above; however, the distribution of the statistic under H 0 {\displaystyle H_{0}} H_{0} has to be adjusted.
+
 As demonstrated in the example, when the difference between the groups is zero, the observations are discarded. This is of particular concern if the samples are taken from a discrete distribution. In these scenarios the modification to the Wilcoxon test by Pratt 1959, provides an alternative which incorporates the zero differences.[4][5] This modification is more robust for data on an ordinal scale.[5] (https://en.wikipedia.org/wiki/Wilcoxon_signed-rank_test)\n\n""")
                 T, p_value = stats.wilcoxon(np.array(samples[0]), np.array(samples[1]), zero_method='pratt', correction=False)
 

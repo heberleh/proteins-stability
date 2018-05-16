@@ -298,8 +298,8 @@ def multidimensional_scaling(data, labels, title, filename, colors, n_iterations
 
 if __name__ == '__main__':
     
-    path_results = "./results/"
-    path_dataset = "./dataset/"
+    path_results = "./results/proteins/"
+    path_dataset = "./dataset/proteins/"
 
     start = time.time()
 
@@ -344,7 +344,7 @@ if __name__ == '__main__':
     
     max_group_size = -1 # make max_group_size == len(dataset.genes)
     #max_group_size = 3 # limit the size of signature (max_group_size)
-    filter = False
+    filter = True
     filter_name = "wilcoxon"
     cutoff = 0.10
 
@@ -362,13 +362,46 @@ if __name__ == '__main__':
     n_splits = n_cpu
 
     selected_genes = []
-    selected_genes_true = True
+    selected_genes_true = False
     if selected_genes_true:
         if 'proteins' in path_results:        
             selected_genes = ["LKHA4"]
         else:
             selected_genes = ["Pep12", "Pep13", "Pep14"]
-        
+
+
+    fdr_test = True
+    if fdr_test:
+        from sklearn.feature_selection import SelectFdr, chi2
+        from scipy.stats import ranksums
+
+        with open(path_results+'FDR.txt', 'w') as f:
+
+            # ANOVA F-value
+            data = {}
+            dataset_fdr = dataset#.getSmoteEnn(invert=True)
+            print("size after...",len(dataset.matrix))
+            for i in range(len(dataset_fdr.genes)):
+                data[dataset_fdr.genes[i]] = {}
+
+            fdr = SelectFdr(alpha=0.05)            
+            fdr.fit(X=dataset_fdr.matrix, y=dataset_fdr.labels)
+            v_selected = fdr.get_support(indices=False)
+
+            for i in range(len(v_selected)):
+                data[dataset_fdr.genes[i]]["ANOVA F-value"] = v_selected[i]
+            
+            fdr = SelectFdr(score_func=chi2,alpha=0.05)            
+            fdr.fit(X=dataset_fdr.matrix, y=dataset_fdr.labels)
+            v_selected = fdr.get_support(indices=False)
+
+            for i in range(len(v_selected)):
+                data[dataset_fdr.genes[i]]["Chi-squared"] = v_selected[i]
+
+            print(data)
+            exit()
+
+
     if len(selected_genes) > 0:
         dataset = dataset.get_sub_dataset(selected_genes)
         dataset_test = dataset_test.get_sub_dataset(selected_genes)

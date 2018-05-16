@@ -15,6 +15,33 @@ Null hypothesis: COMB_CSTB invasive tumor comes from a normal distribution.
 The null hypothesis can be rejected.
 
 
+Selected statistical test: Wilcoxon signed-rank test
+
+Note about the statistical test:
+The Wilcoxon signed-rank test tests the null hypothesis that two related paired samples come from the same distribution. In particular, it tests whether the distribution of the differences x - y is symmetric about zero. It is a non-parametric version of the paired T-test.
+
+
+
+Siegel used the symbol T for a value related to, but not the same as, W {\displaystyle W} W. In consequence, the test is sometimes referred to as the Wilcoxon T test, and the test statistic is reported as a value of T.
+
+The original Wilcoxon's proposal used a different statistic. Denoted by Siegel as the T statistic, it is the smaller of the two sums of ranks of given sign; in the example given below, therefore, T would equal 3+4+5+6=18. Low values of T are required for significance. As will be obvious from the example below, T is easier to calculate by hand than W and the test is equivalent to the two-sided test described above; however, the distribution of the statistic under H 0 {\displaystyle H_{0}} H_{0} has to be adjusted.
+
+As demonstrated in the example, when the difference between the groups is zero, the observations are discarded. This is of particular concern if the samples are taken from a discrete distribution. In these scenarios the modification to the Wilcoxon test by Pratt 1959, provides an alternative which incorporates the zero differences.[4][5] This modification is more robust for data on an ordinal scale.[5] (https://en.wikipedia.org/wiki/Wilcoxon_signed-rank_test)
+
+sum(v1-v2) COMB_CSTB inner tumor against COMB_CSTB invasive tumor: -29.0000
+
+sum(v1): 256.0000
+
+sum(v2): 285.0000
+
+Means for COMB_CSTB inner tumor against COMB_CSTB invasive tumor: 2.25 against 2.50
+
+Medians for COMB_CSTB inner tumor against COMB_CSTB invasive tumor: 2.0 against 2.0
+
+STDs for COMB_CSTB inner tumor against COMB_CSTB invasive tumor: 2.06 against 1.07
+
+The sum of the ranks of the differences above or below zero, whichever is smaller: 2440.5
+The p-value found for COMB_CSTB inner tumor against COMB_CSTB invasive tumor is 0.016375991936107354
 
 
 
@@ -32,6 +59,33 @@ Null hypothesis: COMB_LTA4H inner tumor comes from a normal distribution.
 The null hypothesis can be rejected.
 
 
+Selected statistical test: Wilcoxon signed-rank test
+
+Note about the statistical test:
+The Wilcoxon signed-rank test tests the null hypothesis that two related paired samples come from the same distribution. In particular, it tests whether the distribution of the differences x - y is symmetric about zero. It is a non-parametric version of the paired T-test.
+
+
+
+Siegel used the symbol T for a value related to, but not the same as, W {\displaystyle W} W. In consequence, the test is sometimes referred to as the Wilcoxon T test, and the test statistic is reported as a value of T.
+
+The original Wilcoxon's proposal used a different statistic. Denoted by Siegel as the T statistic, it is the smaller of the two sums of ranks of given sign; in the example given below, therefore, T would equal 3+4+5+6=18. Low values of T are required for significance. As will be obvious from the example below, T is easier to calculate by hand than W and the test is equivalent to the two-sided test described above; however, the distribution of the statistic under H 0 {\displaystyle H_{0}} H_{0} has to be adjusted.
+
+As demonstrated in the example, when the difference between the groups is zero, the observations are discarded. This is of particular concern if the samples are taken from a discrete distribution. In these scenarios the modification to the Wilcoxon test by Pratt 1959, provides an alternative which incorporates the zero differences.[4][5] This modification is more robust for data on an ordinal scale.[5] (https://en.wikipedia.org/wiki/Wilcoxon_signed-rank_test)
+
+sum(v1-v2) COMB_LTA4H invasive tumor against COMB_LTA4H inner tumor: 160.0000
+
+sum(v1): 358.0000
+
+sum(v2): 198.0000
+
+Means for COMB_LTA4H invasive tumor against COMB_LTA4H inner tumor: 3.06 against 1.69
+
+Medians for COMB_LTA4H invasive tumor against COMB_LTA4H inner tumor: 4.0 against 0.0
+
+STDs for COMB_LTA4H invasive tumor against COMB_LTA4H inner tumor: 2.25 against 1.99
+
+The sum of the ranks of the differences above or below zero, whichever is smaller: 459.5
+The p-value found for COMB_LTA4H invasive tumor against COMB_LTA4H inner tumor is 3.7169482976438455e-16
 
 
 
@@ -49,6 +103,33 @@ Null hypothesis: COMB_NDRG1 invasive tumor comes from a normal distribution.
 The null hypothesis can be rejected.
 
 
+Selected statistical test: Wilcoxon signed-rank test
+
+Note about the statistical test:
+The Wilcoxon signed-rank test tests the null hypothesis that two related paired samples come from the same distribution. In particular, it tests whether the distribution of the differences x - y is symmetric about zero. It is a non-parametric version of the paired T-test.
+
+
+
+Siegel used the symbol T for a value related to, but not the same as, W {\displaystyle W} W. In consequence, the test is sometimes referred to as the Wilcoxon T test, and the test statistic is reported as a value of T.
+
+The original Wilcoxon's proposal used a different statistic. Denoted by Siegel as the T statistic, it is the smaller of the two sums of ranks of given sign; in the example given below, therefore, T would equal 3+4+5+6=18. Low values of T are required for significance. As will be obvious from the example below, T is easier to calculate by hand than W and the test is equivalent to the two-sided test described above; however, the distribution of the statistic under H 0 {\displaystyle H_{0}} H_{0} has to be adjusted.
+
+As demonstrated in the example, when the difference between the groups is zero, the observations are discarded. This is of particular concern if the samples are taken from a discrete distribution. In these scenarios the modification to the Wilcoxon test by Pratt 1959, provides an alternative which incorporates the zero differences.[4][5] This modification is more robust for data on an ordinal scale.[5] (https://en.wikipedia.org/wiki/Wilcoxon_signed-rank_test)
+
+sum(v1-v2) COMB_NDRG1 inner tumor against COMB_NDRG1 invasive tumor: 95.0000
+
+sum(v1): 481.0000
+
+sum(v2): 386.0000
+
+Means for COMB_NDRG1 inner tumor against COMB_NDRG1 invasive tumor: 4.08 against 3.27
+
+Medians for COMB_NDRG1 inner tumor against COMB_NDRG1 invasive tumor: 5.0 against 4.0
+
+STDs for COMB_NDRG1 inner tumor against COMB_NDRG1 invasive tumor: 2.05 against 1.94
+
+The sum of the ranks of the differences above or below zero, whichever is smaller: 1221.5
+The p-value found for COMB_NDRG1 inner tumor against COMB_NDRG1 invasive tumor is 6.466370023975321e-10
 
 
 
@@ -66,6 +147,33 @@ Null hypothesis: COMB_PGK1 invasive tumor comes from a normal distribution.
 The null hypothesis can be rejected.
 
 
+Selected statistical test: Wilcoxon signed-rank test
+
+Note about the statistical test:
+The Wilcoxon signed-rank test tests the null hypothesis that two related paired samples come from the same distribution. In particular, it tests whether the distribution of the differences x - y is symmetric about zero. It is a non-parametric version of the paired T-test.
+
+
+
+Siegel used the symbol T for a value related to, but not the same as, W {\displaystyle W} W. In consequence, the test is sometimes referred to as the Wilcoxon T test, and the test statistic is reported as a value of T.
+
+The original Wilcoxon's proposal used a different statistic. Denoted by Siegel as the T statistic, it is the smaller of the two sums of ranks of given sign; in the example given below, therefore, T would equal 3+4+5+6=18. Low values of T are required for significance. As will be obvious from the example below, T is easier to calculate by hand than W and the test is equivalent to the two-sided test described above; however, the distribution of the statistic under H 0 {\displaystyle H_{0}} H_{0} has to be adjusted.
+
+As demonstrated in the example, when the difference between the groups is zero, the observations are discarded. This is of particular concern if the samples are taken from a discrete distribution. In these scenarios the modification to the Wilcoxon test by Pratt 1959, provides an alternative which incorporates the zero differences.[4][5] This modification is more robust for data on an ordinal scale.[5] (https://en.wikipedia.org/wiki/Wilcoxon_signed-rank_test)
+
+sum(v1-v2) COMB_PGK1 inner tumor against COMB_PGK1 invasive tumor: -47.0000
+
+sum(v1): 269.0000
+
+sum(v2): 316.0000
+
+Means for COMB_PGK1 inner tumor against COMB_PGK1 invasive tumor: 2.28 against 2.68
+
+Medians for COMB_PGK1 inner tumor against COMB_PGK1 invasive tumor: 3.0 against 3.0
+
+STDs for COMB_PGK1 inner tumor against COMB_PGK1 invasive tumor: 1.94 against 1.91
+
+The sum of the ranks of the differences above or below zero, whichever is smaller: 1994.0
+The p-value found for COMB_PGK1 inner tumor against COMB_PGK1 invasive tumor is 4.413004522261222e-05
 
 
 
@@ -83,6 +191,33 @@ Null hypothesis: COMB_COL6A1 inner stroma comes from a normal distribution.
 The null hypothesis can be rejected.
 
 
+Selected statistical test: Wilcoxon signed-rank test
+
+Note about the statistical test:
+The Wilcoxon signed-rank test tests the null hypothesis that two related paired samples come from the same distribution. In particular, it tests whether the distribution of the differences x - y is symmetric about zero. It is a non-parametric version of the paired T-test.
+
+
+
+Siegel used the symbol T for a value related to, but not the same as, W {\displaystyle W} W. In consequence, the test is sometimes referred to as the Wilcoxon T test, and the test statistic is reported as a value of T.
+
+The original Wilcoxon's proposal used a different statistic. Denoted by Siegel as the T statistic, it is the smaller of the two sums of ranks of given sign; in the example given below, therefore, T would equal 3+4+5+6=18. Low values of T are required for significance. As will be obvious from the example below, T is easier to calculate by hand than W and the test is equivalent to the two-sided test described above; however, the distribution of the statistic under H 0 {\displaystyle H_{0}} H_{0} has to be adjusted.
+
+As demonstrated in the example, when the difference between the groups is zero, the observations are discarded. This is of particular concern if the samples are taken from a discrete distribution. In these scenarios the modification to the Wilcoxon test by Pratt 1959, provides an alternative which incorporates the zero differences.[4][5] This modification is more robust for data on an ordinal scale.[5] (https://en.wikipedia.org/wiki/Wilcoxon_signed-rank_test)
+
+sum(v1-v2) COMB_COL6A1 invasive stroma against COMB_COL6A1 inner stroma: 61.0000
+
+sum(v1): 516.0000
+
+sum(v2): 455.0000
+
+Means for COMB_COL6A1 invasive stroma against COMB_COL6A1 inner stroma: 5.55 against 4.89
+
+Medians for COMB_COL6A1 invasive stroma against COMB_COL6A1 inner stroma: 6.0 against 5.0
+
+STDs for COMB_COL6A1 invasive stroma against COMB_COL6A1 inner stroma: 0.90 against 1.64
+
+The sum of the ranks of the differences above or below zero, whichever is smaller: 662.5
+The p-value found for COMB_COL6A1 invasive stroma against COMB_COL6A1 inner stroma is 4.748030704109273e-09
 
 
 
@@ -100,6 +235,33 @@ Null hypothesis: COMB_ITGAV invasive stroma comes from a normal distribution.
 The null hypothesis can be rejected.
 
 
+Selected statistical test: Wilcoxon signed-rank test
+
+Note about the statistical test:
+The Wilcoxon signed-rank test tests the null hypothesis that two related paired samples come from the same distribution. In particular, it tests whether the distribution of the differences x - y is symmetric about zero. It is a non-parametric version of the paired T-test.
+
+
+
+Siegel used the symbol T for a value related to, but not the same as, W {\displaystyle W} W. In consequence, the test is sometimes referred to as the Wilcoxon T test, and the test statistic is reported as a value of T.
+
+The original Wilcoxon's proposal used a different statistic. Denoted by Siegel as the T statistic, it is the smaller of the two sums of ranks of given sign; in the example given below, therefore, T would equal 3+4+5+6=18. Low values of T are required for significance. As will be obvious from the example below, T is easier to calculate by hand than W and the test is equivalent to the two-sided test described above; however, the distribution of the statistic under H 0 {\displaystyle H_{0}} H_{0} has to be adjusted.
+
+As demonstrated in the example, when the difference between the groups is zero, the observations are discarded. This is of particular concern if the samples are taken from a discrete distribution. In these scenarios the modification to the Wilcoxon test by Pratt 1959, provides an alternative which incorporates the zero differences.[4][5] This modification is more robust for data on an ordinal scale.[5] (https://en.wikipedia.org/wiki/Wilcoxon_signed-rank_test)
+
+sum(v1-v2) COMB_ITGAV inner stroma against COMB_ITGAV invasive stroma: -41.0000
+
+sum(v1): 85.0000
+
+sum(v2): 126.0000
+
+Means for COMB_ITGAV inner stroma against COMB_ITGAV invasive stroma: 1.06 against 1.57
+
+Medians for COMB_ITGAV inner stroma against COMB_ITGAV invasive stroma: 0.0 against 0.0
+
+STDs for COMB_ITGAV inner stroma against COMB_ITGAV invasive stroma: 2.05 against 2.39
+
+The sum of the ranks of the differences above or below zero, whichever is smaller: 640.0
+The p-value found for COMB_ITGAV inner stroma against COMB_ITGAV invasive stroma is 2.5846618585538117e-06
 
 
 
@@ -116,4 +278,70 @@ The null hypothesis can be rejected.
 Null hypothesis: COMB_MB inner stroma comes from a normal distribution.
 The null hypothesis can be rejected.
 
+
+Selected statistical test: Wilcoxon signed-rank test
+
+Note about the statistical test:
+The Wilcoxon signed-rank test tests the null hypothesis that two related paired samples come from the same distribution. In particular, it tests whether the distribution of the differences x - y is symmetric about zero. It is a non-parametric version of the paired T-test.
+
+
+
+Siegel used the symbol T for a value related to, but not the same as, W {\displaystyle W} W. In consequence, the test is sometimes referred to as the Wilcoxon T test, and the test statistic is reported as a value of T.
+
+The original Wilcoxon's proposal used a different statistic. Denoted by Siegel as the T statistic, it is the smaller of the two sums of ranks of given sign; in the example given below, therefore, T would equal 3+4+5+6=18. Low values of T are required for significance. As will be obvious from the example below, T is easier to calculate by hand than W and the test is equivalent to the two-sided test described above; however, the distribution of the statistic under H 0 {\displaystyle H_{0}} H_{0} has to be adjusted.
+
+As demonstrated in the example, when the difference between the groups is zero, the observations are discarded. This is of particular concern if the samples are taken from a discrete distribution. In these scenarios the modification to the Wilcoxon test by Pratt 1959, provides an alternative which incorporates the zero differences.[4][5] This modification is more robust for data on an ordinal scale.[5] (https://en.wikipedia.org/wiki/Wilcoxon_signed-rank_test)
+
+sum(v1-v2) COMB_MB invasive stroma against COMB_MB inner stroma: 3.0000
+
+sum(v1): 19.0000
+
+sum(v2): 16.0000
+
+Means for COMB_MB invasive stroma against COMB_MB inner stroma: 0.22 against 0.19
+
+Medians for COMB_MB invasive stroma against COMB_MB inner stroma: 0.0 against 0.0
+
+STDs for COMB_MB invasive stroma against COMB_MB inner stroma: 0.87 against 0.77
+
+The sum of the ranks of the differences above or below zero, whichever is smaller: 248.0
+The p-value found for COMB_MB invasive stroma against COMB_MB inner stroma is 4.481682810283967e-12
+
+
+
+ =============== complete table ============== 
+
+samples, test, p-value, T
+COMB_CSTB inner tumor against COMB_CSTB invasive tumor, Wilcoxon signed-rank test, 0.016375991936107354, 2440.5
+COMB_LTA4H invasive tumor against COMB_LTA4H inner tumor, Wilcoxon signed-rank test, 3.7169482976438455e-16, 459.5
+COMB_NDRG1 inner tumor against COMB_NDRG1 invasive tumor, Wilcoxon signed-rank test, 6.466370023975321e-10, 1221.5
+COMB_PGK1 inner tumor against COMB_PGK1 invasive tumor, Wilcoxon signed-rank test, 4.413004522261222e-05, 1994.0
+COMB_COL6A1 invasive stroma against COMB_COL6A1 inner stroma, Wilcoxon signed-rank test, 4.748030704109273e-09, 662.5
+COMB_ITGAV inner stroma against COMB_ITGAV invasive stroma, Wilcoxon signed-rank test, 2.5846618585538117e-06, 640.0
+COMB_MB invasive stroma against COMB_MB inner stroma, Wilcoxon signed-rank test, 4.481682810283967e-12, 248.0
+
+
+
+ =============== considered values ============== 
+
+COMB_CSTB inner tumor: [2.0, 4.0, 4.0, 0.0, 4.0, 4.0, 1.0, 3.0, 5.0, 0.0, 1.0, 2.0, 4.0, 0.0, 0.0, 3.0, 0.0, 2.0, 5.0, 2.0, 2.0, 2.0, 0.0, 2.0, 0.0, 2.0, 0.0, 0.0, 4.0, 2.0, 0.0, 0.0, 0.0, 2.0, 2.0, 0.0, 0.0, 3.0, 3.0, 0.0, 0.0, 0.0, 2.0, 3.0, 5.0, 4.0, 0.0, 0.0, 0.0, 0.0, 3.0, 0.0, 4.0, 0.0, 3.0, 2.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 6.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 6.0, 5.0, 6.0, 3.0, 0.0, 0.0, 4.0, 0.0, 0.0, 5.0, 4.0, 2.0, 5.0, 5.0, 0.0, 4.0, 4.0, 2.0, 4.0, 0.0, 4.0, 4.0, 3.0, 5.0, 5.0, 0.0, 4.0, 4.0, 4.0, 4.0, 4.0, 3.0, 4.0, 5.0, 6.0, 6.0, 5.0, 4.0, 3.0, 6.0, 5.0, 5.0, 2.0]
+COMB_CSTB invasive tumor: [2.0, 2.0, 2.0, 2.0, 3.0, 2.0, 2.0, 2.0, 3.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 3.0, 2.0, 2.0, 3.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 3.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 4.0, 2.0, 2.0, 3.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 3.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 5.0, 0.0, 3.0, 4.0, 3.0, 5.0, 0.0, 3.0, 4.0, 4.0, 5.0, 5.0, 3.0, 5.0, 3.0, 3.0, 3.0, 3.0, 3.0, 4.0, 5.0, 5.0, 6.0, 5.0, 4.0, 0.0, 5.0, 3.0, 5.0, 2.0]
+
+COMB_LTA4H invasive tumor: [6.0, 6.0, 3.0, 5.0, 5.0, 3.0, 0.0, 4.0, 0.0, 0.0, 4.0, 6.0, 5.0, 2.0, 0.0, 3.0, 2.0, 0.0, 0.0, 6.0, 4.0, 3.0, 6.0, 4.0, 5.0, 6.0, 3.0, 5.0, 4.0, 0.0, 2.0, 5.0, 0.0, 0.0, 4.0, 5.0, 4.0, 3.0, 5.0, 5.0, 0.0, 2.0, 0.0, 0.0, 6.0, 5.0, 6.0, 4.0, 4.0, 5.0, 4.0, 0.0, 4.0, 6.0, 5.0, 5.0, 6.0, 3.0, 0.0, 0.0, 0.0, 6.0, 4.0, 2.0, 5.0, 4.0, 0.0, 3.0, 4.0, 0.0, 0.0, 4.0, 4.0, 0.0, 5.0, 5.0, 6.0, 4.0, 6.0, 0.0, 5.0, 5.0, 0.0, 3.0, 0.0, 3.0, 4.0, 5.0, 0.0, 0.0, 0.0, 4.0, 6.0, 0.0, 5.0, 0.0, 0.0, 5.0, 5.0, 0.0, 4.0, 5.0, 0.0, 0.0, 0.0, 0.0, 4.0, 4.0, 4.0, 6.0, 6.0, 5.0, 0.0, 0.0, 4.0, 4.0, 2.0]
+COMB_LTA4H inner tumor: [3.0, 0.0, 0.0, 5.0, 3.0, 3.0, 0.0, 3.0, 0.0, 0.0, 3.0, 5.0, 2.0, 0.0, 0.0, 0.0, 0.0, 0.0, 2.0, 6.0, 0.0, 3.0, 5.0, 0.0, 4.0, 3.0, 5.0, 0.0, 2.0, 0.0, 0.0, 3.0, 0.0, 0.0, 0.0, 2.0, 0.0, 0.0, 0.0, 4.0, 2.0, 0.0, 0.0, 3.0, 5.0, 4.0, 4.0, 2.0, 3.0, 3.0, 3.0, 0.0, 4.0, 6.0, 4.0, 0.0, 4.0, 0.0, 0.0, 0.0, 0.0, 3.0, 3.0, 0.0, 2.0, 4.0, 3.0, 0.0, 0.0, 0.0, 0.0, 0.0, 4.0, 0.0, 3.0, 3.0, 6.0, 0.0, 6.0, 0.0, 3.0, 5.0, 0.0, 0.0, 0.0, 3.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 4.0, 0.0, 5.0, 0.0, 0.0, 6.0, 4.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 4.0, 4.0, 0.0, 5.0, 0.0, 0.0, 0.0, 0.0, 0.0, 3.0, 2.0]
+
+COMB_NDRG1 inner tumor: [6.0, 6.0, 5.0, 5.0, 3.0, 6.0, 6.0, 0.0, 4.0, 6.0, 6.0, 6.0, 3.0, 6.0, 5.0, 3.0, 0.0, 5.0, 6.0, 6.0, 0.0, 6.0, 4.0, 6.0, 5.0, 6.0, 5.0, 0.0, 0.0, 5.0, 4.0, 3.0, 0.0, 0.0, 0.0, 6.0, 5.0, 6.0, 0.0, 6.0, 4.0, 0.0, 4.0, 4.0, 5.0, 6.0, 5.0, 6.0, 0.0, 6.0, 5.0, 3.0, 4.0, 6.0, 6.0, 0.0, 5.0, 5.0, 0.0, 3.0, 4.0, 5.0, 6.0, 5.0, 0.0, 0.0, 3.0, 6.0, 0.0, 5.0, 4.0, 6.0, 5.0, 6.0, 6.0, 6.0, 4.0, 6.0, 4.0, 4.0, 5.0, 3.0, 4.0, 6.0, 4.0, 5.0, 3.0, 6.0, 0.0, 5.0, 0.0, 5.0, 5.0, 4.0, 4.0, 4.0, 4.0, 5.0, 6.0, 5.0, 4.0, 4.0, 5.0, 6.0, 0.0, 4.0, 4.0, 4.0, 5.0, 4.0, 6.0, 5.0, 6.0, 6.0, 0.0, 4.0, 5.0, 4.0]
+COMB_NDRG1 invasive tumor: [5.0, 5.0, 5.0, 4.0, 2.0, 2.0, 3.0, 0.0, 0.0, 2.0, 6.0, 6.0, 0.0, 6.0, 5.0, 2.0, 4.0, 4.0, 5.0, 5.0, 0.0, 5.0, 5.0, 6.0, 3.0, 6.0, 4.0, 0.0, 0.0, 0.0, 3.0, 0.0, 0.0, 4.0, 0.0, 5.0, 5.0, 4.0, 0.0, 6.0, 0.0, 0.0, 4.0, 3.0, 5.0, 0.0, 4.0, 5.0, 0.0, 5.0, 5.0, 0.0, 3.0, 6.0, 6.0, 2.0, 5.0, 2.0, 0.0, 0.0, 5.0, 5.0, 0.0, 5.0, 6.0, 0.0, 5.0, 4.0, 0.0, 4.0, 0.0, 5.0, 5.0, 4.0, 3.0, 5.0, 6.0, 6.0, 4.0, 5.0, 5.0, 5.0, 2.0, 6.0, 3.0, 4.0, 0.0, 4.0, 4.0, 4.0, 2.0, 4.0, 3.0, 3.0, 4.0, 2.0, 3.0, 4.0, 3.0, 3.0, 3.0, 3.0, 4.0, 4.0, 2.0, 3.0, 3.0, 4.0, 4.0, 4.0, 4.0, 4.0, 3.0, 3.0, 2.0, 3.0, 3.0, 3.0]
+
+COMB_PGK1 inner tumor: [0.0, 4.0, 4.0, 3.0, 2.0, 3.0, 0.0, 4.0, 0.0, 2.0, 4.0, 0.0, 2.0, 3.0, 0.0, 0.0, 0.0, 4.0, 4.0, 0.0, 0.0, 3.0, 4.0, 3.0, 2.0, 2.0, 3.0, 2.0, 0.0, 0.0, 0.0, 0.0, 5.0, 0.0, 0.0, 4.0, 0.0, 2.0, 5.0, 0.0, 0.0, 3.0, 0.0, 0.0, 4.0, 2.0, 4.0, 0.0, 2.0, 3.0, 3.0, 4.0, 2.0, 2.0, 0.0, 2.0, 4.0, 2.0, 3.0, 0.0, 3.0, 4.0, 4.0, 4.0, 3.0, 0.0, 0.0, 5.0, 0.0, 0.0, 0.0, 0.0, 3.0, 3.0, 4.0, 3.0, 6.0, 0.0, 5.0, 4.0, 2.0, 5.0, 0.0, 3.0, 4.0, 4.0, 4.0, 0.0, 5.0, 0.0, 4.0, 4.0, 4.0, 5.0, 3.0, 3.0, 0.0, 0.0, 3.0, 0.0, 0.0, 0.0, 0.0, 0.0, 3.0, 0.0, 5.0, 5.0, 0.0, 6.0, 6.0, 5.0, 5.0, 5.0, 0.0, 5.0, 4.0, 2.0]
+COMB_PGK1 invasive tumor: [0.0, 3.0, 5.0, 0.0, 4.0, 4.0, 3.0, 6.0, 0.0, 5.0, 3.0, 0.0, 4.0, 5.0, 2.0, 0.0, 2.0, 4.0, 0.0, 4.0, 2.0, 4.0, 2.0, 2.0, 3.0, 3.0, 4.0, 2.0, 0.0, 0.0, 2.0, 2.0, 5.0, 0.0, 4.0, 4.0, 2.0, 4.0, 2.0, 2.0, 0.0, 0.0, 4.0, 0.0, 2.0, 2.0, 6.0, 0.0, 5.0, 4.0, 4.0, 5.0, 2.0, 6.0, 2.0, 5.0, 3.0, 0.0, 4.0, 2.0, 4.0, 5.0, 3.0, 3.0, 2.0, 0.0, 3.0, 0.0, 4.0, 0.0, 2.0, 2.0, 0.0, 0.0, 2.0, 3.0, 0.0, 2.0, 5.0, 3.0, 3.0, 4.0, 0.0, 2.0, 4.0, 4.0, 4.0, 2.0, 5.0, 0.0, 4.0, 4.0, 4.0, 5.0, 3.0, 4.0, 0.0, 0.0, 5.0, 0.0, 0.0, 0.0, 4.0, 0.0, 4.0, 0.0, 5.0, 5.0, 0.0, 6.0, 5.0, 6.0, 5.0, 4.0, 0.0, 4.0, 4.0, 5.0]
+
+COMB_COL6A1 invasive stroma: [0.0, 3.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 6.0, 6.0, 6.0, 6.0, 6.0, 6.0, 6.0, 6.0, 6.0, 6.0, 6.0, 6.0, 6.0, 6.0, 6.0, 6.0, 6.0, 6.0, 6.0, 6.0, 6.0, 6.0, 6.0, 6.0, 6.0, 6.0, 6.0, 6.0, 6.0, 6.0, 6.0, 6.0, 6.0, 6.0, 6.0, 6.0, 6.0, 6.0, 6.0, 6.0, 6.0, 6.0, 6.0, 6.0, 6.0, 6.0, 6.0, 6.0, 6.0, 6.0, 6.0, 6.0, 6.0, 6.0, 6.0, 6.0, 6.0, 6.0, 6.0, 6.0, 6.0, 6.0, 6.0, 6.0, 6.0, 6.0]
+COMB_COL6A1 inner stroma: [6.0, 0.0, 3.0, 4.0, 3.0, 4.0, 5.0, 4.0, 6.0, 4.0, 5.0, 0.0, 6.0, 6.0, 5.0, 5.0, 6.0, 6.0, 5.0, 6.0, 5.0, 5.0, 0.0, 6.0, 6.0, 4.0, 4.0, 6.0, 4.0, 6.0, 4.0, 6.0, 5.0, 4.0, 6.0, 5.0, 5.0, 5.0, 6.0, 6.0, 6.0, 6.0, 6.0, 5.0, 6.0, 5.0, 6.0, 0.0, 5.0, 5.0, 5.0, 6.0, 5.0, 6.0, 6.0, 6.0, 6.0, 6.0, 6.0, 6.0, 6.0, 0.0, 6.0, 3.0, 6.0, 6.0, 6.0, 6.0, 5.0, 6.0, 0.0, 6.0, 6.0, 6.0, 6.0, 6.0, 3.0, 5.0, 6.0, 4.0, 4.0, 5.0, 5.0, 4.0, 6.0, 0.0, 6.0, 6.0, 6.0, 4.0, 5.0, 6.0, 5.0]
+
+COMB_ITGAV inner stroma: [0.0, 0.0, 0.0, 0.0, 6.0, 6.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 3.0, 0.0, 0.0, 4.0, 6.0, 0.0, 0.0, 0.0, 3.0, 5.0, 0.0, 0.0, 0.0, 0.0, 3.0, 0.0, 3.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 6.0, 6.0, 0.0, 0.0, 0.0, 0.0, 4.0, 0.0, 4.0, 0.0, 4.0, 0.0, 0.0, 0.0, 0.0, 5.0, 0.0, 6.0, 0.0, 0.0, 6.0, 5.0]
+COMB_ITGAV invasive stroma: [0.0, 4.0, 0.0, 0.0, 4.0, 4.0, 0.0, 0.0, 0.0, 0.0, 5.0, 6.0, 0.0, 0.0, 0.0, 0.0, 6.0, 0.0, 6.0, 0.0, 0.0, 0.0, 2.0, 6.0, 0.0, 0.0, 0.0, 5.0, 0.0, 0.0, 0.0, 0.0, 0.0, 6.0, 6.0, 4.0, 6.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 6.0, 0.0, 0.0, 0.0, 0.0, 6.0, 0.0, 0.0, 5.0, 0.0, 6.0, 4.0, 0.0, 0.0, 0.0, 0.0, 4.0, 0.0, 6.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 6.0, 4.0, 2.0, 0.0, 5.0, 0.0, 2.0]
+
+COMB_MB invasive stroma: [0.0, 5.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 4.0, 0.0, 0.0, 0.0, 0.0, 2.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 2.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 4.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 2.0]
+COMB_MB inner stroma: [0.0, 4.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 3.0, 0.0, 0.0, 0.0, 0.0, 0.0, 3.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 2.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 4.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
 
