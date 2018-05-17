@@ -1,0 +1,7413 @@
+Chi-squared
+Group_code * Gender
+   
+     0  1
+  0  3 11
+  1  3 23
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.69813, df = 1, p-value = 0.4034
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.1379, df = 1, p-value = 0.7104
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.69813, df = NA, p-value = 0.6462
+
+----------------------------------
+Group_code * Age
+   
+    20 40 43 44 45 48 49 50 51 52 55 56 58 59 60 61 62 63 66 68 71 73 74 75 76
+  0  0  0  1  2  0  1  1  1  1  1  0  0  0  1  0  0  1  0  2  0  1  0  0  1  0
+  1  1  1  0  1  1  1  1  1  1  1  2  2  1  1  2  1  2  1  0  1  0  1  1  0  1
+   
+    79
+  0  0
+  1  1
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 20.952, df = 25, p-value = 0.6953
+
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 20.952, df = 25, p-value = 0.6953
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 20.952, df = NA, p-value = 0.937
+
+----------------------------------
+Group_code * Age_code
+   
+     1  2
+  0  8  6
+  1 11 15
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.80311, df = 1, p-value = 0.3702
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.31838, df = 1, p-value = 0.5726
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.80311, df = NA, p-value = 0.5162
+
+----------------------------------
+Group_code * T_code
+   
+     1  2
+  0  7  7
+  1  5 21
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 4.1026, df = 1, p-value = 0.04282
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 2.7682, df = 1, p-value = 0.09616
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 4.1026, df = NA, p-value = 0.07796
+
+----------------------------------
+Group_code * N_code
+   
+     1  2
+  0 14  0
+  1  1 25
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 35.897, df = 1, p-value = 2.08e-09
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 31.912, df = 1, p-value = 1.613e-08
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 35.897, df = NA, p-value = 0.0004998
+
+----------------------------------
+Group_code * Stage_code
+   
+     1  2
+  0  7  7
+  1  0 26
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 15.758, df = 1, p-value = 7.2e-05
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 12.485, df = 1, p-value = 0.0004103
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 15.758, df = NA, p-value = 0.0004998
+
+----------------------------------
+Group_code * Survival_code
+   
+     0  1
+  0 10  4
+  1 13 13
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 1.7099, df = 1, p-value = 0.191
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.94545, df = 1, p-value = 0.3309
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 1.7099, df = NA, p-value = 0.3078
+
+----------------------------------
+Group_code * Smoking_habit_code
+   
+     0  1
+  0  1 13
+  1  2 24
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.00396, df = 1, p-value = 0.9498
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 5.2716e-32, df = 1, p-value = 1
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.00396, df = NA, p-value = 1
+
+----------------------------------
+Group_code * Drinking_habit_code
+   
+     0  1
+  0  2 12
+  1  2 24
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.43956, df = 1, p-value = 0.5073
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.01221, df = 1, p-value = 0.912
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.43956, df = NA, p-value = 0.6097
+
+----------------------------------
+Group_code * Pep1
+   
+     0  1
+  0  7  7
+  1 21  5
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 4.1026, df = 1, p-value = 0.04282
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 2.7682, df = 1, p-value = 0.09616
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 4.1026, df = NA, p-value = 0.06847
+
+----------------------------------
+Group_code * Pep2
+   
+     0  1
+  0 11  3
+  1 18  8
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.39822, df = 1, p-value = 0.528
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.067519, df = 1, p-value = 0.795
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.39822, df = NA, p-value = 0.7326
+
+----------------------------------
+Group_code * Pep3
+   
+     0  1
+  0  7  7
+  1 21  5
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 4.1026, df = 1, p-value = 0.04282
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 2.7682, df = 1, p-value = 0.09616
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 4.1026, df = NA, p-value = 0.07796
+
+----------------------------------
+Group_code * Pep4
+   
+     0  1
+  0  9  5
+  1 23  3
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 3.3242, df = 1, p-value = 0.06827
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 1.9849, df = 1, p-value = 0.1589
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 3.3242, df = NA, p-value = 0.09395
+
+----------------------------------
+Group_code * Pep5
+   
+     0  1
+  0  7  7
+  1 22  4
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 5.469, df = 1, p-value = 0.01936
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 3.8706, df = 1, p-value = 0.04914
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 5.469, df = NA, p-value = 0.03748
+
+----------------------------------
+Group_code * Pep6
+   
+     0  1
+  0 10  4
+  1 23  3
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 1.8286, df = 1, p-value = 0.1763
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.83916, df = 1, p-value = 0.3596
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 1.8286, df = NA, p-value = 0.2144
+
+----------------------------------
+Group_code * Pep7
+   
+     0  1
+  0  7  7
+  1 22  4
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 5.469, df = 1, p-value = 0.01936
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 3.8706, df = 1, p-value = 0.04914
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 5.469, df = NA, p-value = 0.02899
+
+----------------------------------
+Group_code * Pep8
+   
+     0  1
+  0  6  8
+  1 22  4
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 7.5563, df = 1, p-value = 0.00598
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 5.6986, df = 1, p-value = 0.01698
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 7.5563, df = NA, p-value = 0.009495
+
+----------------------------------
+Group_code * Pep9
+   
+     0  1
+  0  9  5
+  1 21  5
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 1.3187, df = 1, p-value = 0.2508
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.58608, df = 1, p-value = 0.4439
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 1.3187, df = NA, p-value = 0.4578
+
+----------------------------------
+Group_code * Pep10
+   
+     0  1
+  0  6  8
+  1 20  6
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 4.642, df = 1, p-value = 0.0312
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 3.2653, df = 1, p-value = 0.07076
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 4.642, df = NA, p-value = 0.04948
+
+----------------------------------
+Group_code * Pep11
+   
+     0  1
+  0  7  7
+  1 19  7
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 2.1302, df = 1, p-value = 0.1444
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 1.2366, df = 1, p-value = 0.2661
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 2.1302, df = NA, p-value = 0.1809
+
+----------------------------------
+Group_code * Pep12
+   
+     0  1
+  0  9  5
+  1 21  5
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 1.3187, df = 1, p-value = 0.2508
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.58608, df = 1, p-value = 0.4439
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 1.3187, df = NA, p-value = 0.4433
+
+----------------------------------
+Group_code * Pep13
+   
+     0  1
+  0 10  4
+  1 19  7
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.012401, df = 1, p-value = 0.9113
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 1.2132e-30, df = 1, p-value = 1
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.012401, df = NA, p-value = 1
+
+----------------------------------
+Group_code * Pep14
+   
+     0  1
+  0 11  3
+  1 20  6
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.014179, df = 1, p-value = 0.9052
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 1.3937e-30, df = 1, p-value = 1
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.014179, df = NA, p-value = 1
+
+----------------------------------
+Gender * Age
+   
+    20 40 43 44 45 48 49 50 51 52 55 56 58 59 60 61 62 63 66 68 71 73 74 75 76
+  0  0  0  0  1  0  0  1  0  0  1  1  0  0  1  0  0  0  0  0  0  1  0  0  0  0
+  1  1  1  1  2  1  2  1  2  2  1  1  2  1  1  2  1  3  1  2  1  0  1  1  1  1
+   
+    79
+  0  0
+  1  1
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 19.085, df = 25, p-value = 0.793
+
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 19.085, df = 25, p-value = 0.793
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 19.085, df = NA, p-value = 0.9375
+
+----------------------------------
+Gender * Age_code
+   
+     1  2
+  0  4  2
+  1 15 19
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 1.0399, df = 1, p-value = 0.3079
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.3322, df = 1, p-value = 0.5644
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 1.0399, df = NA, p-value = 0.3828
+
+----------------------------------
+Gender * T_code
+   
+     1  2
+  0  4  2
+  1  8 26
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 4.5191, df = 1, p-value = 0.03352
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 2.6984, df = 1, p-value = 0.1004
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 4.5191, df = NA, p-value = 0.05947
+
+----------------------------------
+Gender * N_code
+   
+     1  2
+  0  3  3
+  1 12 22
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.47059, df = 1, p-value = 0.4927
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.052288, df = 1, p-value = 0.8191
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.47059, df = NA, p-value = 0.6452
+
+----------------------------------
+Gender * Stage_code
+   
+     1  2
+  0  2  4
+  1  5 29
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 1.2257, df = 1, p-value = 0.2682
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.27502, df = 1, p-value = 0.6
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 1.2257, df = NA, p-value = 0.5592
+
+----------------------------------
+Gender * Survival_code
+   
+     0  1
+  0  5  1
+  1 18 16
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 1.9277, df = 1, p-value = 0.165
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.88461, df = 1, p-value = 0.3469
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 1.9277, df = NA, p-value = 0.2159
+
+----------------------------------
+Gender * Smoking_habit_code
+   
+     0  1
+  0  0  6
+  1  3 31
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.57234, df = 1, p-value = 0.4493
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 1.6088e-30, df = 1, p-value = 1
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.57234, df = NA, p-value = 1
+
+----------------------------------
+Gender * Drinking_habit_code
+   
+     0  1
+  0  0  6
+  1  4 30
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.78431, df = 1, p-value = 0.3758
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.021786, df = 1, p-value = 0.8827
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.78431, df = NA, p-value = 0.6192
+
+----------------------------------
+Gender * Pep1
+   
+     0  1
+  0  6  0
+  1 22 12
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 3.0252, df = 1, p-value = 0.08198
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 1.578, df = 1, p-value = 0.2091
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 3.0252, df = NA, p-value = 0.1629
+
+----------------------------------
+Gender * Pep2
+   
+     0  1
+  0  5  1
+  1 24 10
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.41551, df = 1, p-value = 0.5192
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.022128, df = 1, p-value = 0.8817
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.41551, df = NA, p-value = 0.6672
+
+----------------------------------
+Gender * Pep3
+   
+     0  1
+  0  6  0
+  1 22 12
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 3.0252, df = 1, p-value = 0.08198
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 1.578, df = 1, p-value = 0.2091
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 3.0252, df = NA, p-value = 0.1559
+
+----------------------------------
+Gender * Pep4
+   
+     0  1
+  0  6  0
+  1 26  8
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 1.7647, df = 1, p-value = 0.184
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.60049, df = 1, p-value = 0.4384
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 1.7647, df = NA, p-value = 0.3128
+
+----------------------------------
+Gender * Pep5
+   
+     0  1
+  0  5  1
+  1 24 10
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.41551, df = 1, p-value = 0.5192
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.022128, df = 1, p-value = 0.8817
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.41551, df = NA, p-value = 0.6602
+
+----------------------------------
+Gender * Pep6
+   
+     0  1
+  0  4  2
+  1 29  5
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 1.2257, df = 1, p-value = 0.2682
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.27502, df = 1, p-value = 0.6
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 1.2257, df = NA, p-value = 0.5687
+
+----------------------------------
+Gender * Pep7
+   
+     0  1
+  0  6  0
+  1 23 11
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 2.6775, df = 1, p-value = 0.1018
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 1.3006, df = 1, p-value = 0.2541
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 2.6775, df = NA, p-value = 0.1634
+
+----------------------------------
+Gender * Pep8
+   
+     0  1
+  0  5  1
+  1 23 11
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.59757, df = 1, p-value = 0.4395
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.084034, df = 1, p-value = 0.7719
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.59757, df = NA, p-value = 0.6497
+
+----------------------------------
+Gender * Pep9
+   
+     0  1
+  0  6  0
+  1 24 10
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 2.3529, df = 1, p-value = 0.125
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 1.0458, df = 1, p-value = 0.3065
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 2.3529, df = NA, p-value = 0.3118
+
+----------------------------------
+Gender * Pep10
+   
+     0  1
+  0  5  1
+  1 21 13
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 1.0429, df = 1, p-value = 0.3072
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.31028, df = 1, p-value = 0.5775
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 1.0429, df = NA, p-value = 0.3858
+
+----------------------------------
+Gender * Pep11
+   
+     0  1
+  0  4  2
+  1 22 12
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.0086188, df = 1, p-value = 0.926
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 2.8726e-31, df = 1, p-value = 1
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.0086188, df = NA, p-value = 1
+
+----------------------------------
+Gender * Pep12
+   
+     0  1
+  0  6  0
+  1 24 10
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 2.3529, df = 1, p-value = 0.125
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 1.0458, df = 1, p-value = 0.3065
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 2.3529, df = NA, p-value = 0.3093
+
+----------------------------------
+Gender * Pep13
+   
+     0  1
+  0  4  2
+  1 25  9
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.12047, df = 1, p-value = 0.7285
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 2.4753e-31, df = 1, p-value = 1
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.12047, df = NA, p-value = 1
+
+----------------------------------
+Gender * Pep14
+   
+     0  1
+  0  4  2
+  1 27  7
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.47509, df = 1, p-value = 0.4907
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.0253, df = 1, p-value = 0.8736
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.47509, df = NA, p-value = 0.6057
+
+----------------------------------
+Age * Age_code
+    
+     1 2
+  20 1 0
+  40 1 0
+  43 1 0
+  44 3 0
+  45 1 0
+  48 2 0
+  49 2 0
+  50 2 0
+  51 2 0
+  52 2 0
+  55 2 0
+  56 0 2
+  58 0 1
+  59 0 2
+  60 0 2
+  61 0 1
+  62 0 3
+  63 0 1
+  66 0 2
+  68 0 1
+  71 0 1
+  73 0 1
+  74 0 1
+  75 0 1
+  76 0 1
+  79 0 1
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 40, df = 25, p-value = 0.02916
+
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 40, df = 25, p-value = 0.02916
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 40, df = NA, p-value = 0.0004998
+
+----------------------------------
+Age * T_code
+    
+     1 2
+  20 0 1
+  40 0 1
+  43 1 0
+  44 2 1
+  45 0 1
+  48 1 1
+  49 1 1
+  50 0 2
+  51 1 1
+  52 1 1
+  55 1 1
+  56 1 1
+  58 0 1
+  59 1 1
+  60 1 1
+  61 0 1
+  62 0 3
+  63 0 1
+  66 0 2
+  68 0 1
+  71 0 1
+  73 0 1
+  74 1 0
+  75 0 1
+  76 0 1
+  79 0 1
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 17.778, df = 25, p-value = 0.8517
+
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 17.778, df = 25, p-value = 0.8517
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 17.778, df = NA, p-value = 0.9765
+
+----------------------------------
+Age * N_code
+    
+     1 2
+  20 1 0
+  40 0 1
+  43 1 0
+  44 2 1
+  45 0 1
+  48 1 1
+  49 1 1
+  50 1 1
+  51 1 1
+  52 1 1
+  55 0 2
+  56 0 2
+  58 0 1
+  59 1 1
+  60 0 2
+  61 0 1
+  62 1 2
+  63 0 1
+  66 2 0
+  68 0 1
+  71 1 0
+  73 0 1
+  74 0 1
+  75 1 0
+  76 0 1
+  79 0 1
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 21.511, df = 25, p-value = 0.6638
+
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 21.511, df = 25, p-value = 0.6638
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 21.511, df = NA, p-value = 0.9195
+
+----------------------------------
+Age * Stage_code
+    
+     1 2
+  20 0 1
+  40 0 1
+  43 1 0
+  44 1 2
+  45 0 1
+  48 1 1
+  49 1 1
+  50 0 2
+  51 1 1
+  52 1 1
+  55 0 2
+  56 0 2
+  58 0 1
+  59 1 1
+  60 0 2
+  61 0 1
+  62 0 3
+  63 0 1
+  66 0 2
+  68 0 1
+  71 0 1
+  73 0 1
+  74 0 1
+  75 0 1
+  76 0 1
+  79 0 1
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 18.066, df = 25, p-value = 0.8396
+
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 18.066, df = 25, p-value = 0.8396
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 18.066, df = NA, p-value = 0.9615
+
+----------------------------------
+Age * Survival_code
+    
+     0 1
+  20 1 0
+  40 1 0
+  43 0 1
+  44 3 0
+  45 1 0
+  48 1 1
+  49 1 1
+  50 2 0
+  51 0 2
+  52 1 1
+  55 1 1
+  56 2 0
+  58 0 1
+  59 1 1
+  60 0 2
+  61 1 0
+  62 3 0
+  63 0 1
+  66 2 0
+  68 1 0
+  71 1 0
+  73 0 1
+  74 0 1
+  75 0 1
+  76 0 1
+  79 0 1
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 29.77, df = 25, p-value = 0.233
+
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 29.77, df = 25, p-value = 0.233
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 29.77, df = NA, p-value = 0.1334
+
+----------------------------------
+Age * Smoking_habit_code
+    
+     0 1
+  20 1 0
+  40 0 1
+  43 1 0
+  44 0 3
+  45 0 1
+  48 1 1
+  49 0 2
+  50 0 2
+  51 0 2
+  52 0 2
+  55 0 2
+  56 0 2
+  58 0 1
+  59 0 2
+  60 0 2
+  61 0 1
+  62 0 3
+  63 0 1
+  66 0 2
+  68 0 1
+  71 0 1
+  73 0 1
+  74 0 1
+  75 0 1
+  76 0 1
+  79 0 1
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 32.793, df = 25, p-value = 0.1363
+
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 32.793, df = 25, p-value = 0.1363
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 32.793, df = NA, p-value = 0.2674
+
+----------------------------------
+Age * Drinking_habit_code
+    
+     0 1
+  20 1 0
+  40 0 1
+  43 1 0
+  44 0 3
+  45 0 1
+  48 1 1
+  49 0 2
+  50 0 2
+  51 0 2
+  52 0 2
+  55 0 2
+  56 0 2
+  58 0 1
+  59 0 2
+  60 0 2
+  61 0 1
+  62 0 3
+  63 0 1
+  66 1 1
+  68 0 1
+  71 0 1
+  73 0 1
+  74 0 1
+  75 0 1
+  76 0 1
+  79 0 1
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 28.889, df = 25, p-value = 0.2686
+
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 28.889, df = 25, p-value = 0.2686
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 28.889, df = NA, p-value = 0.3593
+
+----------------------------------
+Age * Pep1
+    
+     0 1
+  20 0 1
+  40 1 0
+  43 0 1
+  44 3 0
+  45 1 0
+  48 1 1
+  49 2 0
+  50 2 0
+  51 1 1
+  52 1 1
+  55 2 0
+  56 1 1
+  58 1 0
+  59 2 0
+  60 2 0
+  61 1 0
+  62 2 1
+  63 0 1
+  66 0 2
+  68 1 0
+  71 1 0
+  73 1 0
+  74 1 0
+  75 0 1
+  76 1 0
+  79 0 1
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 27.302, df = 25, p-value = 0.341
+
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 27.302, df = 25, p-value = 0.341
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 27.302, df = NA, p-value = 0.4143
+
+----------------------------------
+Age * Pep2
+    
+     0 1
+  20 1 0
+  40 0 1
+  43 0 1
+  44 3 0
+  45 1 0
+  48 2 0
+  49 1 1
+  50 2 0
+  51 1 1
+  52 1 1
+  55 0 2
+  56 2 0
+  58 1 0
+  59 2 0
+  60 2 0
+  61 1 0
+  62 3 0
+  63 0 1
+  66 1 1
+  68 1 0
+  71 1 0
+  73 1 0
+  74 1 0
+  75 0 1
+  76 1 0
+  79 0 1
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 29.969, df = 25, p-value = 0.2255
+
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 29.969, df = 25, p-value = 0.2255
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 29.969, df = NA, p-value = 0.1414
+
+----------------------------------
+Age * Pep3
+    
+     0 1
+  20 1 0
+  40 1 0
+  43 0 1
+  44 2 1
+  45 1 0
+  48 1 1
+  49 1 1
+  50 2 0
+  51 1 1
+  52 2 0
+  55 2 0
+  56 0 2
+  58 1 0
+  59 2 0
+  60 2 0
+  61 1 0
+  62 3 0
+  63 0 1
+  66 0 2
+  68 1 0
+  71 1 0
+  73 1 0
+  74 1 0
+  75 0 1
+  76 1 0
+  79 0 1
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 29.683, df = 25, p-value = 0.2364
+
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 29.683, df = 25, p-value = 0.2364
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 29.683, df = NA, p-value = 0.2104
+
+----------------------------------
+Age * Pep4
+    
+     0 1
+  20 1 0
+  40 1 0
+  43 0 1
+  44 2 1
+  45 1 0
+  48 1 1
+  49 1 1
+  50 2 0
+  51 2 0
+  52 2 0
+  55 2 0
+  56 2 0
+  58 1 0
+  59 2 0
+  60 2 0
+  61 1 0
+  62 3 0
+  63 0 1
+  66 1 1
+  68 1 0
+  71 1 0
+  73 1 0
+  74 1 0
+  75 0 1
+  76 1 0
+  79 0 1
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 26.458, df = 25, p-value = 0.3835
+
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 26.458, df = 25, p-value = 0.3835
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 26.458, df = NA, p-value = 0.5132
+
+----------------------------------
+Age * Pep5
+    
+     0 1
+  20 1 0
+  40 1 0
+  43 0 1
+  44 2 1
+  45 1 0
+  48 1 1
+  49 1 1
+  50 2 0
+  51 2 0
+  52 1 1
+  55 2 0
+  56 1 1
+  58 1 0
+  59 2 0
+  60 2 0
+  61 1 0
+  62 2 1
+  63 0 1
+  66 1 1
+  68 1 0
+  71 1 0
+  73 1 0
+  74 1 0
+  75 0 1
+  76 1 0
+  79 0 1
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 20.773, df = 25, p-value = 0.7052
+
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 20.773, df = 25, p-value = 0.7052
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 20.773, df = NA, p-value = 0.932
+
+----------------------------------
+Age * Pep6
+    
+     0 1
+  20 0 1
+  40 1 0
+  43 1 0
+  44 3 0
+  45 1 0
+  48 2 0
+  49 2 0
+  50 2 0
+  51 2 0
+  52 1 1
+  55 2 0
+  56 0 2
+  58 1 0
+  59 1 1
+  60 2 0
+  61 1 0
+  62 2 1
+  63 1 0
+  66 2 0
+  68 1 0
+  71 0 1
+  73 1 0
+  74 1 0
+  75 1 0
+  76 1 0
+  79 1 0
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 28.456, df = 25, p-value = 0.2873
+
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 28.456, df = 25, p-value = 0.2873
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 28.456, df = NA, p-value = 0.3583
+
+----------------------------------
+Age * Pep7
+    
+     0 1
+  20 1 0
+  40 1 0
+  43 0 1
+  44 2 1
+  45 1 0
+  48 1 1
+  49 1 1
+  50 2 0
+  51 2 0
+  52 2 0
+  55 2 0
+  56 1 1
+  58 1 0
+  59 2 0
+  60 2 0
+  61 1 0
+  62 2 1
+  63 0 1
+  66 0 2
+  68 1 0
+  71 1 0
+  73 1 0
+  74 1 0
+  75 0 1
+  76 1 0
+  79 0 1
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 25.789, df = 25, p-value = 0.4189
+
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 25.789, df = 25, p-value = 0.4189
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 25.789, df = NA, p-value = 0.5497
+
+----------------------------------
+Age * Pep8
+    
+     0 1
+  20 1 0
+  40 1 0
+  43 0 1
+  44 2 1
+  45 1 0
+  48 1 1
+  49 2 0
+  50 2 0
+  51 1 1
+  52 1 1
+  55 2 0
+  56 1 1
+  58 1 0
+  59 2 0
+  60 2 0
+  61 1 0
+  62 3 0
+  63 0 1
+  66 0 2
+  68 0 1
+  71 1 0
+  73 1 0
+  74 1 0
+  75 0 1
+  76 1 0
+  79 0 1
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 27.302, df = 25, p-value = 0.341
+
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 27.302, df = 25, p-value = 0.341
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 27.302, df = NA, p-value = 0.3923
+
+----------------------------------
+Age * Pep9
+    
+     0 1
+  20 0 1
+  40 1 0
+  43 0 1
+  44 3 0
+  45 1 0
+  48 0 2
+  49 2 0
+  50 2 0
+  51 2 0
+  52 2 0
+  55 2 0
+  56 1 1
+  58 1 0
+  59 2 0
+  60 2 0
+  61 1 0
+  62 2 1
+  63 0 1
+  66 1 1
+  68 1 0
+  71 1 0
+  73 1 0
+  74 1 0
+  75 0 1
+  76 1 0
+  79 0 1
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 31.111, df = 25, p-value = 0.1854
+
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 31.111, df = 25, p-value = 0.1854
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 31.111, df = NA, p-value = 0.1324
+
+----------------------------------
+Age * Pep10
+    
+     0 1
+  20 0 1
+  40 1 0
+  43 0 1
+  44 2 1
+  45 1 0
+  48 1 1
+  49 1 1
+  50 2 0
+  51 1 1
+  52 2 0
+  55 2 0
+  56 0 2
+  58 1 0
+  59 1 1
+  60 2 0
+  61 1 0
+  62 2 1
+  63 0 1
+  66 1 1
+  68 1 0
+  71 0 1
+  73 1 0
+  74 1 0
+  75 1 0
+  76 1 0
+  79 0 1
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 23.15, df = 25, p-value = 0.5688
+
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 23.15, df = 25, p-value = 0.5688
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 23.15, df = NA, p-value = 0.8096
+
+----------------------------------
+Age * Pep11
+    
+     0 1
+  20 1 0
+  40 1 0
+  43 1 0
+  44 2 1
+  45 1 0
+  48 1 1
+  49 2 0
+  50 1 1
+  51 2 0
+  52 1 1
+  55 2 0
+  56 0 2
+  58 1 0
+  59 1 1
+  60 2 0
+  61 1 0
+  62 1 2
+  63 0 1
+  66 1 1
+  68 0 1
+  71 0 1
+  73 1 0
+  74 1 0
+  75 1 0
+  76 1 0
+  79 0 1
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 23.15, df = 25, p-value = 0.5688
+
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 23.15, df = 25, p-value = 0.5688
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 23.15, df = NA, p-value = 0.8186
+
+----------------------------------
+Age * Pep12
+    
+     0 1
+  20 1 0
+  40 1 0
+  43 0 1
+  44 2 1
+  45 1 0
+  48 2 0
+  49 1 1
+  50 2 0
+  51 1 1
+  52 2 0
+  55 2 0
+  56 0 2
+  58 1 0
+  59 1 1
+  60 2 0
+  61 1 0
+  62 3 0
+  63 0 1
+  66 2 0
+  68 1 0
+  71 1 0
+  73 1 0
+  74 1 0
+  75 0 1
+  76 1 0
+  79 0 1
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 28.444, df = 25, p-value = 0.2878
+
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 28.444, df = 25, p-value = 0.2878
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 28.444, df = NA, p-value = 0.3008
+
+----------------------------------
+Age * Pep13
+    
+     0 1
+  20 1 0
+  40 1 0
+  43 0 1
+  44 2 1
+  45 1 0
+  48 2 0
+  49 1 1
+  50 1 1
+  51 2 0
+  52 1 1
+  55 2 0
+  56 1 1
+  58 1 0
+  59 1 1
+  60 2 0
+  61 0 1
+  62 3 0
+  63 0 1
+  66 2 0
+  68 1 0
+  71 1 0
+  73 1 0
+  74 1 0
+  75 1 0
+  76 0 1
+  79 0 1
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 24.117, df = 25, p-value = 0.5126
+
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 24.117, df = 25, p-value = 0.5126
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 24.117, df = NA, p-value = 0.7001
+
+----------------------------------
+Age * Pep14
+    
+     0 1
+  20 1 0
+  40 1 0
+  43 0 1
+  44 2 1
+  45 1 0
+  48 2 0
+  49 1 1
+  50 1 1
+  51 2 0
+  52 1 1
+  55 2 0
+  56 1 1
+  58 1 0
+  59 2 0
+  60 2 0
+  61 0 1
+  62 3 0
+  63 0 1
+  66 2 0
+  68 1 0
+  71 1 0
+  73 1 0
+  74 1 0
+  75 1 0
+  76 1 0
+  79 0 1
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 24.707, df = 25, p-value = 0.4789
+
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 24.707, df = 25, p-value = 0.4789
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 24.707, df = NA, p-value = 0.6307
+
+----------------------------------
+Age_code * T_code
+   
+     1  2
+  1  8 11
+  2  4 17
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 2.5254, df = 1, p-value = 0.112
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 1.5467, df = 1, p-value = 0.2136
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 2.5254, df = NA, p-value = 0.1739
+
+----------------------------------
+Age_code * N_code
+   
+     1  2
+  1  9 10
+  2  6 15
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 1.5038, df = 1, p-value = 0.2201
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.80869, df = 1, p-value = 0.3685
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 1.5038, df = NA, p-value = 0.3373
+
+----------------------------------
+Age_code * Stage_code
+   
+     1  2
+  1  6 13
+  2  1 20
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 4.9687, df = 1, p-value = 0.02581
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 3.2848, df = 1, p-value = 0.06992
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 4.9687, df = NA, p-value = 0.03848
+
+----------------------------------
+Age_code * Survival_code
+   
+     0  1
+  1 12  7
+  2 11 10
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.47408, df = 1, p-value = 0.4911
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.13563, df = 1, p-value = 0.7127
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.47408, df = NA, p-value = 0.5517
+
+----------------------------------
+Age_code * Smoking_habit_code
+   
+     0  1
+  1  3 16
+  2  0 21
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 3.5846, df = 1, p-value = 0.05832
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 1.6699, df = 1, p-value = 0.1963
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 3.5846, df = NA, p-value = 0.08546
+
+----------------------------------
+Age_code * Drinking_habit_code
+   
+     0  1
+  1  3 16
+  2  1 20
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 1.3478, df = 1, p-value = 0.2457
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.401, df = 1, p-value = 0.5266
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 1.3478, df = NA, p-value = 0.3303
+
+----------------------------------
+Age_code * Pep1
+   
+     0  1
+  1 14  5
+  2 14  7
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.23392, df = 1, p-value = 0.6286
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.019095, df = 1, p-value = 0.8901
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.23392, df = NA, p-value = 0.7356
+
+----------------------------------
+Age_code * Pep2
+   
+     0  1
+  1 12  7
+  2 17  4
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 1.5842, df = 1, p-value = 0.2082
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.8174, df = 1, p-value = 0.3659
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 1.5842, df = NA, p-value = 0.3078
+
+----------------------------------
+Age_code * Pep3
+   
+     0  1
+  1 14  5
+  2 14  7
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.23392, df = 1, p-value = 0.6286
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.019095, df = 1, p-value = 0.8901
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.23392, df = NA, p-value = 0.7286
+
+----------------------------------
+Age_code * Pep4
+   
+     0  1
+  1 15  4
+  2 17  4
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.025063, df = 1, p-value = 0.8742
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 3.9542e-31, df = 1, p-value = 1
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.025063, df = NA, p-value = 1
+
+----------------------------------
+Age_code * Pep5
+   
+     0  1
+  1 14  5
+  2 15  6
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.025455, df = 1, p-value = 0.8732
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0, df = 1, p-value = 1
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.025455, df = NA, p-value = 1
+
+----------------------------------
+Age_code * Pep6
+   
+     0  1
+  1 17  2
+  2 16  5
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 1.2191, df = 1, p-value = 0.2695
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.47261, df = 1, p-value = 0.4918
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 1.2191, df = NA, p-value = 0.4038
+
+----------------------------------
+Age_code * Pep7
+   
+     0  1
+  1 15  4
+  2 14  7
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.75455, df = 1, p-value = 0.385
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.2643, df = 1, p-value = 0.6072
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.75455, df = NA, p-value = 0.4838
+
+----------------------------------
+Age_code * Pep8
+   
+     0  1
+  1 14  5
+  2 14  7
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.23392, df = 1, p-value = 0.6286
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.019095, df = 1, p-value = 0.8901
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.23392, df = NA, p-value = 0.7431
+
+----------------------------------
+Age_code * Pep9
+   
+     0  1
+  1 15  4
+  2 15  6
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.30075, df = 1, p-value = 0.5834
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.033417, df = 1, p-value = 0.855
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.30075, df = NA, p-value = 0.7231
+
+----------------------------------
+Age_code * Pep10
+   
+     0  1
+  1 13  6
+  2 13  8
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.18618, df = 1, p-value = 0.6661
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.0099149, df = 1, p-value = 0.9207
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.18618, df = NA, p-value = 0.7466
+
+----------------------------------
+Age_code * Pep11
+   
+     0  1
+  1 15  4
+  2 11 10
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 3.0945, df = 1, p-value = 0.07855
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 2.037, df = 1, p-value = 0.1535
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 3.0945, df = NA, p-value = 0.1169
+
+----------------------------------
+Age_code * Pep12
+   
+     0  1
+  1 15  4
+  2 15  6
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.30075, df = 1, p-value = 0.5834
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.033417, df = 1, p-value = 0.855
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.30075, df = NA, p-value = 0.7056
+
+----------------------------------
+Age_code * Pep13
+   
+     0  1
+  1 14  5
+  2 15  6
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.025455, df = 1, p-value = 0.8732
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0, df = 1, p-value = 1
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.025455, df = NA, p-value = 1
+
+----------------------------------
+Age_code * Pep14
+   
+     0  1
+  1 14  5
+  2 17  4
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.30219, df = 1, p-value = 0.5825
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.029105, df = 1, p-value = 0.8645
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.30219, df = NA, p-value = 0.7311
+
+----------------------------------
+T_code * N_code
+   
+     1  2
+  1  7  5
+  2  8 20
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 3.1746, df = 1, p-value = 0.07479
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 2.0317, df = 1, p-value = 0.154
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 3.1746, df = NA, p-value = 0.1454
+
+----------------------------------
+T_code * Stage_code
+   
+     1  2
+  1  7  5
+  2  0 28
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 19.798, df = 1, p-value = 8.607e-06
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 15.964, df = 1, p-value = 6.457e-05
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 19.798, df = NA, p-value = 0.0009995
+
+----------------------------------
+T_code * Survival_code
+   
+     0  1
+  1  7  5
+  2 16 12
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.0048715, df = 1, p-value = 0.9444
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 1.9599e-31, df = 1, p-value = 1
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.0048715, df = NA, p-value = 1
+
+----------------------------------
+T_code * Smoking_habit_code
+   
+     0  1
+  1  1 11
+  2  2 26
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.01716, df = 1, p-value = 0.8958
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 3.39e-31, df = 1, p-value = 1
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.01716, df = NA, p-value = 1
+
+----------------------------------
+T_code * Drinking_habit_code
+   
+     0  1
+  1  1 11
+  2  3 25
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.05291, df = 1, p-value = 0.8181
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 6.5151e-31, df = 1, p-value = 1
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.05291, df = NA, p-value = 1
+
+----------------------------------
+T_code * Pep1
+   
+     0  1
+  1  9  3
+  2 19  9
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.20408, df = 1, p-value = 0.6514
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.0056689, df = 1, p-value = 0.94
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.20408, df = NA, p-value = 0.7271
+
+----------------------------------
+T_code * Pep2
+   
+     0  1
+  1 10  2
+  2 19  9
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 1.0091, df = 1, p-value = 0.3151
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.38215, df = 1, p-value = 0.5365
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 1.0091, df = NA, p-value = 0.4468
+
+----------------------------------
+T_code * Pep3
+   
+     0  1
+  1  8  4
+  2 20  8
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.090703, df = 1, p-value = 0.7633
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 1.2443e-30, df = 1, p-value = 1
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.090703, df = NA, p-value = 1
+
+----------------------------------
+T_code * Pep4
+   
+     0  1
+  1 10  2
+  2 22  6
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.11905, df = 1, p-value = 0.7301
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 1.6317e-30, df = 1, p-value = 1
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.11905, df = NA, p-value = 1
+
+----------------------------------
+T_code * Pep5
+   
+     0  1
+  1  9  3
+  2 20  8
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.053739, df = 1, p-value = 0.8167
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 1.2953e-31, df = 1, p-value = 1
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.053739, df = NA, p-value = 1
+
+----------------------------------
+T_code * Pep6
+   
+     0  1
+  1  9  3
+  2 24  4
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.6679, df = 1, p-value = 0.4138
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.13193, df = 1, p-value = 0.7164
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.6679, df = NA, p-value = 0.6432
+
+----------------------------------
+T_code * Pep7
+   
+     0  1
+  1 10  2
+  2 19  9
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 1.0091, df = 1, p-value = 0.3151
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.38215, df = 1, p-value = 0.5365
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 1.0091, df = NA, p-value = 0.4413
+
+----------------------------------
+T_code * Pep8
+   
+     0  1
+  1  8  4
+  2 20  8
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.090703, df = 1, p-value = 0.7633
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 1.2443e-30, df = 1, p-value = 1
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.090703, df = NA, p-value = 1
+
+----------------------------------
+T_code * Pep9
+   
+     0  1
+  1 10  2
+  2 20  8
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.63492, df = 1, p-value = 0.4256
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.15873, df = 1, p-value = 0.6903
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.63492, df = NA, p-value = 0.6962
+
+----------------------------------
+T_code * Pep10
+   
+     0  1
+  1  7  5
+  2 19  9
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.3349, df = 1, p-value = 0.5628
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.047096, df = 1, p-value = 0.8282
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.3349, df = NA, p-value = 0.7226
+
+----------------------------------
+T_code * Pep11
+   
+     0  1
+  1  7  5
+  2 19  9
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.3349, df = 1, p-value = 0.5628
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.047096, df = 1, p-value = 0.8282
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.3349, df = NA, p-value = 0.7186
+
+----------------------------------
+T_code * Pep12
+   
+     0  1
+  1  8  4
+  2 22  6
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.63492, df = 1, p-value = 0.4256
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.15873, df = 1, p-value = 0.6903
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.63492, df = NA, p-value = 0.6792
+
+----------------------------------
+T_code * Pep13
+   
+     0  1
+  1  7  5
+  2 22  6
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 1.7256, df = 1, p-value = 0.189
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.85983, df = 1, p-value = 0.3538
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 1.7256, df = NA, p-value = 0.2369
+
+----------------------------------
+T_code * Pep14
+   
+     0  1
+  1  8  4
+  2 23  5
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 1.1538, df = 1, p-value = 0.2828
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.43693, df = 1, p-value = 0.5086
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 1.1538, df = NA, p-value = 0.4223
+
+----------------------------------
+N_code * Stage_code
+   
+     1  2
+  1  7  8
+  2  0 25
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 14.141, df = 1, p-value = 0.0001696
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 11.094, df = 1, p-value = 0.0008662
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 14.141, df = NA, p-value = 0.0004998
+
+----------------------------------
+N_code * Survival_code
+   
+     0  1
+  1 11  4
+  2 12 13
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 2.4621, df = 1, p-value = 0.1166
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 1.5345, df = 1, p-value = 0.2154
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 2.4621, df = NA, p-value = 0.1899
+
+----------------------------------
+N_code * Smoking_habit_code
+   
+     0  1
+  1  2 13
+  2  1 24
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 1.1772, df = 1, p-value = 0.2779
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.21622, df = 1, p-value = 0.6419
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 1.1772, df = NA, p-value = 0.5627
+
+----------------------------------
+N_code * Drinking_habit_code
+   
+     0  1
+  1  3 12
+  2  1 24
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 2.6667, df = 1, p-value = 0.1025
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 1.1852, df = 1, p-value = 0.2763
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 2.6667, df = NA, p-value = 0.2854
+
+----------------------------------
+N_code * Pep1
+   
+     0  1
+  1  7  8
+  2 21  4
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 6.2222, df = 1, p-value = 0.01262
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 4.5714, df = 1, p-value = 0.03251
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 6.2222, df = NA, p-value = 0.03598
+
+----------------------------------
+N_code * Pep2
+   
+     0  1
+  1 12  3
+  2 17  8
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.67712, df = 1, p-value = 0.4106
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.20899, df = 1, p-value = 0.6476
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.67712, df = NA, p-value = 0.5037
+
+----------------------------------
+N_code * Pep3
+   
+     0  1
+  1  8  7
+  2 20  5
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 3.1746, df = 1, p-value = 0.07479
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 2.0317, df = 1, p-value = 0.154
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 3.1746, df = NA, p-value = 0.1649
+
+----------------------------------
+N_code * Pep4
+   
+     0  1
+  1 10  5
+  2 22  3
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 2.6667, df = 1, p-value = 0.1025
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 1.5, df = 1, p-value = 0.2207
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 2.6667, df = NA, p-value = 0.2269
+
+----------------------------------
+N_code * Pep5
+   
+     0  1
+  1  8  7
+  2 21  4
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 4.4222, df = 1, p-value = 0.03548
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 3.0178, df = 1, p-value = 0.08236
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 4.4222, df = NA, p-value = 0.07596
+
+----------------------------------
+N_code * Pep6
+   
+     0  1
+  1 10  5
+  2 23  2
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 4.1674, df = 1, p-value = 0.04121
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 2.5974, df = 1, p-value = 0.107
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 4.1674, df = NA, p-value = 0.08546
+
+----------------------------------
+N_code * Pep7
+   
+     0  1
+  1  8  7
+  2 21  4
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 4.4222, df = 1, p-value = 0.03548
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 3.0178, df = 1, p-value = 0.08236
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 4.4222, df = NA, p-value = 0.06597
+
+----------------------------------
+N_code * Pep8
+   
+     0  1
+  1  7  8
+  2 21  4
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 6.2222, df = 1, p-value = 0.01262
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 4.5714, df = 1, p-value = 0.03251
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 6.2222, df = NA, p-value = 0.02349
+
+----------------------------------
+N_code * Pep9
+   
+     0  1
+  1  9  6
+  2 21  4
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 2.88, df = 1, p-value = 0.08969
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 1.7422, df = 1, p-value = 0.1869
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 2.88, df = NA, p-value = 0.1334
+
+----------------------------------
+N_code * Pep10
+   
+     0  1
+  1  6  9
+  2 20  5
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 6.5934, df = 1, p-value = 0.01024
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 4.9524, df = 1, p-value = 0.02605
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 6.5934, df = NA, p-value = 0.01599
+
+----------------------------------
+N_code * Pep11
+   
+     0  1
+  1  8  7
+  2 18  7
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 1.4359, df = 1, p-value = 0.2308
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.7326, df = 1, p-value = 0.392
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 1.4359, df = NA, p-value = 0.3153
+
+----------------------------------
+N_code * Pep12
+   
+     0  1
+  1 10  5
+  2 20  5
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.88889, df = 1, p-value = 0.3458
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.32, df = 1, p-value = 0.5716
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.88889, df = NA, p-value = 0.4773
+
+----------------------------------
+N_code * Pep13
+   
+     0  1
+  1 11  4
+  2 18  7
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.0083595, df = 1, p-value = 0.9272
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0, df = 1, p-value = 1
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.0083595, df = NA, p-value = 1
+
+----------------------------------
+N_code * Pep14
+   
+     0  1
+  1 12  3
+  2 19  6
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.086022, df = 1, p-value = 0.7693
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0, df = 1, p-value = 1
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.086022, df = NA, p-value = 1
+
+----------------------------------
+Stage_code * Survival_code
+   
+     0  1
+  1  4  3
+  2 19 14
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.00044286, df = 1, p-value = 0.9832
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 1.6056e-30, df = 1, p-value = 1
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.00044286, df = NA, p-value = 1
+
+----------------------------------
+Stage_code * Smoking_habit_code
+   
+     0  1
+  1  1  6
+  2  2 31
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.56316, df = 1, p-value = 0.453
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 3.9436e-31, df = 1, p-value = 1
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.56316, df = NA, p-value = 1
+
+----------------------------------
+Stage_code * Drinking_habit_code
+   
+     0  1
+  1  1  6
+  2  3 30
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.17316, df = 1, p-value = 0.6773
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 9.6995e-32, df = 1, p-value = 1
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.17316, df = NA, p-value = 1
+
+----------------------------------
+Stage_code * Pep1
+   
+     0  1
+  1  4  3
+  2 24  9
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.6679, df = 1, p-value = 0.4138
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.13193, df = 1, p-value = 0.7164
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.6679, df = NA, p-value = 0.6502
+
+----------------------------------
+Stage_code * Pep2
+   
+     0  1
+  1  6  1
+  2 23 10
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.74312, df = 1, p-value = 0.3887
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.15688, df = 1, p-value = 0.692
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.74312, df = NA, p-value = 0.6327
+
+----------------------------------
+Stage_code * Pep3
+   
+     0  1
+  1  4  3
+  2 24  9
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.6679, df = 1, p-value = 0.4138
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.13193, df = 1, p-value = 0.7164
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.6679, df = NA, p-value = 0.6487
+
+----------------------------------
+Stage_code * Pep4
+   
+     0  1
+  1  5  2
+  2 27  6
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.38961, df = 1, p-value = 0.5325
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.010823, df = 1, p-value = 0.9171
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.38961, df = NA, p-value = 0.6257
+
+----------------------------------
+Stage_code * Pep5
+   
+     0  1
+  1  4  3
+  2 25  8
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 1.0037, df = 1, p-value = 0.3164
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.28715, df = 1, p-value = 0.5921
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 1.0037, df = NA, p-value = 0.3843
+
+----------------------------------
+Stage_code * Pep6
+   
+     0  1
+  1  5  2
+  2 28  5
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.72038, df = 1, p-value = 0.396
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.090703, df = 1, p-value = 0.7633
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.72038, df = NA, p-value = 0.5847
+
+----------------------------------
+Stage_code * Pep7
+   
+     0  1
+  1  5  2
+  2 24  9
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.0048854, df = 1, p-value = 0.9443
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 3.8595e-31, df = 1, p-value = 1
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.0048854, df = NA, p-value = 1
+
+----------------------------------
+Stage_code * Pep8
+   
+     0  1
+  1  3  4
+  2 25  8
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 2.9767, df = 1, p-value = 0.08447
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 1.6162, df = 1, p-value = 0.2036
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 2.9767, df = NA, p-value = 0.1729
+
+----------------------------------
+Stage_code * Pep9
+   
+     0  1
+  1  5  2
+  2 25  8
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.05772, df = 1, p-value = 0.8101
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0, df = 1, p-value = 1
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.05772, df = NA, p-value = 1
+
+----------------------------------
+Stage_code * Pep10
+   
+     0  1
+  1  3  4
+  2 23 10
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 1.8286, df = 1, p-value = 0.1763
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.83916, df = 1, p-value = 0.3596
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 1.8286, df = NA, p-value = 0.2219
+
+----------------------------------
+Stage_code * Pep11
+   
+     0  1
+  1  3  4
+  2 23 10
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 1.8286, df = 1, p-value = 0.1763
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.83916, df = 1, p-value = 0.3596
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 1.8286, df = NA, p-value = 0.2219
+
+----------------------------------
+Stage_code * Pep12
+   
+     0  1
+  1  4  3
+  2 26  7
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 1.443, df = 1, p-value = 0.2297
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.51948, df = 1, p-value = 0.4711
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 1.443, df = NA, p-value = 0.3498
+
+----------------------------------
+Stage_code * Pep13
+   
+     0  1
+  1  4  3
+  2 25  8
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 1.0037, df = 1, p-value = 0.3164
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.28715, df = 1, p-value = 0.5921
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 1.0037, df = NA, p-value = 0.3698
+
+----------------------------------
+Stage_code * Pep14
+   
+     0  1
+  1  5  2
+  2 26  7
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.17937, df = 1, p-value = 0.6719
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 6.2149e-32, df = 1, p-value = 1
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.17937, df = NA, p-value = 1
+
+----------------------------------
+Survival_code * Smoking_habit_code
+   
+     0  1
+  0  2 21
+  1  1 16
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.11152, df = 1, p-value = 0.7384
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 2.6217e-30, df = 1, p-value = 1
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.11152, df = NA, p-value = 1
+
+----------------------------------
+Survival_code * Drinking_habit_code
+   
+     0  1
+  0  3 20
+  1  1 16
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.55698, df = 1, p-value = 0.4555
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.045467, df = 1, p-value = 0.8311
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.55698, df = NA, p-value = 0.6212
+
+----------------------------------
+Survival_code * Pep1
+   
+     0  1
+  0 18  5
+  1 10  7
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 1.7586, df = 1, p-value = 0.1848
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.95482, df = 1, p-value = 0.3285
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 1.7586, df = NA, p-value = 0.2914
+
+----------------------------------
+Survival_code * Pep2
+   
+     0  1
+  0 20  3
+  1  9  8
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 5.6728, df = 1, p-value = 0.01723
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 4.095, df = 1, p-value = 0.04301
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 5.6728, df = NA, p-value = 0.02499
+
+----------------------------------
+Survival_code * Pep3
+   
+     0  1
+  0 18  5
+  1 10  7
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 1.7586, df = 1, p-value = 0.1848
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.95482, df = 1, p-value = 0.3285
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 1.7586, df = NA, p-value = 0.2934
+
+----------------------------------
+Survival_code * Pep4
+   
+     0  1
+  0 21  2
+  1 11  6
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 4.3223, df = 1, p-value = 0.03762
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 2.8197, df = 1, p-value = 0.09311
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 4.3223, df = NA, p-value = 0.04698
+
+----------------------------------
+Survival_code * Pep5
+   
+     0  1
+  0 18  5
+  1 11  6
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.90083, df = 1, p-value = 0.3426
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.34924, df = 1, p-value = 0.5545
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.90083, df = NA, p-value = 0.4878
+
+----------------------------------
+Survival_code * Pep6
+   
+     0  1
+  0 16  7
+  1 17  0
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 6.2714, df = 1, p-value = 0.01227
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 4.3405, df = 1, p-value = 0.03722
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 6.2714, df = NA, p-value = 0.02549
+
+----------------------------------
+Survival_code * Pep7
+   
+     0  1
+  0 18  5
+  1 11  6
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.90083, df = 1, p-value = 0.3426
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.34924, df = 1, p-value = 0.5545
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.90083, df = NA, p-value = 0.4878
+
+----------------------------------
+Survival_code * Pep8
+   
+     0  1
+  0 17  6
+  1 11  6
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.39459, df = 1, p-value = 0.5299
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.077944, df = 1, p-value = 0.7801
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.39459, df = NA, p-value = 0.7241
+
+----------------------------------
+Survival_code * Pep9
+   
+     0  1
+  0 18  5
+  1 12  5
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.30691, df = 1, p-value = 0.5796
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.034101, df = 1, p-value = 0.8535
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.30691, df = NA, p-value = 0.7196
+
+----------------------------------
+Survival_code * Pep10
+   
+     0  1
+  0 15  8
+  1 11  6
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.0011242, df = 1, p-value = 0.9733
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 2.2215e-31, df = 1, p-value = 1
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.0011242, df = NA, p-value = 1
+
+----------------------------------
+Survival_code * Pep11
+   
+     0  1
+  0 12 11
+  1 14  3
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 3.9133, df = 1, p-value = 0.0479
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 2.6992, df = 1, p-value = 0.1004
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 3.9133, df = NA, p-value = 0.09995
+
+----------------------------------
+Survival_code * Pep12
+   
+     0  1
+  0 19  4
+  1 11  6
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 1.6709, df = 1, p-value = 0.1961
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.85251, df = 1, p-value = 0.3558
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 1.6709, df = NA, p-value = 0.2664
+
+----------------------------------
+Survival_code * Pep13
+   
+     0  1
+  0 17  6
+  1 12  5
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.054198, df = 1, p-value = 0.8159
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 2.9346e-31, df = 1, p-value = 1
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.054198, df = NA, p-value = 1
+
+----------------------------------
+Survival_code * Pep14
+   
+     0  1
+  0 18  5
+  1 13  4
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.017967, df = 1, p-value = 0.8934
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 1.0413e-31, df = 1, p-value = 1
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.017967, df = NA, p-value = 1
+
+----------------------------------
+Smoking_habit_code * Drinking_habit_code
+   
+     0  1
+  0  3  0
+  1  1 36
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 29.189, df = 1, p-value = 6.564e-08
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 19.379, df = 1, p-value = 1.072e-05
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 29.189, df = NA, p-value = 0.0009995
+
+----------------------------------
+Smoking_habit_code * Pep1
+   
+     0  1
+  0  1  2
+  1 27 10
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 2.0764, df = 1, p-value = 0.1496
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.61776, df = 1, p-value = 0.4319
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 2.0764, df = NA, p-value = 0.2224
+
+----------------------------------
+Smoking_habit_code * Pep2
+   
+     0  1
+  0  2  1
+  1 27 10
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.055353, df = 1, p-value = 0.814
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 1.667e-31, df = 1, p-value = 1
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.055353, df = NA, p-value = 1
+
+----------------------------------
+Smoking_habit_code * Pep3
+   
+     0  1
+  0  2  1
+  1 26 11
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.01716, df = 1, p-value = 0.8958
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 3.39e-31, df = 1, p-value = 1
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.01716, df = NA, p-value = 1
+
+----------------------------------
+Smoking_habit_code * Pep4
+   
+     0  1
+  0  2  1
+  1 30  7
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.36036, df = 1, p-value = 0.5483
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 4.6378e-30, df = 1, p-value = 1
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.36036, df = NA, p-value = 1
+
+----------------------------------
+Smoking_habit_code * Pep5
+   
+     0  1
+  0  2  1
+  1 27 10
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.055353, df = 1, p-value = 0.814
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 1.667e-31, df = 1, p-value = 1
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.055353, df = NA, p-value = 1
+
+----------------------------------
+Smoking_habit_code * Pep6
+   
+     0  1
+  0  2  1
+  1 31  6
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.56316, df = 1, p-value = 0.453
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 3.9436e-31, df = 1, p-value = 1
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.56316, df = NA, p-value = 1
+
+----------------------------------
+Smoking_habit_code * Pep7
+   
+     0  1
+  0  2  1
+  1 27 10
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.055353, df = 1, p-value = 0.814
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 1.667e-31, df = 1, p-value = 1
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.055353, df = NA, p-value = 1
+
+----------------------------------
+Smoking_habit_code * Pep8
+   
+     0  1
+  0  2  1
+  1 26 11
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.01716, df = 1, p-value = 0.8958
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 3.39e-31, df = 1, p-value = 1
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.01716, df = NA, p-value = 1
+
+----------------------------------
+Smoking_habit_code * Pep9
+   
+     0  1
+  0  0  3
+  1 30  7
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 9.7297, df = 1, p-value = 0.001813
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 5.8859, df = 1, p-value = 0.01526
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 9.7297, df = NA, p-value = 0.01599
+
+----------------------------------
+Smoking_habit_code * Pep10
+   
+     0  1
+  0  1  2
+  1 25 12
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 1.4296, df = 1, p-value = 0.2318
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.32076, df = 1, p-value = 0.5712
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 1.4296, df = NA, p-value = 0.5532
+
+----------------------------------
+Smoking_habit_code * Pep11
+   
+     0  1
+  0  3  0
+  1 23 14
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 1.7464, df = 1, p-value = 0.1863
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.47916, df = 1, p-value = 0.4888
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 1.7464, df = NA, p-value = 0.3258
+
+----------------------------------
+Smoking_habit_code * Pep12
+   
+     0  1
+  0  2  1
+  1 28  9
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.12012, df = 1, p-value = 0.7289
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0, df = 1, p-value = 1
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.12012, df = NA, p-value = 1
+
+----------------------------------
+Smoking_habit_code * Pep13
+   
+     0  1
+  0  2  1
+  1 27 10
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.055353, df = 1, p-value = 0.814
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 1.667e-31, df = 1, p-value = 1
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.055353, df = NA, p-value = 1
+
+----------------------------------
+Smoking_habit_code * Pep14
+   
+     0  1
+  0  2  1
+  1 29  8
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.21828, df = 1, p-value = 0.6404
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 9.9668e-31, df = 1, p-value = 1
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.21828, df = NA, p-value = 1
+
+----------------------------------
+Drinking_habit_code * Pep1
+   
+     0  1
+  0  1  3
+  1 27  9
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 4.2857, df = 1, p-value = 0.03843
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 2.2354, df = 1, p-value = 0.1349
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 4.2857, df = NA, p-value = 0.06297
+
+----------------------------------
+Drinking_habit_code * Pep2
+   
+     0  1
+  0  2  2
+  1 27  9
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 1.1285, df = 1, p-value = 0.2881
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.22292, df = 1, p-value = 0.6368
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 1.1285, df = NA, p-value = 0.5542
+
+----------------------------------
+Drinking_habit_code * Pep3
+   
+     0  1
+  0  2  2
+  1 26 10
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.84656, df = 1, p-value = 0.3575
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.11905, df = 1, p-value = 0.7301
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.84656, df = NA, p-value = 0.5607
+
+----------------------------------
+Drinking_habit_code * Pep4
+   
+     0  1
+  0  2  2
+  1 30  6
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 2.5, df = 1, p-value = 0.1138
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.85069, df = 1, p-value = 0.3564
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 2.5, df = NA, p-value = 0.1704
+
+----------------------------------
+Drinking_habit_code * Pep5
+   
+     0  1
+  0  2  2
+  1 27  9
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 1.1285, df = 1, p-value = 0.2881
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.22292, df = 1, p-value = 0.6368
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 1.1285, df = NA, p-value = 0.5682
+
+----------------------------------
+Drinking_habit_code * Pep6
+   
+     0  1
+  0  3  1
+  1 30  6
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.17316, df = 1, p-value = 0.6773
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 9.6995e-32, df = 1, p-value = 1
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.17316, df = NA, p-value = 1
+
+----------------------------------
+Drinking_habit_code * Pep7
+   
+     0  1
+  0  2  2
+  1 27  9
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 1.1285, df = 1, p-value = 0.2881
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.22292, df = 1, p-value = 0.6368
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 1.1285, df = NA, p-value = 0.5412
+
+----------------------------------
+Drinking_habit_code * Pep8
+   
+     0  1
+  0  2  2
+  1 26 10
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.84656, df = 1, p-value = 0.3575
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.11905, df = 1, p-value = 0.7301
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.84656, df = NA, p-value = 0.5687
+
+----------------------------------
+Drinking_habit_code * Pep9
+   
+     0  1
+  0  0  4
+  1 30  6
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 13.333, df = 1, p-value = 0.0002607
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 9.2593, df = 1, p-value = 0.002343
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 13.333, df = NA, p-value = 0.003998
+
+----------------------------------
+Drinking_habit_code * Pep10
+   
+     0  1
+  0  1  3
+  1 25 11
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 3.1258, df = 1, p-value = 0.07706
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 1.4774, df = 1, p-value = 0.2242
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 3.1258, df = NA, p-value = 0.1209
+
+----------------------------------
+Drinking_habit_code * Pep11
+   
+     0  1
+  0  4  0
+  1 22 14
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 2.3932, df = 1, p-value = 0.1219
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.98901, df = 1, p-value = 0.32
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 2.3932, df = NA, p-value = 0.2664
+
+----------------------------------
+Drinking_habit_code * Pep12
+   
+     0  1
+  0  3  1
+  1 27  9
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0, df = 1, p-value = 1
+
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0, df = 1, p-value = 1
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0, df = NA, p-value = 1
+
+----------------------------------
+Drinking_habit_code * Pep13
+   
+     0  1
+  0  3  1
+  1 26 10
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.013932, df = 1, p-value = 0.906
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 3.6819e-31, df = 1, p-value = 1
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.013932, df = NA, p-value = 1
+
+----------------------------------
+Drinking_habit_code * Pep14
+   
+     0  1
+  0  3  1
+  1 28  8
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.01593, df = 1, p-value = 0.8996
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 2.9998e-31, df = 1, p-value = 1
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.01593, df = NA, p-value = 1
+
+----------------------------------
+Pep1 * Pep2
+   
+     0  1
+  0 23  5
+  1  6  6
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 4.3529, df = 1, p-value = 0.03695
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 2.89, df = 1, p-value = 0.08913
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 4.3529, df = NA, p-value = 0.06047
+
+----------------------------------
+Pep1 * Pep3
+   
+     0  1
+  0 25  3
+  1  3  9
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 16.531, df = 1, p-value = 4.787e-05
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 13.611, df = 1, p-value = 0.0002249
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 16.531, df = NA, p-value = 0.0004998
+
+----------------------------------
+Pep1 * Pep4
+   
+     0  1
+  0 26  2
+  1  6  6
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 9.6429, df = 1, p-value = 0.001901
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 7.1503, df = 1, p-value = 0.007495
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 9.6429, df = NA, p-value = 0.005997
+
+----------------------------------
+Pep1 * Pep5
+   
+     0  1
+  0 25  3
+  1  4  8
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 13.19, df = 1, p-value = 0.0002814
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 10.533, df = 1, p-value = 0.001173
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 13.19, df = NA, p-value = 0.001499
+
+----------------------------------
+Pep1 * Pep6
+   
+     0  1
+  0 24  4
+  1  9  3
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.6679, df = 1, p-value = 0.4138
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.13193, df = 1, p-value = 0.7164
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.6679, df = NA, p-value = 0.6587
+
+----------------------------------
+Pep1 * Pep7
+   
+     0  1
+  0 26  2
+  1  3  9
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 19.4, df = 1, p-value = 1.06e-05
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 16.146, df = 1, p-value = 5.865e-05
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 19.4, df = NA, p-value = 0.0004998
+
+----------------------------------
+Pep1 * Pep8
+   
+     0  1
+  0 25  3
+  1  3  9
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 16.531, df = 1, p-value = 4.787e-05
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 13.611, df = 1, p-value = 0.0002249
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 16.531, df = NA, p-value = 0.0004998
+
+----------------------------------
+Pep1 * Pep9
+   
+     0  1
+  0 27  1
+  1  3  9
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 22.857, df = 1, p-value = 1.745e-06
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 19.206, df = 1, p-value = 1.173e-05
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 22.857, df = NA, p-value = 0.0004998
+
+----------------------------------
+Pep1 * Pep10
+   
+     0  1
+  0 23  5
+  1  3  9
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 12.057, df = 1, p-value = 0.0005161
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 9.6756, df = 1, p-value = 0.001867
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 12.057, df = NA, p-value = 0.001499
+
+----------------------------------
+Pep1 * Pep11
+   
+     0  1
+  0 20  8
+  1  6  6
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 1.6954, df = 1, p-value = 0.1929
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.88435, df = 1, p-value = 0.347
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 1.6954, df = NA, p-value = 0.2839
+
+----------------------------------
+Pep1 * Pep12
+   
+     0  1
+  0 24  4
+  1  6  6
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 5.7143, df = 1, p-value = 0.01683
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 3.9683, df = 1, p-value = 0.04637
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 5.7143, df = NA, p-value = 0.03848
+
+----------------------------------
+Pep1 * Pep13
+   
+     0  1
+  0 20  8
+  1  9  3
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.053739, df = 1, p-value = 0.8167
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 1.2953e-31, df = 1, p-value = 1
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.053739, df = NA, p-value = 1
+
+----------------------------------
+Pep1 * Pep14
+   
+     0  1
+  0 22  6
+  1  9  3
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.061444, df = 1, p-value = 0.8042
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 1.2118e-31, df = 1, p-value = 1
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.061444, df = NA, p-value = 1
+
+----------------------------------
+Pep2 * Pep3
+   
+     0  1
+  0 23  6
+  1  5  6
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 4.3529, df = 1, p-value = 0.03695
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 2.89, df = 1, p-value = 0.08913
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 4.3529, df = NA, p-value = 0.05097
+
+----------------------------------
+Pep2 * Pep4
+   
+     0  1
+  0 27  2
+  1  5  6
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 11.317, df = 1, p-value = 0.0007682
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 8.5345, df = 1, p-value = 0.003485
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 11.317, df = NA, p-value = 0.002999
+
+----------------------------------
+Pep2 * Pep5
+   
+     0  1
+  0 24  5
+  1  5  6
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 5.5664, df = 1, p-value = 0.01831
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 3.8526, df = 1, p-value = 0.04967
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 5.5664, df = NA, p-value = 0.04348
+
+----------------------------------
+Pep2 * Pep6
+   
+     0  1
+  0 22  7
+  1 11  0
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 3.2184, df = 1, p-value = 0.07282
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 1.7636, df = 1, p-value = 0.1842
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 3.2184, df = NA, p-value = 0.1634
+
+----------------------------------
+Pep2 * Pep7
+   
+     0  1
+  0 24  5
+  1  5  6
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 5.5664, df = 1, p-value = 0.01831
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 3.8526, df = 1, p-value = 0.04967
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 5.5664, df = NA, p-value = 0.04548
+
+----------------------------------
+Pep2 * Pep8
+   
+     0  1
+  0 22  7
+  1  6  5
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 1.7256, df = 1, p-value = 0.189
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.85983, df = 1, p-value = 0.3538
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 1.7256, df = NA, p-value = 0.2434
+
+----------------------------------
+Pep2 * Pep9
+   
+     0  1
+  0 24  5
+  1  6  5
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 3.3856, df = 1, p-value = 0.06577
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 2.0481, df = 1, p-value = 0.1524
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 3.3856, df = NA, p-value = 0.09045
+
+----------------------------------
+Pep2 * Pep10
+   
+     0  1
+  0 20  9
+  1  6  5
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.72893, df = 1, p-value = 0.3932
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.23287, df = 1, p-value = 0.6294
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.72893, df = NA, p-value = 0.4693
+
+----------------------------------
+Pep2 * Pep11
+   
+     0  1
+  0 17 12
+  1  9  2
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 1.8864, df = 1, p-value = 0.1696
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 1.0045, df = 1, p-value = 0.3162
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 1.8864, df = NA, p-value = 0.2874
+
+----------------------------------
+Pep2 * Pep12
+   
+     0  1
+  0 24  5
+  1  6  5
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 3.3856, df = 1, p-value = 0.06577
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 2.0481, df = 1, p-value = 0.1524
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 3.3856, df = NA, p-value = 0.1169
+
+----------------------------------
+Pep2 * Pep13
+   
+     0  1
+  0 22  7
+  1  7  4
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.59787, df = 1, p-value = 0.4394
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.1419, df = 1, p-value = 0.7064
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.59787, df = NA, p-value = 0.6837
+
+----------------------------------
+Pep2 * Pep14
+   
+     0  1
+  0 24  5
+  1  7  4
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 1.6723, df = 1, p-value = 0.1959
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.7555, df = 1, p-value = 0.3847
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 1.6723, df = NA, p-value = 0.2414
+
+----------------------------------
+Pep3 * Pep4
+   
+     0  1
+  0 28  0
+  1  4  8
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 23.333, df = 1, p-value = 1.362e-06
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 19.353, df = 1, p-value = 1.087e-05
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 23.333, df = NA, p-value = 0.0004998
+
+----------------------------------
+Pep3 * Pep5
+   
+     0  1
+  0 26  2
+  1  3  9
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 19.4, df = 1, p-value = 1.06e-05
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 16.146, df = 1, p-value = 5.865e-05
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 19.4, df = NA, p-value = 0.0004998
+
+----------------------------------
+Pep3 * Pep6
+   
+     0  1
+  0 23  5
+  1 10  2
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.0082457, df = 1, p-value = 0.9276
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 2.3051e-31, df = 1, p-value = 1
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.0082457, df = NA, p-value = 1
+
+----------------------------------
+Pep3 * Pep7
+   
+     0  1
+  0 27  1
+  1  2 10
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 26.804, df = 1, p-value = 2.252e-07
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 22.953, df = 1, p-value = 1.66e-06
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 26.804, df = NA, p-value = 0.0004998
+
+----------------------------------
+Pep3 * Pep8
+   
+     0  1
+  0 26  2
+  1  2 10
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 23.22, df = 1, p-value = 1.445e-06
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 19.734, df = 1, p-value = 8.902e-06
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 23.22, df = NA, p-value = 0.0004998
+
+----------------------------------
+Pep3 * Pep9
+   
+     0  1
+  0 25  3
+  1  5  7
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 10.159, df = 1, p-value = 0.001436
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 7.7778, df = 1, p-value = 0.005289
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 10.159, df = NA, p-value = 0.002999
+
+----------------------------------
+Pep3 * Pep10
+   
+     0  1
+  0 24  4
+  1  2 10
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 17.603, df = 1, p-value = 2.721e-05
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 14.699, df = 1, p-value = 0.0001261
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 17.603, df = NA, p-value = 0.0004998
+
+----------------------------------
+Pep3 * Pep11
+   
+     0  1
+  0 20  8
+  1  6  6
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 1.6954, df = 1, p-value = 0.1929
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.88435, df = 1, p-value = 0.347
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 1.6954, df = NA, p-value = 0.2674
+
+----------------------------------
+Pep3 * Pep12
+   
+     0  1
+  0 27  1
+  1  3  9
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 22.857, df = 1, p-value = 1.745e-06
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 19.206, df = 1, p-value = 1.173e-05
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 22.857, df = NA, p-value = 0.0004998
+
+----------------------------------
+Pep3 * Pep13
+   
+     0  1
+  0 22  6
+  1  7  5
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 1.7256, df = 1, p-value = 0.189
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.85983, df = 1, p-value = 0.3538
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 1.7256, df = NA, p-value = 0.2504
+
+----------------------------------
+Pep3 * Pep14
+   
+     0  1
+  0 24  4
+  1  7  5
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 3.6115, df = 1, p-value = 0.05738
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 2.212, df = 1, p-value = 0.1369
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 3.6115, df = NA, p-value = 0.09945
+
+----------------------------------
+Pep4 * Pep5
+   
+     0  1
+  0 29  3
+  1  0  8
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 26.364, df = 1, p-value = 2.828e-07
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 22.014, df = 1, p-value = 2.707e-06
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 26.364, df = NA, p-value = 0.0004998
+
+----------------------------------
+Pep4 * Pep6
+   
+     0  1
+  0 25  7
+  1  8  0
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 2.1212, df = 1, p-value = 0.1453
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.87662, df = 1, p-value = 0.3491
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 2.1212, df = NA, p-value = 0.3153
+
+----------------------------------
+Pep4 * Pep7
+   
+     0  1
+  0 29  3
+  1  0  8
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 26.364, df = 1, p-value = 2.828e-07
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 22.014, df = 1, p-value = 2.707e-06
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 26.364, df = NA, p-value = 0.0004998
+
+----------------------------------
+Pep4 * Pep8
+   
+     0  1
+  0 27  5
+  1  1  7
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 15.744, df = 1, p-value = 7.252e-05
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 12.507, df = 1, p-value = 0.0004053
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 15.744, df = NA, p-value = 0.0009995
+
+----------------------------------
+Pep4 * Pep9
+   
+     0  1
+  0 28  4
+  1  2  6
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 13.333, df = 1, p-value = 0.0002607
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 10.208, df = 1, p-value = 0.001398
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 13.333, df = NA, p-value = 0.0009995
+
+----------------------------------
+Pep4 * Pep10
+   
+     0  1
+  0 25  7
+  1  1  7
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 12.115, df = 1, p-value = 0.0005001
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 9.4025, df = 1, p-value = 0.002167
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 12.115, df = NA, p-value = 0.0009995
+
+----------------------------------
+Pep4 * Pep11
+   
+     0  1
+  0 21 11
+  1  5  3
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.027473, df = 1, p-value = 0.8684
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 4.3344e-31, df = 1, p-value = 1
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.027473, df = NA, p-value = 1
+
+----------------------------------
+Pep4 * Pep12
+   
+     0  1
+  0 28  4
+  1  2  6
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 13.333, df = 1, p-value = 0.0002607
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 10.208, df = 1, p-value = 0.001398
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 13.333, df = NA, p-value = 0.0009995
+
+----------------------------------
+Pep4 * Pep13
+   
+     0  1
+  0 25  7
+  1  4  4
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 2.5392, df = 1, p-value = 0.1111
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 1.3245, df = 1, p-value = 0.2498
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 2.5392, df = NA, p-value = 0.1819
+
+----------------------------------
+Pep4 * Pep14
+   
+     0  1
+  0 27  5
+  1  4  4
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 4.3369, df = 1, p-value = 0.03729
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 2.5896, df = 1, p-value = 0.1076
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 4.3369, df = NA, p-value = 0.04998
+
+----------------------------------
+Pep5 * Pep6
+   
+     0  1
+  0 25  4
+  1  8  3
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 1.0037, df = 1, p-value = 0.3164
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.28715, df = 1, p-value = 0.5921
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 1.0037, df = NA, p-value = 0.3758
+
+----------------------------------
+Pep5 * Pep7
+   
+     0  1
+  0 28  1
+  1  1 10
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 30.598, df = 1, p-value = 3.175e-08
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 26.368, df = 1, p-value = 2.822e-07
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 30.598, df = NA, p-value = 0.0004998
+
+----------------------------------
+Pep5 * Pep8
+   
+     0  1
+  0 26  3
+  1  2  9
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 19.4, df = 1, p-value = 1.06e-05
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 16.146, df = 1, p-value = 5.865e-05
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 19.4, df = NA, p-value = 0.0004998
+
+----------------------------------
+Pep5 * Pep9
+   
+     0  1
+  0 27  2
+  1  3  8
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 18.433, df = 1, p-value = 1.76e-05
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 15.089, df = 1, p-value = 0.0001026
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 18.433, df = NA, p-value = 0.0004998
+
+----------------------------------
+Pep5 * Pep10
+   
+     0  1
+  0 24  5
+  1  2  9
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 14.618, df = 1, p-value = 0.0001316
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 11.918, df = 1, p-value = 0.000556
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 14.618, df = NA, p-value = 0.0004998
+
+----------------------------------
+Pep5 * Pep11
+   
+     0  1
+  0 21  8
+  1  5  6
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 2.5478, df = 1, p-value = 0.1104
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 1.5006, df = 1, p-value = 0.2206
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 2.5478, df = NA, p-value = 0.1369
+
+----------------------------------
+Pep5 * Pep12
+   
+     0  1
+  0 26  3
+  1  4  7
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 12.079, df = 1, p-value = 0.0005098
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 9.4044, df = 1, p-value = 0.002165
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 12.079, df = NA, p-value = 0.0004998
+
+----------------------------------
+Pep5 * Pep13
+   
+     0  1
+  0 23  6
+  1  6  5
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 2.4532, df = 1, p-value = 0.1173
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 1.3683, df = 1, p-value = 0.2421
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 2.4532, df = NA, p-value = 0.2519
+
+----------------------------------
+Pep5 * Pep14
+   
+     0  1
+  0 25  4
+  1  6  5
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 4.5847, df = 1, p-value = 0.03226
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 2.9487, df = 1, p-value = 0.08595
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 4.5847, df = NA, p-value = 0.04398
+
+----------------------------------
+Pep6 * Pep7
+   
+     0  1
+  0 24  9
+  1  5  2
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.0048854, df = 1, p-value = 0.9443
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 3.8595e-31, df = 1, p-value = 1
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.0048854, df = NA, p-value = 1
+
+----------------------------------
+Pep6 * Pep8
+   
+     0  1
+  0 23 10
+  1  5  2
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.0082457, df = 1, p-value = 0.9276
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 2.3051e-31, df = 1, p-value = 1
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.0082457, df = NA, p-value = 1
+
+----------------------------------
+Pep6 * Pep9
+   
+     0  1
+  0 26  7
+  1  4  3
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 1.443, df = 1, p-value = 0.2297
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.51948, df = 1, p-value = 0.4711
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 1.443, df = NA, p-value = 0.3383
+
+----------------------------------
+Pep6 * Pep10
+   
+     0  1
+  0 25  8
+  1  1  6
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 9.5923, df = 1, p-value = 0.001954
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 7.0805, df = 1, p-value = 0.007793
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 9.5923, df = NA, p-value = 0.002499
+
+----------------------------------
+Pep6 * Pep11
+   
+     0  1
+  0 25  8
+  1  1  6
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 9.5923, df = 1, p-value = 0.001954
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 7.0805, df = 1, p-value = 0.007793
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 9.5923, df = NA, p-value = 0.007996
+
+----------------------------------
+Pep6 * Pep12
+   
+     0  1
+  0 26  7
+  1  4  3
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 1.443, df = 1, p-value = 0.2297
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.51948, df = 1, p-value = 0.4711
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 1.443, df = NA, p-value = 0.3463
+
+----------------------------------
+Pep6 * Pep13
+   
+     0  1
+  0 25  8
+  1  4  3
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 1.0037, df = 1, p-value = 0.3164
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.28715, df = 1, p-value = 0.5921
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 1.0037, df = NA, p-value = 0.3763
+
+----------------------------------
+Pep6 * Pep14
+   
+     0  1
+  0 26  7
+  1  5  2
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.17937, df = 1, p-value = 0.6719
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 6.2149e-32, df = 1, p-value = 1
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.17937, df = NA, p-value = 1
+
+----------------------------------
+Pep7 * Pep8
+   
+     0  1
+  0 26  3
+  1  2  9
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 19.4, df = 1, p-value = 1.06e-05
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 16.146, df = 1, p-value = 5.865e-05
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 19.4, df = NA, p-value = 0.0004998
+
+----------------------------------
+Pep7 * Pep9
+   
+     0  1
+  0 27  2
+  1  3  8
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 18.433, df = 1, p-value = 1.76e-05
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 15.089, df = 1, p-value = 0.0001026
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 18.433, df = NA, p-value = 0.0009995
+
+----------------------------------
+Pep7 * Pep10
+   
+     0  1
+  0 24  5
+  1  2  9
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 14.618, df = 1, p-value = 0.0001316
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 11.918, df = 1, p-value = 0.000556
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 14.618, df = NA, p-value = 0.0004998
+
+----------------------------------
+Pep7 * Pep11
+   
+     0  1
+  0 21  8
+  1  5  6
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 2.5478, df = 1, p-value = 0.1104
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 1.5006, df = 1, p-value = 0.2206
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 2.5478, df = NA, p-value = 0.1349
+
+----------------------------------
+Pep7 * Pep12
+   
+     0  1
+  0 26  3
+  1  4  7
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 12.079, df = 1, p-value = 0.0005098
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 9.4044, df = 1, p-value = 0.002165
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 12.079, df = NA, p-value = 0.001999
+
+----------------------------------
+Pep7 * Pep13
+   
+     0  1
+  0 22  7
+  1  7  4
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.59787, df = 1, p-value = 0.4394
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.1419, df = 1, p-value = 0.7064
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.59787, df = NA, p-value = 0.6887
+
+----------------------------------
+Pep7 * Pep14
+   
+     0  1
+  0 24  5
+  1  7  4
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 1.6723, df = 1, p-value = 0.1959
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.7555, df = 1, p-value = 0.3847
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 1.6723, df = NA, p-value = 0.2374
+
+----------------------------------
+Pep8 * Pep9
+   
+     0  1
+  0 25  3
+  1  5  7
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 10.159, df = 1, p-value = 0.001436
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 7.7778, df = 1, p-value = 0.005289
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 10.159, df = NA, p-value = 0.004498
+
+----------------------------------
+Pep8 * Pep10
+   
+     0  1
+  0 22  6
+  1  4  8
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 7.5563, df = 1, p-value = 0.00598
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 5.6986, df = 1, p-value = 0.01698
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 7.5563, df = NA, p-value = 0.01199
+
+----------------------------------
+Pep8 * Pep11
+   
+     0  1
+  0 21  7
+  1  5  7
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 4.1026, df = 1, p-value = 0.04282
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 2.7682, df = 1, p-value = 0.09616
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 4.1026, df = NA, p-value = 0.07396
+
+----------------------------------
+Pep8 * Pep12
+   
+     0  1
+  0 25  3
+  1  5  7
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 10.159, df = 1, p-value = 0.001436
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 7.7778, df = 1, p-value = 0.005289
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 10.159, df = NA, p-value = 0.002499
+
+----------------------------------
+Pep8 * Pep13
+   
+     0  1
+  0 21  7
+  1  8  4
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.29258, df = 1, p-value = 0.5886
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.023884, df = 1, p-value = 0.8772
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.29258, df = NA, p-value = 0.7101
+
+----------------------------------
+Pep8 * Pep14
+   
+     0  1
+  0 23  5
+  1  8  4
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 1.1538, df = 1, p-value = 0.2828
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.43693, df = 1, p-value = 0.5086
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 1.1538, df = NA, p-value = 0.4323
+
+----------------------------------
+Pep9 * Pep10
+   
+     0  1
+  0 24  6
+  1  2  8
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 11.868, df = 1, p-value = 0.000571
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 9.3773, df = 1, p-value = 0.002197
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 11.868, df = NA, p-value = 0.001999
+
+----------------------------------
+Pep9 * Pep11
+   
+     0  1
+  0 21  9
+  1  5  5
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 1.3187, df = 1, p-value = 0.2508
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.58608, df = 1, p-value = 0.4439
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 1.3187, df = NA, p-value = 0.4588
+
+----------------------------------
+Pep9 * Pep12
+   
+     0  1
+  0 25  5
+  1  5  5
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 4.4444, df = 1, p-value = 0.03501
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 2.8444, df = 1, p-value = 0.09169
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 4.4444, df = NA, p-value = 0.09745
+
+----------------------------------
+Pep9 * Pep13
+   
+     0  1
+  0 22  8
+  1  7  3
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.041797, df = 1, p-value = 0.838
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0, df = 1, p-value = 1
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.041797, df = NA, p-value = 1
+
+----------------------------------
+Pep9 * Pep14
+   
+     0  1
+  0 24  6
+  1  7  3
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.43011, df = 1, p-value = 0.5119
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.04779, df = 1, p-value = 0.827
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.43011, df = NA, p-value = 0.6717
+
+----------------------------------
+Pep10 * Pep11
+   
+     0  1
+  0 20  6
+  1  6  8
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 4.642, df = 1, p-value = 0.0312
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 3.2653, df = 1, p-value = 0.07076
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 4.642, df = NA, p-value = 0.04798
+
+----------------------------------
+Pep10 * Pep12
+   
+     0  1
+  0 25  1
+  1  5  9
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 17.729, df = 1, p-value = 2.547e-05
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 14.652, df = 1, p-value = 0.0001293
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 17.729, df = NA, p-value = 0.0004998
+
+----------------------------------
+Pep10 * Pep13
+   
+     0  1
+  0 21  5
+  1  8  6
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 2.5478, df = 1, p-value = 0.1104
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 1.5006, df = 1, p-value = 0.2206
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 2.5478, df = NA, p-value = 0.1479
+
+----------------------------------
+Pep10 * Pep14
+   
+     0  1
+  0 22  4
+  1  9  5
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 2.1568, df = 1, p-value = 0.1419
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 1.1485, df = 1, p-value = 0.2839
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 2.1568, df = NA, p-value = 0.2234
+
+----------------------------------
+Pep11 * Pep12
+   
+     0  1
+  0 21  5
+  1  9  5
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 1.3187, df = 1, p-value = 0.2508
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.58608, df = 1, p-value = 0.4439
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 1.3187, df = NA, p-value = 0.4548
+
+----------------------------------
+Pep11 * Pep13
+   
+     0  1
+  0 20  6
+  1  9  5
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.72893, df = 1, p-value = 0.3932
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.23287, df = 1, p-value = 0.6294
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.72893, df = NA, p-value = 0.4778
+
+----------------------------------
+Pep11 * Pep14
+   
+     0  1
+  0 21  5
+  1 10  4
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.45532, df = 1, p-value = 0.4998
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.077199, df = 1, p-value = 0.7811
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 0.45532, df = NA, p-value = 0.6892
+
+----------------------------------
+Pep12 * Pep13
+   
+     0  1
+  0 25  5
+  1  4  6
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 7.0637, df = 1, p-value = 0.007866
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 5.0575, df = 1, p-value = 0.02452
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 7.0637, df = NA, p-value = 0.01549
+
+----------------------------------
+Pep12 * Pep14
+   
+     0  1
+  0 26  4
+  1  5  5
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 5.7826, df = 1, p-value = 0.01619
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 3.871, df = 1, p-value = 0.04913
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 5.7826, df = NA, p-value = 0.02799
+
+----------------------------------
+Pep13 * Pep14
+   
+     0  1
+  0 29  0
+  1  2  9
+
+	Pearson's Chi-squared test
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 30.616, df = 1, p-value = 3.145e-08
+
+
+	Pearson's Chi-squared test with Yates' continuity correction
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 26.104, df = 1, p-value = 3.236e-07
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, ind[1, i]] and db[, ind[2, i]]
+X-squared = 30.616, df = NA, p-value = 0.0004998
+
+----------------------------------
