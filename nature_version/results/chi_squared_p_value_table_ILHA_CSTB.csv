@@ -1,0 +1,4 @@
+Attribute 1, Attribute 2, Pearson's Chi-squared test, Pearson's Chi-squared test with Yates' continuity correction, Pearson's Chi-squared test with simulated p-value (based on 2000 replicates)
+CSTBintensity.front,CSTBintensity.inner,0.000112075612670246,0.000112075612670246,0.00149925037481259
+CSTBscoreCOMB.front,CSTBscoreCOMB.inner,2.09466889429644e-07,2.09466889429644e-07,0.00249875062468766
+CSTBscoreFINAL.front,CSTBscoreFINAL.inner,3.5573525130048e-48,3.5573525130048e-48,0.000499750124937531

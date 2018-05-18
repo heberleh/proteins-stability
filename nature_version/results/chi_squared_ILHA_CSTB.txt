@@ -1,0 +1,83 @@
+Chi-squared
+CSTBintensity.front * CSTBintensity.inner
+   
+     0  1  2  3
+  0  2  1  0  0
+  1 43 18 25  4
+  2  1  2  7  3
+  3  0  0  4  4
+
+	Pearson's Chi-squared test
+
+data:  db[, index1] and db[, index2]
+X-squared = 33.437, df = 9, p-value = 0.0001121
+
+
+	Pearson's Chi-squared test
+
+data:  db[, index1] and db[, index2]
+X-squared = 33.437, df = 9, p-value = 0.0001121
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, index1] and db[, index2]
+X-squared = 33.437, df = NA, p-value = 0.001499
+
+----------------------------------
+CSTBscoreCOMB.front * CSTBscoreCOMB.inner
+   
+     0  1  2  3  4  5  6
+  0  2  0  0  1  0  0  0
+  2 40  2 14  7  9  3  2
+  3  2  0  1  2  7  4  1
+  4  0  0  1  1  4  0  0
+  5  0  0  0  0  2  6  2
+  6  0  0  0  0  0  0  1
+
+	Pearson's Chi-squared test
+
+data:  db[, index1] and db[, index2]
+X-squared = 86.651, df = 30, p-value = 2.095e-07
+
+
+	Pearson's Chi-squared test
+
+data:  db[, index1] and db[, index2]
+X-squared = 86.651, df = 30, p-value = 2.095e-07
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, index1] and db[, index2]
+X-squared = 86.651, df = NA, p-value = 0.002499
+
+----------------------------------
+CSTBscoreFINAL.front * CSTBscoreFINAL.inner
+   
+     0  1  2
+  0 29  0  0
+  1  0 36  0
+  2  0  0 49
+
+	Pearson's Chi-squared test
+
+data:  db[, index1] and db[, index2]
+X-squared = 228, df = 4, p-value < 2.2e-16
+
+
+	Pearson's Chi-squared test
+
+data:  db[, index1] and db[, index2]
+X-squared = 228, df = 4, p-value < 2.2e-16
+
+
+	Pearson's Chi-squared test with simulated p-value (based on 2000
+	replicates)
+
+data:  db[, index1] and db[, index2]
+X-squared = 228, df = NA, p-value = 0.0004998
+
+----------------------------------

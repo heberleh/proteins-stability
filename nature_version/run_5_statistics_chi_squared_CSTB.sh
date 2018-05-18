@@ -1,0 +1,1 @@
+R -f ./code/statistics/chi_squared_ilha_CSTB.R
