@@ -21,6 +21,15 @@ cat("Wilcoxon signed rank sum", file=filename, sep="\n\n", append=FALSE)
 
 cat("Attribute 1, Attribute 2, Wil.sig.2sided.exact, Wil.sig.2.sided.Asymptotic, Wil.sig.less.exact, Wil.sig.less.Asymptotic, Wil.sig.greater.exact, Wil.sig.greater.Asymptotic \n", file=filename2, sep="", append=FALSE)
 
+# testes
+# wilcoxsign_test
+# fisher.test(x, y = NULL, workspace = 200000, hybrid = FALSE,
+            # hybridPars = c(expect = 5, percent = 80, Emin = 1),
+            # control = list(), or = 1, alternative = "two.sided",
+            # conf.int = TRUE, conf.level = 0.95,
+            # simulate.p.value = FALSE, B = 2000)
+
+
 p_matrix <- c()
 #zero.method = c("Pratt", "Wilcoxon")
 method = "Pratt"

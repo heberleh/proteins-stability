@@ -1,0 +1,1 @@
+R -f ./code/statistics/fisher_scores_0_6.R
