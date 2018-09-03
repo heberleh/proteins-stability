@@ -51,7 +51,7 @@ class Dataset(object):
         self.genes = list(np.array(self.complete_dataset[2:, 0].transpose())[0])
         self.samples = list(np.array(self.complete_dataset[0, 1:])[0])
         self.labels = list(np.array(self.complete_dataset[1, 1:])[0])
-        print "Samples found:" +str(self.samples) +" total size: " + str(len(self.samples))
+        print("\n----- dataset reader ---------\n Samples found:" +str(self.samples) +"\n total size: " + str(len(self.samples))+'\n------------------------------\n')
 
     def __normalize(self):
         """ Normalize into range 0-1

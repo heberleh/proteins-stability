@@ -1,0 +1,7 @@
+Number of samples in the train dataset: 22
+Number of samples in the independent test dataset: 6 
+
+Train samples: ['12.5fmol_C8', '12.5fmol_C9', '12.5fmol_C5', '50fmol_T1T2_S57', '12.5fmol_C10', '25fmol_semtumor_S57', '25fmol_semtumor_T16', '25fmol_semtumor_S40', '50fmol_T1T2_T22', '12.5fmol_C4', '12.5fmol_C2', '25fmol_semtumor_S61', '50fmol_T1T2_S17', '50fmol_T1T2_T23', '50fmol_T1T2_T20', '12.5fmol_Ro', '25fmol_semtumor_S09', '50fmol_T1T2_S79', '25fmol_semtumor_S36', '50fmol_T1T2_T12', '12.5fmol_C3', '12.5fmol_C1']
+
+Test samples: ['50fmol_T1T2_S77', '25fmol_semtumor_S68', '25fmol_semtumor_S64', '25fmol_semtumor_S55', '25fmol_semtumor_S49', '50fmol_T1T2_S78']
+
