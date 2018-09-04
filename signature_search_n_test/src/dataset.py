@@ -9,6 +9,7 @@ from sklearn import preprocessing
 from numpy import matrix
 import csv
 import numpy as np
+import pandas as pd
 
 
 
@@ -69,7 +70,7 @@ class Dataset(object):
         """
         self.matrix = np.matrix(preprocessing.scale(self.matrix))
 
-    def get_scaled_data(self)    :
+    def get_scaled_data(self):
         return preprocessing.scale(self.matrix)
 
     def nRow(self):
@@ -110,3 +111,21 @@ class Dataset(object):
         print self.labels
         np.random.shuffle(self.labels)
         print self.labels
+
+    def getMatrixZscoreWithColClassAsDataFrame(self):
+        levels = self.levels().tolist()
+
+        m = self.get_scaled_data().tolist()
+        print(m)
+
+        for i in range(len(self.labels)):
+            lindex = levels.index(self.labels[i])
+            m[i].append(lindex)
+
+        col_labels = self.genes + ['class']    
+            
+        print(np.matrix(m))
+        d = pd.DataFrame(np.matrix(m), index=self.samples, columns=col_labels)
+
+        print(d)
+        return d
