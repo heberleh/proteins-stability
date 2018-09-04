@@ -16,6 +16,8 @@ ap.add_argument('--onlyFilter', help='The algorithm will only test the dataset c
 
 ap.add_argument('--fdr', help='Correct the Wilcoxon/Kruskal p-values used for filtering proteins by False Discovery Rate.', action='store_true')
 
+ap.add_argument('--minFdr', help='Minimun number of proteins to consider the FDR result to filter.', action='store', type=int, default=9)
+
 ap.add_argument('--tTest', help='Uses T-Test instead of Wilcoxon when the dataset has 2 classes.', action='store_true')
 
 ap.add_argument('--onlyStats', help='If set, only the statistics test will be executed.', action='store_true')
@@ -26,7 +28,7 @@ ap.add_argument('--train', help='Path for the train dataset.', action='store', r
 
 ap.add_argument('--test', help='Path for the independent test dataset.', action='store')
 
-default_test_size= 0.0
+default_test_size= 0.7
 ap.add_argument('--testSize', help='If --test is not defined, --test_size is used to define the independent test set size. If --test_size is set to 0.0, then the independent test is not performed; that is, only the CV is performed to evaluate the selected signatures.', action='store', type=float, default=-1)
 
 ap.add_argument('--nSSearch', help='Set the maximum number of proteins to search for small signatures formed by all prot. combinations (signature size).', action='store', type=int, default=3)
@@ -37,6 +39,18 @@ ap.add_argument('--topN', help='Create all combinations of top-N signatures from
 
 args = vars(ap.parse_args())
 print(args) # Values are saved in the report.txt file
+
+
+
+
+
+
+
+
+
+
+
+
 
 # ======== MAIN =========
 
@@ -183,6 +197,7 @@ for option in filter_options:
         saveHistogram(filename=results_path+'histogram_p_values.png', values=p_values, title=stat_test_name, xlabel='p-values', ylabel='counts', bins=20, rwidth=0.9, color='#607c8e', grid=False, ygrid=True, alpha=0.75)
 
         p_values_corrected = None
+        filtered = None
         if args['fdr']:
             #correct p-values
             print('\nP-values before correction: %s \n\n' % str(p_values))
@@ -205,30 +220,36 @@ for option in filter_options:
 
             report.write('P-values were corrected by FDR and these are the remaining proteins with p-value < %f: %s' % (cutoff, str(filtered)))
             
-        
+
+
+        # ========= save graphics ===========
         train_dataset_temp = train_dataset.get_sub_dataset([train_dataset.genes[i] for i in range(len(train_dataset.genes)) if p_values[i]<cutoff])
-
-        test_dataset_temp = test_dataset.get_sub_dataset([test_dataset.genes[i] for i in range(len(test_dataset.genes)) if p_values[i]<cutoff])
-        
-        cutoff = args['pValue']
-        # filter proteins if p-value < cutoff
-
+    
         saveHeatMap(train_dataset_temp.matrix, train_dataset_temp.samples, train_dataset_temp.genes, results_path+'heatmap_train_dataset_correlation_filtered', metric='correlation', xticklabels=True)
 
         saveHeatMap(train_dataset_temp.get_scaled_data(), train_dataset_temp.samples, train_dataset_temp.genes, results_path+'heatmap_train_dataset_correlation_filtered_zscore', metric='correlation', xticklabels=True) 
 
         saveHeatMap(train_dataset_temp.matrix, train_dataset_temp.samples, train_dataset_temp.genes, results_path+'heatmap_train_dataset_euclidean_filtered', metric='euclidean', xticklabels=True)
 
-        saveHeatMap(train_dataset_temp.get_scaled_data(), train_dataset_temp.samples, train_dataset_temp.genes, results_path+'heatmap_train_dataset_euclidean_filtered_zscore', metric='euclidean', xticklabels=True)    
+        saveHeatMap(train_dataset_temp.get_scaled_data(), train_dataset_temp.samples, train_dataset_temp.genes, results_path+'heatmap_train_dataset_euclidean_filtered_zscore', metric='euclidean', xticklabels=True) 
+
+        saveScatterPlots(train_dataset_temp.getMatrixZscoreWithColClassAsDataFrame(), results_path+'scatterplots_filtered_zscore')   
+        # ========= end graphics ===========
 
 
-        p_values = p_values_corrected
+
+        # aply filter and create a new train/test data set
+        if args['fdr'] and len(filtered) > args['minFdr']:
+            p_values = p_values_corrected
 
         train_dataset = train_dataset.get_sub_dataset([train_dataset.genes[i] for i in range(len(train_dataset.genes)) if p_values[i]<cutoff])
 
         test_dataset = test_dataset.get_sub_dataset([test_dataset.genes[i] for i in range(len(test_dataset.genes)) if p_values[i]<cutoff])
         
 
+
+
+        # ========= save graphics ===========
         saveHeatMap(train_dataset.matrix, train_dataset.samples, train_dataset.genes, results_path+'heatmap_train_dataset_correlation_filtered_fdr', metric='correlation', xticklabels=True)
 
         saveHeatMap(train_dataset.get_scaled_data(), train_dataset.samples, train_dataset.genes, results_path+'heatmap_train_dataset_correlation_filtered_fdr_zscore', metric='correlation', xticklabels=True)
@@ -237,12 +258,35 @@ for option in filter_options:
 
         saveHeatMap(train_dataset.get_scaled_data(), train_dataset.samples, train_dataset.genes, results_path+'heatmap_train_dataset_euclidean_filtered_fdr_zscore', metric='euclidean', xticklabels=True)
 
-        saveScatterPlots(train_dataset.getMatrixZscoreWithColClassAsDataFrame(), results_path+'scatterplots_filtered_fdr_zscore')
+        #saveScatterPlots(train_dataset.getMatrixZscoreWithColClassAsDataFrame(), results_path+'scatterplots_filtered_fdr_zscore')
+        # ========= end graphics ===========
+
+
+
 
     if args['onlyStats']:
         print('\n The parameter onlyStats was set and the statistical results are ready.\nThe algorithm stops here.')
         report.close()
         exit()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
     signatures = []

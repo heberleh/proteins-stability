@@ -27,12 +27,14 @@ def saveScatterPlots(dataset, filename):
     
     genes.remove('class')
     print(genes)
-
-    g = sns.PairGrid(dataset, hue="class", vars=genes,  hue_kws={"cmap": ["Blues", "Greens", "Reds"]}) #palette="Set2",
+    sns.set(style="ticks")
+    #g = sns.PairGrid(dataset, hue="class", vars=genes, hue_kws={"cmap": ["Blues", "Greens", "Reds"]}) #palette="Set2",
+    g = sns.pairplot(dataset, hue="class", vars=genes)#, hue_kws={"cmap": ["Blues", "Greens", "Reds"]})
     #g.map_diag(plt.scatter)
-    g.map_diag(sns.kdeplot)
-    g.map_lower(plt.scatter)
-    g.map_upper(sns.kdeplot) 
+    #g = g.map_diag(sns.kdeplot)
+    #g = g.map_diag(sns.kdeplot, lw=3, legend=False)
+    #g = g.map_lower(plt.scatter)
+    g = g.map_upper(sns.kdeplot) 
     g.savefig(filename, dpi=300)
     plt.close()
 
