@@ -129,3 +129,7 @@ class Dataset(object):
 
         print(d)
         return d
+
+    # todo save dataset
+    def save(self, filename):
+        pass

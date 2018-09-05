@@ -44,3 +44,8 @@ def saveHeatMap(matrix, rows_labels, cols_labels, filename, metric='correlation'
     g = sns.clustermap(dataset, metric=metric, xticklabels=xticklabels)
     g.savefig(filename, dpi=300)
     plt.close()
+
+
+#todo save rank
+def saveRank(scores, filename):
+    pass

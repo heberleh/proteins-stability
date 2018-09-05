@@ -14,9 +14,11 @@ ap.add_argument('--noFilter', help='The algorithm will not filter proteins by Wi
 
 ap.add_argument('--onlyFilter', help='The algorithm will only test the dataset composed by filtered proteins.', action='store_true')
 
+ap.add_argument('--saveGraphics', help='Save Heatmaps, Scatterplots and others graphics for visualization of datasets and results.', action='store_true')
+
 ap.add_argument('--fdr', help='Correct the Wilcoxon/Kruskal p-values used for filtering proteins by False Discovery Rate.', action='store_true')
 
-ap.add_argument('--minFdr', help='Minimun number of proteins to consider the FDR result to filter.', action='store', type=int, default=9)
+ap.add_argument('--minFdr', help='Minimun number of proteins to consider the FDR result to filter.', action='store', type=int, default=4)
 
 ap.add_argument('--tTest', help='Uses T-Test instead of Wilcoxon when the dataset has 2 classes.', action='store_true')
 
@@ -28,7 +30,7 @@ ap.add_argument('--train', help='Path for the train dataset.', action='store', r
 
 ap.add_argument('--test', help='Path for the independent test dataset.', action='store')
 
-default_test_size= 0.7
+default_test_size= 0.08
 ap.add_argument('--testSize', help='If --test is not defined, --test_size is used to define the independent test set size. If --test_size is set to 0.0, then the independent test is not performed; that is, only the CV is performed to evaluate the selected signatures.', action='store', type=float, default=-1)
 
 ap.add_argument('--nSSearch', help='Set the maximum number of proteins to search for small signatures formed by all prot. combinations (signature size).', action='store', type=int, default=3)
@@ -36,6 +38,10 @@ ap.add_argument('--nSSearch', help='Set the maximum number of proteins to search
 ap.add_argument('--nSmall', help='Set the number of proteins considered small. If the total number of proteins in a dataset is smaller or equal than NSMALL, it will compute all combinations of proteins to form signatures. Otherwise, it will consider NSSEARCH to compute only combinations of size up to the value set for this parameter.', action='store', type=int, default=10)
 
 ap.add_argument('--topN', help='Create all combinations of top-N signatures from the average of ranks.', action='store', type=int, default=10)
+
+ap.add_argument('--deltaRankCutoff', help='The percentage of difference from the maximum score value that is used as cutoff univariate ranks. The scores are normalized between 0 and 1. So, if the maximum value is 0.9, and deltaRankCutoff is set to 0.05, the cutoff value is 0.85. Proteins with score >= 0.85 are selected to form signatures by top-N proteins.', action='store', type=int, default=10)
+
+ap.add_argument('--k', help='The value of K for all k-fold cross-validations.', action='store', type=int, default=10)
 
 args = vars(ap.parse_args())
 print(args) # Values are saved in the report.txt file
@@ -94,6 +100,9 @@ report =  open(results_path+'report.txt','w')
 report.write('============= REPORT =============\n\n')
 report.write('Arguments used in this project: %s\n\n' % str(args))
 
+saveGraphics = args['saveGraphics']
+
+
 if test_dataset_path != None:
     try:
         # TODO Test this parameter -> reading test dataset from file
@@ -127,14 +136,14 @@ else:
     report.write('Train samples: %s\n\n' % str(train_dataset.samples))
     report.write('Test samples: %s\n\n' % str(test_dataset.samples))
 
+    if saveGraphics:
+        saveHeatMap(train_dataset.matrix, train_dataset.samples, train_dataset.genes, results_path+'heatmap_train_dataset_correlation', metric='correlation')
 
-    saveHeatMap(train_dataset.matrix, train_dataset.samples, train_dataset.genes, results_path+'heatmap_train_dataset_correlation', metric='correlation')
+        saveHeatMap(train_dataset.get_scaled_data(), train_dataset.samples, train_dataset.genes, results_path+'heatmap_train_dataset_correlation_zscore', metric='correlation')   
 
-    saveHeatMap(train_dataset.get_scaled_data(), train_dataset.samples, train_dataset.genes, results_path+'heatmap_train_dataset_correlation_zscore', metric='correlation')   
+        saveHeatMap(train_dataset.matrix, train_dataset.samples, train_dataset.genes, results_path+'heatmap_train_dataset_euclidean', metric='euclidean')
 
-    saveHeatMap(train_dataset.matrix, train_dataset.samples, train_dataset.genes, results_path+'heatmap_train_dataset_euclidean', metric='euclidean')
-
-    saveHeatMap(train_dataset.get_scaled_data(), train_dataset.samples, train_dataset.genes, results_path+'heatmap_train_dataset_euclidean_zscore', metric='euclidean')    
+        saveHeatMap(train_dataset.get_scaled_data(), train_dataset.samples, train_dataset.genes, results_path+'heatmap_train_dataset_euclidean_zscore', metric='euclidean')    
 
 
 
@@ -194,7 +203,8 @@ for option in filter_options:
 
         # print p-value histogram
         #saveHistogram(filename=results_path+'p_values_histogram_from_filter_no_correction', values=p_values, title=stat_test_name)
-        saveHistogram(filename=results_path+'histogram_p_values.png', values=p_values, title=stat_test_name, xlabel='p-values', ylabel='counts', bins=20, rwidth=0.9, color='#607c8e', grid=False, ygrid=True, alpha=0.75)
+        if saveGraphics:
+            saveHistogram(filename=results_path+'histogram_p_values.png', values=p_values, title=stat_test_name, xlabel='p-values', ylabel='counts', bins=20, rwidth=0.9, color='#607c8e', grid=False, ygrid=True, alpha=0.75)
 
         p_values_corrected = None
         filtered = None
@@ -210,7 +220,9 @@ for option in filter_options:
                 for i in range(len(train_dataset.genes)):
                     f.write(train_dataset.genes[i]+","+str(p_values_corrected[i])+"\n")   
 
-            saveHistogram(filename=results_path+'histogram_p_values_corrected_fdr.png', values=p_values_corrected, title=stat_test_name+' (corrected)', xlabel='p-values', ylabel='counts', bins=20, rwidth=0.9, color='#607c8e', grid=False, ygrid=True, alpha=0.75)            
+            if saveGraphics:
+                saveHistogram(filename=results_path+'histogram_p_values_corrected_fdr.png', values=p_values_corrected, title=stat_test_name+' (corrected)', xlabel='p-values', ylabel='counts', bins=20, rwidth=0.9, color='#607c8e', grid=False, ygrid=True, alpha=0.75)            
+            
             print('\nSelected proteins after FDR correction: %s\n\n' % str(filtered))
 
             if len(filtered) < 2:
@@ -223,17 +235,18 @@ for option in filter_options:
 
 
         # ========= save graphics ===========
-        train_dataset_temp = train_dataset.get_sub_dataset([train_dataset.genes[i] for i in range(len(train_dataset.genes)) if p_values[i]<cutoff])
-    
-        saveHeatMap(train_dataset_temp.matrix, train_dataset_temp.samples, train_dataset_temp.genes, results_path+'heatmap_train_dataset_correlation_filtered', metric='correlation', xticklabels=True)
+        if saveGraphics:
+            train_dataset_temp = train_dataset.get_sub_dataset([train_dataset.genes[i] for i in range(len(train_dataset.genes)) if p_values[i]<cutoff])
+        
+            saveHeatMap(train_dataset_temp.matrix, train_dataset_temp.samples, train_dataset_temp.genes, results_path+'heatmap_train_dataset_correlation_filtered', metric='correlation', xticklabels=True)
 
-        saveHeatMap(train_dataset_temp.get_scaled_data(), train_dataset_temp.samples, train_dataset_temp.genes, results_path+'heatmap_train_dataset_correlation_filtered_zscore', metric='correlation', xticklabels=True) 
+            saveHeatMap(train_dataset_temp.get_scaled_data(), train_dataset_temp.samples, train_dataset_temp.genes, results_path+'heatmap_train_dataset_correlation_filtered_zscore', metric='correlation', xticklabels=True) 
 
-        saveHeatMap(train_dataset_temp.matrix, train_dataset_temp.samples, train_dataset_temp.genes, results_path+'heatmap_train_dataset_euclidean_filtered', metric='euclidean', xticklabels=True)
+            saveHeatMap(train_dataset_temp.matrix, train_dataset_temp.samples, train_dataset_temp.genes, results_path+'heatmap_train_dataset_euclidean_filtered', metric='euclidean', xticklabels=True)
 
-        saveHeatMap(train_dataset_temp.get_scaled_data(), train_dataset_temp.samples, train_dataset_temp.genes, results_path+'heatmap_train_dataset_euclidean_filtered_zscore', metric='euclidean', xticklabels=True) 
+            saveHeatMap(train_dataset_temp.get_scaled_data(), train_dataset_temp.samples, train_dataset_temp.genes, results_path+'heatmap_train_dataset_euclidean_filtered_zscore', metric='euclidean', xticklabels=True) 
 
-        saveScatterPlots(train_dataset_temp.getMatrixZscoreWithColClassAsDataFrame(), results_path+'scatterplots_filtered_zscore')   
+            saveScatterPlots(train_dataset_temp.getMatrixZscoreWithColClassAsDataFrame(), results_path+'scatterplots_filtered_zscore')   
         # ========= end graphics ===========
 
 
@@ -250,13 +263,14 @@ for option in filter_options:
 
 
         # ========= save graphics ===========
-        saveHeatMap(train_dataset.matrix, train_dataset.samples, train_dataset.genes, results_path+'heatmap_train_dataset_correlation_filtered_fdr', metric='correlation', xticklabels=True)
+        if saveGraphics:
+            saveHeatMap(train_dataset.matrix, train_dataset.samples, train_dataset.genes, results_path+'heatmap_train_dataset_correlation_filtered_fdr', metric='correlation', xticklabels=True)
 
-        saveHeatMap(train_dataset.get_scaled_data(), train_dataset.samples, train_dataset.genes, results_path+'heatmap_train_dataset_correlation_filtered_fdr_zscore', metric='correlation', xticklabels=True)
+            saveHeatMap(train_dataset.get_scaled_data(), train_dataset.samples, train_dataset.genes, results_path+'heatmap_train_dataset_correlation_filtered_fdr_zscore', metric='correlation', xticklabels=True)
 
-        saveHeatMap(train_dataset.matrix, train_dataset.samples, train_dataset.genes, results_path+'heatmap_train_dataset_euclidean_filtered_fdr', metric='euclidean', xticklabels=True)
+            saveHeatMap(train_dataset.matrix, train_dataset.samples, train_dataset.genes, results_path+'heatmap_train_dataset_euclidean_filtered_fdr', metric='euclidean', xticklabels=True)
 
-        saveHeatMap(train_dataset.get_scaled_data(), train_dataset.samples, train_dataset.genes, results_path+'heatmap_train_dataset_euclidean_filtered_fdr_zscore', metric='euclidean', xticklabels=True)
+            saveHeatMap(train_dataset.get_scaled_data(), train_dataset.samples, train_dataset.genes, results_path+'heatmap_train_dataset_euclidean_filtered_fdr_zscore', metric='euclidean', xticklabels=True)
 
         #saveScatterPlots(train_dataset.getMatrixZscoreWithColClassAsDataFrame(), results_path+'scatterplots_filtered_fdr_zscore')
         # ========= end graphics ===========
@@ -274,40 +288,76 @@ for option in filter_options:
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    signatures = []
-    proteins_ranks = []
-
     #================== signatures by ranking =========================
     # for each ranking method, create signatures by selecting top-N proteins
     # if a signature exists, add the method to its methods list
     # sum the ranks position for each protein
     # SAVE ALL THE RANKS
 
-    # svm-rfe
+
+    from sklearn.ensemble import RandomForestClassifier
+    from sklearn.model_selection import cross_val_score
+
+    signatures = []
+    proteins_ranks = []
+
+    k = args['k']
+    deltaScore = args['deltaRankCutoff']
+
+    # Type 1: Model Based Ranking
+    # Type 2: Regularization (L1 and L2)
+    # Type 3: Univariate Feature Selection
+    # Type 4: Recursive Feature Elimination
+    # Type 5: Random Forest Feature Importance
+    # Type 6: Stability Selection
+
+    # ---------------------- Model Based Ranks -------------------------
+   
+    # Random Forests
+    clf = RandomForestClassifier()
+    scores = []
+    for i in range(len(train_dataset.genes)):
+        x_train = train_dataset.matrix[:, i] # data matrix
+        y_train = factorize(train_dataset.labels)[0]  # classes/labels of each sample from 
+        score = np.mean(cross_val_score(clf, x_train, y_train, cv=k))
+        scores.append((int(score), i, train_dataset.genes[i]))
+
+    scores = sorted(scores, reverse = True)
+
+    saveRank(scores, results_path+'rank_t1_uni_rf_mean_accuracy.csv')
+
+    maxScore = max(scores,key=lambda item:item[0])[0]
+    cutoffScore = maxScore-deltaScore
+    selected_genes_names = [item[2] for item in scores if item[0] > cutoffScore]
+    selected_genes_indexes = [item[1] for item in scores if item[0] > cutoffScore]
+    genes_for_signature = []
+    for i in range(len(selected_genes_indexes)):
+        signature()
+
+    report.write('== Model Based Rank - Random Forests == \n')
+    report.write('Top-N proteins formed %d signatures\n' %len(selected_genes_names))
+    report.write('Max Mean Accuracy by individual protein: %f\n' %maxScore)
+    report.write('Selected proteins by cutoff of %f: %s\n\n' %(cutoffScore,str(selected_genes_names)))
+
 
     # beta-binomial
 
-    # kruskal, t-test or wilcoxon
 
-    # ensemble variable importance
-    # ... 
+    # kruskal/t-test/wilcoxon
 
-    # ...
+
+    # ------------------------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
 
     # rank by mean-rank position (from above methods)
 
