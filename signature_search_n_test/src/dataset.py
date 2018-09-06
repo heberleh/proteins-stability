@@ -133,3 +133,13 @@ class Dataset(object):
     # todo save dataset
     def save(self, filename):
         pass
+
+    def getMinNumberOfSamplesPerClass(self):
+        counts = {}        
+        for label in self.labels:
+            if label in counts:
+                counts[label] += 1
+            else:
+                counts[label] = 0 
+        
+        return min(counts.values())

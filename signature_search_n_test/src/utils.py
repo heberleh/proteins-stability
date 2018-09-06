@@ -48,4 +48,10 @@ def saveHeatMap(matrix, rows_labels, cols_labels, filename, metric='correlation'
 
 #todo save rank
 def saveRank(scores, filename):
-    pass
+    #scores tuple (score, index, name)
+    with open(filename, 'w') as f:
+        f.write("index,name,score\n")
+        for i in range(len(scores)):
+            item = scores[i]
+            f.write('%d,%s,%f\n' % (item[1], item[2], item[0]))   
+        f.close()

@@ -8,17 +8,16 @@ class Signature(object):
         self.accuracies = []
         self.weight = 0 # how many times this signature was selected
         self.independentAccuracies = []
+        self.id = str(sorted(self.genes))
 
-    
-    def __eq__(self, other):
-        if (len(self.genes)!=len(other.genes)):
-            return False
-                
-        for gene1 in self.genes:
-            if gene1 not in other.genes:
-                return False
+    def __eq__(self, other):               
+        return self.id == other.id
 
-        return True
+    def __hash__(self):
+        return hash(self.id)
+        
+    def __str__(self):
+        return self.id
 
     def getN(self):
         return len(self.genes)
@@ -40,3 +39,7 @@ class Signature(object):
 
     def getIndependentTestAccuracies(self):
         return self.independentAccuracies
+
+    def toGeneNamesList(self, names):
+        return [names[gene] for gene in self.genes]
+        

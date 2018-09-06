@@ -18,6 +18,8 @@ ap.add_argument('--saveGraphics', help='Save Heatmaps, Scatterplots and others g
 
 ap.add_argument('--fdr', help='Correct the Wilcoxon/Kruskal p-values used for filtering proteins by False Discovery Rate.', action='store_true')
 
+ap.add_argument('--fdrPvalue', help='Minimun p-value used as cutoff after FDR correction.', action='store', type=int, default=0.1)
+
 ap.add_argument('--minFdr', help='Minimun number of proteins to consider the FDR result to filter.', action='store', type=int, default=4)
 
 ap.add_argument('--tTest', help='Uses T-Test instead of Wilcoxon when the dataset has 2 classes.', action='store_true')
@@ -39,9 +41,11 @@ ap.add_argument('--nSmall', help='Set the number of proteins considered small. I
 
 ap.add_argument('--topN', help='Create all combinations of top-N signatures from the average of ranks.', action='store', type=int, default=10)
 
-ap.add_argument('--deltaRankCutoff', help='The percentage of difference from the maximum score value that is used as cutoff univariate ranks. The scores are normalized between 0 and 1. So, if the maximum value is 0.9, and deltaRankCutoff is set to 0.05, the cutoff value is 0.85. Proteins with score >= 0.85 are selected to form signatures by top-N proteins.', action='store', type=int, default=10)
+ap.add_argument('--deltaRankCutoff', help='The percentage of difference from the maximum score value that is used as cutoff univariate ranks. The scores are normalized between 0 and 1. So, if the maximum value is 0.9, and deltaRankCutoff is set to 0.05, the cutoff value is 0.85. Proteins with score >= 0.85 are selected to form signatures by top-N proteins.', action='store', type=float, default=0.10)
 
 ap.add_argument('--k', help='The value of K for all k-fold cross-validations.', action='store', type=int, default=10)
+
+ap.add_argument('--limitSignatureSize', help='Limit the size of signatures created by rank to the number of samples. For instance, when selecting top-N proteins using 30 samples, the maximum value of N is 30.', action='store_true')
 
 args = vars(ap.parse_args())
 print(args) # Values are saved in the report.txt file
@@ -91,6 +95,13 @@ results_path = new_dir + '/'
 
 train_dataset_path = args['train']
 dataset = Dataset(train_dataset_path, scale=False, normalize=False, sep=',')
+
+geneIndex = {}
+i = 0
+for gene in dataset.genes:
+    geneIndex[gene] = i
+    i += 1
+geneNames = [gene for gene in dataset.genes]
 
 test_dataset = None
 train_dataset = None
@@ -146,7 +157,6 @@ else:
         saveHeatMap(train_dataset.get_scaled_data(), train_dataset.samples, train_dataset.genes, results_path+'heatmap_train_dataset_euclidean_zscore', metric='euclidean')    
 
 
-
 if args['noFilter']:
     filter_options = ['noFilter']
 elif args['onlyFilter']:
@@ -155,7 +165,19 @@ else:
     filter_options = ['noFilter','filter']
 
 
+global_results_path = results_path
 for option in filter_options:
+    report.write('\n\n============================='+option+'=============================\n')
+
+    results_path = global_results_path+option+'/'
+    try:  
+        os.mkdir(results_path)
+    except OSError:  
+        print ("Creation of the directory %s failed" % results_path)
+        exit()
+    else:  
+        print ("Successfully created the directory %s " % results_path)        
+
     if option == 'filter':
         stat_test_name = ''
         cutoff = args['pValue']
@@ -208,12 +230,13 @@ for option in filter_options:
 
         p_values_corrected = None
         filtered = None
+        fdr_cutoff = args['fdrPvalue']
         if args['fdr']:
             #correct p-values
             print('\nP-values before correction: %s \n\n' % str(p_values))
             p_values_corrected = fdrcorrection(p_values, alpha=0.25, method='indep', is_sorted=False)[1]
             print('P-values after correction: %s\n\n' % str(p_values_corrected))
-            filtered = [train_dataset.genes[i] for i in range(len(train_dataset.genes)) if p_values_corrected[i]<cutoff]
+            filtered = [train_dataset.genes[i] for i in range(len(train_dataset.genes)) if p_values_corrected[i]<fdr_cutoff]
 
             with open(results_path+'corrected_pvalues_fdr.csv', 'w') as f:
                 f.write("gene,p-value\n")
@@ -225,16 +248,14 @@ for option in filter_options:
             
             print('\nSelected proteins after FDR correction: %s\n\n' % str(filtered))
 
+            report.write('P-values were corrected by FDR and these are the remaining proteins with p-value < %f: %s\n' % (fdr_cutoff, str(filtered)))
             if len(filtered) < 2:
                 print('Interrupting the algorithm because the number of selected proteins after FDR filter is < 2')
-                report.write('P-values were corrected by FDR and these are the remaining proteins with p-value < %f: %s' % (cutoff, str(filtered)))
                 exit()
-
-            report.write('P-values were corrected by FDR and these are the remaining proteins with p-value < %f: %s' % (cutoff, str(filtered)))
             
 
 
-        # ========= save graphics ===========
+        # ========= save graphics  - without correction of p-value ===========
         if saveGraphics:
             train_dataset_temp = train_dataset.get_sub_dataset([train_dataset.genes[i] for i in range(len(train_dataset.genes)) if p_values[i]<cutoff])
         
@@ -252,12 +273,19 @@ for option in filter_options:
 
 
         # aply filter and create a new train/test data set
-        if args['fdr'] and len(filtered) > args['minFdr']:
-            p_values = p_values_corrected
+        current_cutoff = cutoff
+        if args['fdr']:
+            if len(filtered) >= args['minFdr']:
+                p_values = p_values_corrected
+                current_cutoff = fdr_cutoff
+            else:
+                print('The number of filtered proteins is smaller than minFdr. The program was interrupted.')
+                exit()
+        
 
-        train_dataset = train_dataset.get_sub_dataset([train_dataset.genes[i] for i in range(len(train_dataset.genes)) if p_values[i]<cutoff])
+        train_dataset = train_dataset.get_sub_dataset([train_dataset.genes[i] for i in range(len(train_dataset.genes)) if p_values[i]<current_cutoff])
 
-        test_dataset = test_dataset.get_sub_dataset([test_dataset.genes[i] for i in range(len(test_dataset.genes)) if p_values[i]<cutoff])
+        test_dataset = test_dataset.get_sub_dataset([test_dataset.genes[i] for i in range(len(test_dataset.genes)) if p_values[i]<current_cutoff])
         
 
 
@@ -286,23 +314,39 @@ for option in filter_options:
 
 
 
-
-
     #================== signatures by ranking =========================
     # for each ranking method, create signatures by selecting top-N proteins
     # if a signature exists, add the method to its methods list
     # sum the ranks position for each protein
     # SAVE ALL THE RANKS
 
-
+    from pandas import factorize    
+    import numpy as np
+    
     from sklearn.ensemble import RandomForestClassifier
     from sklearn.model_selection import cross_val_score
+    
+    from utils import saveRank
+    from signature import Signature
 
-    signatures = []
+    signatures_data = dict()
     proteins_ranks = []
 
     k = args['k']
-    deltaScore = args['deltaRankCutoff']
+    if k > train_dataset.getMinNumberOfSamplesPerClass():
+        print("\n-------------!!!-------------\n")
+        print("Error: The defined K for K-fold Cross-validation is greater than the number of members in each class.\n")
+        print("Please consider using a smaller number for the parameter --k\n")
+        print("Current K: %d\n" % k)
+        print("Max value for K: %d\n" % train_dataset.getMinNumberOfSamplesPerClass())
+        exit()
+
+    deltaScore = float(args['deltaRankCutoff'])
+
+    limitSigSize = args['limitSignatureSize']
+    maxNumberOfProteins = len(train_dataset.genes)
+    if limitSigSize:
+        maxNumberOfProteins = len(train_dataset.samples)
 
     # Type 1: Model Based Ranking
     # Type 2: Regularization (L1 and L2)
@@ -319,8 +363,9 @@ for option in filter_options:
     for i in range(len(train_dataset.genes)):
         x_train = train_dataset.matrix[:, i] # data matrix
         y_train = factorize(train_dataset.labels)[0]  # classes/labels of each sample from 
-        score = np.mean(cross_val_score(clf, x_train, y_train, cv=k))
-        scores.append((int(score), i, train_dataset.genes[i]))
+        scores_cv = cross_val_score(clf, x_train, y_train, cv=k)        
+        score = np.mean(scores_cv)
+        scores.append((score, geneIndex[train_dataset.genes[i]], train_dataset.genes[i]))
 
     scores = sorted(scores, reverse = True)
 
@@ -328,22 +373,85 @@ for option in filter_options:
 
     maxScore = max(scores,key=lambda item:item[0])[0]
     cutoffScore = maxScore-deltaScore
-    selected_genes_names = [item[2] for item in scores if item[0] > cutoffScore]
-    selected_genes_indexes = [item[1] for item in scores if item[0] > cutoffScore]
+    genes_to_show = [item for item in scores if item[0] > cutoffScore]
+
     genes_for_signature = []
-    for i in range(len(selected_genes_indexes)):
-        signature()
+    for i in range(1,maxNumberOfProteins+1):
+        genes_indexes = [item[1] for item in scores[0:i]]
+        sig = Signature(genes_indexes)
+        if sig in signatures_data:
+            signatures_data[sig]['methods'].add('model_based_rank_random_forest')
+        else:
+            sig_data = {'methods':set()}
+            sig_data['methods'].add('model_based_rank_random_forest')
+            signatures_data[sig] = sig_data
 
-    report.write('== Model Based Rank - Random Forests == \n')
-    report.write('Top-N proteins formed %d signatures\n' %len(selected_genes_names))
+    report.write('-- Model Based Rank - Random Forests --\n')
     report.write('Max Mean Accuracy by individual protein: %f\n' %maxScore)
-    report.write('Selected proteins by cutoff of %f: %s\n\n' %(cutoffScore,str(selected_genes_names)))
+    report.write('%d proteins have mean accuracy > %f (max-deltaRankCutoff): %s\n' %(len(genes_to_show), cutoffScore, str(genes_to_show)))
+    
 
+    report.write('\n\n')
 
     # beta-binomial
 
-
+    #-----------------------------------------------------------------------------
     # kruskal/t-test/wilcoxon
+    scores = []
+    name = None
+    test = None
+    if len(train_dataset.levels()) == 3:
+        # Kruskal
+        stat_test_name = 'Kruskal Wallis p-values histogram'
+        test = KruskalRankSumTest3Classes(train_dataset)
+        name = 'kruskal'
+    # if 2-class
+    elif len(train_dataset.levels()) == 2:   
+
+        if args['t_test']:
+            #t-test
+            stat_test_name = 'T-test p-values histogram'
+            test = TTest(train_dataset)
+            name = 'ttest'             
+        else:
+            #wilcoxon
+            stat_test_name = 'Wilcoxon p-values histogram'     
+            test = WilcoxonRankSumTest(train_dataset)
+            name = 'wilcox'           
+    h, p = test.run()    
+    for i in range(len(train_dataset.genes)):
+        score = (p[i],  geneIndex[train_dataset.genes[i]],  train_dataset.genes[i])
+        scores.append(score)
+
+    scores = sorted(scores, reverse = False)
+
+    saveRank(scores, results_path+'rank_t1_uni_'+name+'_pvalue.csv')
+
+    minScore = min(scores,key=lambda item:item[0])[0]
+    cutoffScore = minScore+deltaScore
+    genes_to_show = [item for item in scores if item[0] < cutoffScore]
+
+    genes_for_signature = []
+    for i in range(1,maxNumberOfProteins+1):
+        genes_indexes = [item[1] for item in scores[0:i]]
+        sig = Signature(genes_indexes)        
+        if sig in signatures_data:
+            signatures_data[sig]['methods'].add('model_based_rank_'+name)
+        else:
+            sig_data = {'methods':set()}
+            sig_data['methods'].add('model_based_rank_'+name)
+            signatures_data[sig] = sig_data
+
+    report.write('-- Model Based Rank - '+name+' --\n')
+    report.write('Minimum p-value: %f\n' %minScore)
+    report.write('%d proteins have p-value < %f (min+deltaRankCutoff): %s\n' %(len(genes_to_show), cutoffScore, str(genes_to_show)))
+    #-----------------------------------------------------------------------------
+
+
+
+
+
+
 
 
     # ------------------------------------------------------------------
@@ -371,6 +479,12 @@ for option in filter_options:
         # small signatures from all proteins
     max_sig_size = args['nSSearch']
 
+
+
+    print('There are %d signatures that are going to be tested:' % len(signatures_data.keys()))
+    
+    for signature in signatures_data:        
+        print('%d - %s: %s' % (len(signatures_data[signature]['methods']), signature.toGeneNamesList(geneNames), str(signatures_data[signature]['methods']) ))
 
 report.close()
 
