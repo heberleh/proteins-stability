@@ -55,3 +55,17 @@ def saveRank(scores, filename):
             item = scores[i]
             f.write('%d,%s,%f\n' % (item[1], item[2], item[0]))   
         f.close()
+
+
+def normalizeScores(scores):
+    maximum = max(scores,key=lambda item:item[0])[0]
+    minimum = min(scores,key=lambda item:item[0])[0]
+    delta = maximum - minimum
+    if delta == 0:
+        return scores
+
+    new_scores = []
+    for score in scores:
+        new_scores.append(((score[0]-minimum)/delta,score[1],score[2]))
+
+    return new_scores

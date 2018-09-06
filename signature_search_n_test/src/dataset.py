@@ -53,6 +53,7 @@ class Dataset(object):
         self.samples = list(np.array(self.complete_dataset[0, 1:])[0])
         self.labels = list(np.array(self.complete_dataset[1, 1:])[0])
         print("\n----- dataset reader ---------\n Samples found:" +str(self.samples) +"\n total size: " + str(len(self.samples))+'\n------------------------------\n')
+        self.sortSamplesByClassLabel()
 
     def __normalize(self):
         """ Normalize into range 0-1
@@ -105,6 +106,7 @@ class Dataset(object):
         new_dataset.labels = list(np.array(self.labels)[indexes])
         new_dataset.samples = list(np.array(self.samples)[indexes])
         new_dataset.name = self.name+"_modified"
+        new_dataset.sortSamplesByClassLabel()
         return new_dataset
     
     def shuffle_labels(self):
@@ -143,3 +145,9 @@ class Dataset(object):
                 counts[label] = 0 
         
         return min(counts.values())
+
+    def sortSamplesByClassLabel(self):
+        indexes = np.argsort(self.labels)
+        self.matrix = self.matrix[indexes, :]
+        self.labels = list(np.array(self.labels)[indexes])
+        self.samples = list(np.array(self.samples)[indexes])
