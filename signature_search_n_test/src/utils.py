@@ -69,3 +69,11 @@ def normalizeScores(scores):
         new_scores.append(((score[0]-minimum)/delta,score[1],score[2]))
 
     return new_scores
+
+
+def getMaxNumberOfProteins(scores, maxNumberOfProteins):
+    non_zeros = 0
+    for score in scores:
+        if score[0] > 0:
+            non_zeros +=1
+    return min([non_zeros,maxNumberOfProteins])
