@@ -1,6 +1,9 @@
 
 # =================================
 # =========== ARGS ================
+import warnings
+warnings.filterwarnings("ignore", category=DeprecationWarning)
+warnings.filterwarnings("ignore", category=UserWarning)
 
 # import the necessary packages
 import argparse
@@ -46,6 +49,10 @@ ap.add_argument('--deltaRankCutoff', help='The percentage of difference from the
 ap.add_argument('--k', help='The value of K for all k-fold cross-validations.', action='store', type=int, default=10)
 
 ap.add_argument('--limitSignatureSize', help='Limit the size of signatures created by rank to the number of samples. For instance, when selecting top-N proteins using 30 samples, the maximum value of N is 30.', action='store_true')
+
+ap.add_argument('--nJobs', help='Number of parallel jobs when fitting models.', action='store', type=int, default=1)
+
+ap.add_argument('--ignoreWarnings', help='Stop printing Warnings from models.', action='store_true')
 
 args = vars(ap.parse_args())
 print(args) # Values are saved in the report.txt file
@@ -112,7 +119,7 @@ report.write('============= REPORT =============\n\n')
 report.write('Arguments used in this project: %s\n\n' % str(args))
 
 saveGraphics = args['saveGraphics']
-
+nJobs = args['nJobs']
 
 if test_dataset_path != None:
     try:
@@ -185,7 +192,7 @@ for option in filter_options:
         print ("Creation of the directory %s failed" % results_path)
         exit()
     else:  
-        print ("Successfully created the directory %s " % results_path)    
+        print ("Successfully created the directory %s " % results_path_rank)    
 
     if option == 'filter':
         stat_test_name = ''
@@ -388,15 +395,22 @@ for option in filter_options:
     grid.fit(train_dataset.X(), train_dataset.Y())
     RidgeBestC = grid.best_params_['logisticregression__C']  
 
-    estimators = [
-        {'name': 'Decision Tree', 'model': DecisionTreeClassifier()},
-        {'name': 'Random Forest', 'model': RandomForestClassifier()},
-        {'name': 'Ada Boost', 'model': AdaBoostClassifier()},
-        {'name': 'Gradient Boosting', 'model': GradientBoostingClassifier()},
-        {'name': 'Lasso', 'model': LogisticRegression(penalty='l1', C=LassoBestC)},
-        {'name': 'Ridge', 'model': LogisticRegression(penalty='l2', C=RidgeBestC)},
-        {'name': 'Linear SVM', 'model': LinearSVC()},
-        {'name': 'Linear Discriminant Analysis', 'model': LinearDiscriminantAnalysis()}
+    estimators = [  #lambda_name='model__C',lambda_grid=np.logspace(-5, -1, 50)
+        {'name': 'Decision Tree', 'model': DecisionTreeClassifier(), 'lambda_name':'model__max_depth', 'lambda_grid': np.arange(1, 20)}, #'max_depth': np.arange(3, 10)
+
+        {'name': 'Random Forest', 'model': RandomForestClassifier(n_estimators=100,n_jobs=nJobs), 'lambda_name':'model__max_features', 'lambda_grid': np.array([0.5, 0.7, 0.85, 1.0])},
+
+        {'name': 'Ada Boost', 'model': AdaBoostClassifier(n_estimators=100), 'lambda_name':'model__learning_rate', 'lambda_grid': np.array([0.01, 0.1, 0.3, 0.6, 1.0])},
+
+        {'name': 'Gradient Boosting', 'model': GradientBoostingClassifier(n_estimators=100), 'lambda_name':'model__learning_rate', 'lambda_grid': np.array([0.01, 0.1, 0.3, 0.6, 1.0])},
+
+        {'name': 'Lasso', 'model': LogisticRegression(penalty='l1', C=LassoBestC), 'lambda_name':'model__C', 'lambda_grid': np.logspace(-5, 0, 10)},
+
+        {'name': 'Ridge', 'model': LogisticRegression(penalty='l2', C=RidgeBestC), 'lambda_name':'model__C', 'lambda_grid': np.logspace(-5, 0, 10)},
+
+        {'name': 'Linear SVM', 'model': LinearSVC(), 'lambda_name':'model__C', 'lambda_grid': np.arange(3, 10)},
+
+        {'name': 'Linear Discriminant Analysis', 'model': LinearDiscriminantAnalysis(), 'lambda_name':'model__n_components', 'lambda_grid': None} #! need to be set after filtering
     ]
 
     def getScore(traindata, pipe, estimator_name, i):
@@ -419,7 +433,7 @@ for option in filter_options:
     # ---------------------- Type 1 - Model Based Ranks -------------------------
     if type1:
         # Random Forests
-        clf = RandomForestClassifier()
+        clf = RandomForestClassifier(n_jobs=nJobs, n_estimators=100)
         scores = []
         for i in range(len(train_dataset.genes)):
             x_train = train_dataset.X()[:, i] # data matrix
@@ -451,7 +465,7 @@ for option in filter_options:
 
 
 
-    # ---------------------- Type 2 -------------------------
+    # ---------------------- Type 2 - Rank based on attribute Weights -------------------------
     if type2:
         
         def regularizationRank(estimator, traindata):
@@ -676,7 +690,7 @@ for option in filter_options:
 
 
 
-    #---------- Recursive Feature Elimination (RFE) ----------
+    #---------- Type 4 - Recursive Feature Elimination (RFE) ----------
     if type4:
 
         def rfeRank(estimator, traindata):        
@@ -718,26 +732,26 @@ for option in filter_options:
 
 
         for estimator in estimators:
-            print('Rfe for '+estimator['name']+'\n')
+            print('RFE: '+estimator['name'])
             rfeRank(estimator, train_dataset)
-
+        print("\n")
 
         
-
-
-    type5 = False
-    #---------- type 6 - Stability Selection ----------
+    
+    #---------- Type 5 - Stability Selection ----------
     if type5:
         from stability_selection import StabilitySelection
 
-        def stabilitySelectionScores(estimator, traindata):          
+        def stabilitySelectionScores(estimator, traindata): 
+            if estimator['name'] == 'Linear Discriminant Analysis':
+                estimator['lambda_grid'] = np.arange(2, len(traindata.genes), 3)
             base_estimator = Pipeline([('scaler', StandardScaler()), ('model', estimator['model'])])
-            selector = StabilitySelection(base_estimator=base_estimator).fit(x, y)
+            selector = StabilitySelection(base_estimator=base_estimator, lambda_name=estimator['lambda_name'], lambda_grid=estimator['lambda_grid'], n_jobs=nJobs).fit(traindata.X(), traindata.Y())
             scores = [] 
             name = estimator['name']  
             method = name.lower().replace(" ","_")     
-            for i in range(len(traindata.genes)):
-                score = float(selector.stability_scores_[i])
+            for i in range(len(traindata.genes)):                
+                score = np.mean(selector.stability_scores_[i])
                 scores.append((abs(score), geneIndex[traindata.genes[i]], traindata.genes[i]))
             scores = sorted(scores, reverse = True)
             saveRank(scores, results_path_rank+'rank_t5_'+method+'.csv')
@@ -763,11 +777,41 @@ for option in filter_options:
             report.write('\n\n')
 
         for estimator in estimators:
+            print('Stability selection: %s\n' % estimator['name'])
             stabilitySelectionScores(estimator, train_dataset)
 
 
-    #! scores lists must be already sorted
 
+    type6 =False
+    #---------- Type 6 - Mean Decrease Accuracy ----------
+    if type6:
+
+        scores = []
+        clf = RandomForestClassifier()
+        score_normal = np.mean(cross_val_score(clf, X, y, cv = 10))
+
+        # X_shuffled = X.copy()
+        # np.random.shuffle(X_shuffled[X.columns[i]])
+
+        # X_shuffled.meanfreq
+        for i in range(num_features):
+            X_shuffled = X.copy()
+            scores_shuffle = []
+            for j in range(3):
+                np.random.seed(j*3)
+                np.random.shuffle(X_shuffled[X.columns[i]])
+                score = np.mean(cross_val_score(clf, X_shuffled, y, cv = 10))
+                scores_shuffle.append(score)
+                
+            scores.append((score_normal - np.mean(scores_shuffle), X.columns[i]))
+
+
+
+
+
+
+    # ------------ Saving ranks Tables --------------------
+    #! scores lists must be already sorted
     # Protein names are ordered by rank
     matrix = []  
     for name in sorted(ranks.keys()):
