@@ -35,7 +35,7 @@ ap.add_argument('--train', help='Path for the train dataset.', action='store', r
 
 ap.add_argument('--test', help='Path for the independent test dataset.', action='store')
 
-default_test_size= 0.08
+default_test_size= 0.15
 ap.add_argument('--testSize', help='If --test is not defined, --test_size is used to define the independent test set size. If --test_size is set to 0.0, then the independent test is not performed; that is, only the CV is performed to evaluate the selected signatures.', action='store', type=float, default=-1)
 
 ap.add_argument('--nSSearch', help='Set the maximum number of proteins to search for small signatures formed by all prot. combinations (signature size).', action='store', type=int, default=3)
@@ -82,6 +82,7 @@ from wilcoxon import WilcoxonRankSumTest
 from ttest import TTest
 from utils import saveHistogram, saveHeatMap, saveScatterPlots
 from pandas import DataFrame
+from sklearn.model_selection import train_test_split
 # import pandas as pd
 # import numpy as np
 
@@ -102,6 +103,12 @@ results_path = new_dir + '/'
 
 train_dataset_path = args['train']
 dataset = Dataset(train_dataset_path, scale=False, normalize=False, sep=',')
+
+scoreEstimator = None
+if len(dataset.levels()) == 2:
+    scoreEstimator = 'f1'
+else:
+    scoreEstimator = 'f1_weighted'
 
 geneIndex = {}
 i = 0
@@ -138,21 +145,23 @@ else:
     else:
         test_size_scale = args['testSize']
 
-    total_size = len(dataset.samples)
-    test_size = int(round(total_size * test_size_scale))
-    train_size = total_size - test_size
-    print('\n')
-    report.write('Number of samples in the train dataset: %d\n' % train_size)
-    report.write('Number of samples in the independent test dataset: %d \n\n' % test_size)
+    if test_size_scale == 0:
+        #copy dataset, train and test are going to be the same.
+        train_dataset = dataset.get_sub_dataset_by_samples(range(len(dataset.samples)))
+        test_dataset = dataset.get_sub_dataset_by_samples(range(len(dataset.samples))) 
+    else:
+        total_size = len(dataset.samples)    
 
-    samples_index = range(total_size)
-    shuffle(samples_index)
+        x_indexes = []
+        for i in range(total_size):
+            x_indexes.append([i])    
+        X_train, X_test, y_train, y_test = train_test_split(x_indexes, dataset.Y(), test_size=test_size_scale, shuffle=True, stratify=dataset.Y())
 
-    train_dataset = dataset.get_sub_dataset_by_samples(samples_index[test_size:])
-    test_dataset = dataset.get_sub_dataset_by_samples(samples_index[:test_size])
+        train_indexes = [v[0] for v in X_train]
+        test_indexes = [v[0] for v in X_test]
 
-    report.write('Train samples: %s\n\n' % str(train_dataset.samples))
-    report.write('Test samples: %s\n\n' % str(test_dataset.samples))
+        train_dataset = dataset.get_sub_dataset_by_samples(train_indexes)
+        test_dataset = dataset.get_sub_dataset_by_samples(test_indexes)
 
     if saveGraphics:
         saveHeatMap(train_dataset.matrix, train_dataset.samples, train_dataset.genes, results_path+'heatmap_train_dataset_correlation', metric='correlation')
@@ -163,18 +172,31 @@ else:
 
         saveHeatMap(train_dataset.get_scaled_data(), train_dataset.samples, train_dataset.genes, results_path+'heatmap_train_dataset_euclidean_zscore', metric='euclidean')    
 
+report.write('Number of samples in the train dataset: %d\n' % len(train_dataset.samples))
+report.write('Number of samples in the independent test dataset: %d \n\n' % len(test_dataset.samples))
+
+report.write('Train samples: %s\n\n' % str(train_dataset.samples))
+report.write('Test samples: %s\n\n' % str(test_dataset.samples))
+
 
 if args['noFilter']:
     filter_options = ['noFilter']
 elif args['onlyFilter']:
     filter_options = ['filter']
 else:
-    filter_options = ['noFilter','filter']
+    filter_options = ['filter', 'noFilter']
 
+
+complete_train = train_dataset
+complete_test = test_dataset
 
 global_results_path = results_path
 for option in filter_options:
     report.write('\n\n============================='+option+'=============================\n')
+
+    #! if train_dataset is filtered, when runing without filter or future configurations it is necessary to reset the train_dataset:
+    train_dataset = complete_train
+    test_dataset = complete_test
 
     results_path = global_results_path+option+'/'
     try:  
@@ -214,7 +236,7 @@ for option in filter_options:
         # if 2-class
         elif len(train_dataset.levels()) == 2:   
 
-            if args['t_test']:
+            if args['tTest']:
                 #t-test
                 stat_test_name = 'T-test p-values histogram'
                 ttest = TTest(train_dataset)
@@ -415,8 +437,8 @@ for option in filter_options:
 
     def getScore(traindata, pipe, estimator_name, i):
         if estimator_name in ['Lasso', 'Ridge', 'Linear SVM', 'Linear Discriminant Analysis']:
-            if len(traindata.levels()) == 2:
-                return pipe.coef_[i]
+            if len(traindata.levels()) == 2:                
+                return pipe.coef_[0][i]
             else:
                 return np.mean(pipe.coef_[:,i])
         else:
@@ -432,13 +454,14 @@ for option in filter_options:
 
     # ---------------------- Type 1 - Model Based Ranks -------------------------
     if type1:
+        print('\nExecuting Type 1\n')
         # Random Forests
         clf = RandomForestClassifier(n_jobs=nJobs, n_estimators=100)
         scores = []
         for i in range(len(train_dataset.genes)):
             x_train = train_dataset.X()[:, i] # data matrix
             y_train = train_dataset.Y()  # classes/labels of each sample from 
-            scores_cv = cross_val_score(clf, x_train, y_train, cv=k)        
+            scores_cv = cross_val_score(clf, x_train, y_train, cv=k, scoring=scoreEstimator)        
             score = np.mean(scores_cv)
             scores.append((score, geneIndex[train_dataset.genes[i]], train_dataset.genes[i]))
         scores = sorted(scores, reverse = True)
@@ -459,15 +482,14 @@ for option in filter_options:
                 sig_data = {'methods':set()}
                 sig_data['methods'].add('type1_random_forest')
                 signatures_data[sig] = sig_data
-        report.write('-- Type1 - Model Based Rank - Random Forests --\n')
+        report.write('-- Type 1 - Model Based Rank - Random Forests --\n')
         report.write('Number of proteins with score > %f (max-deltaRankCutoff): %d:\n%s\n' %(cutoffScore, len(genes_to_show), str(genes_to_show))) 
         report.write('\n\n')
 
 
-
     # ---------------------- Type 2 - Rank based on attribute Weights -------------------------
     if type2:
-        
+        print('\nExecuting Type 2\n')
         def regularizationRank(estimator, traindata):
             model = estimator['model']
             name = estimator['name']
@@ -500,19 +522,20 @@ for option in filter_options:
                     sig_data = {'methods':set()}
                     sig_data['methods'].add('type2_'+method)
                     signatures_data[sig] = sig_data
-            report.write('-- Type2 - Attributes\' Weights - '+name+' --\n') 
+            report.write('-- Type 2 - Attributes\' Weights - '+name+' --\n') 
             report.write('Number of proteins with score > %f (max-deltaRankCutoff): %d:\n%s\n' %(cutoffScore, len(genes_to_show), str(genes_to_show)))
             report.write('\n\n')        
         
 
         for estimator in estimators:
+            print('Attribute Weights: %s' % estimator['name'])
             regularizationRank(estimator, train_dataset)
-
-
 
     # 
     # ---------------------- Type 3 - Univariate Ranks -------------------------
     if type3:
+        print('\nExecuting Type 3\n')
+
         # kruskal/t-test/wilcoxon
         scores = []
         name = None
@@ -525,7 +548,7 @@ for option in filter_options:
         # if 2-class
         elif len(train_dataset.levels()) == 2:   
 
-            if args['t_test']:
+            if args['tTest']:
                 #t-test
                 stat_test_name = 'T-test p-values histogram'
                 test = TTest(train_dataset)
@@ -688,11 +711,9 @@ for option in filter_options:
         report.write('\n\n')
 
 
-
-
     #---------- Type 4 - Recursive Feature Elimination (RFE) ----------
     if type4:
-
+        print('\nExecuting Type 4\n')
         def rfeRank(estimator, traindata):        
             model = estimator['model']
             name = estimator['name']
@@ -736,10 +757,10 @@ for option in filter_options:
             rfeRank(estimator, train_dataset)
         print("\n")
 
-        
     
     #---------- Type 5 - Stability Selection ----------
     if type5:
+        print('\nExecuting Type 5\n')
         from stability_selection import StabilitySelection
 
         def stabilitySelectionScores(estimator, traindata): 
@@ -754,12 +775,11 @@ for option in filter_options:
                 score = np.mean(selector.stability_scores_[i])
                 scores.append((abs(score), geneIndex[traindata.genes[i]], traindata.genes[i]))
             scores = sorted(scores, reverse = True)
-            saveRank(scores, results_path_rank+'rank_t5_'+method+'.csv')
-            scores_weight = [(len(scores)-score[0],score[1],score[2]) for score in scores]
-            scores_weight = normalizeScores(scores_weight)
-            ranks['t5_'+method] = scores_weight        
-            saveRank(scores_weight, results_path_rank+'rank_t5_'+method+'_normalized01.csv') 
-            maxScore = max(scores_weight,key=lambda item:item[0])[0]
+            saveRank(scores, results_path_rank+'rank_t5_stability_'+method+'.csv')            
+            scores = normalizeScores(scores)
+            ranks['t5_stability_'+method] = scores        
+            saveRank(scores, results_path_rank+'rank_t5_stability_'+method+'_normalizedMinMax.csv') 
+            maxScore = max(scores,key=lambda item:item[0])[0]
             cutoffScore = maxScore-deltaScore
             genes_to_show = [item for item in scores if item[0] > cutoffScore]
             genes_for_signature = []
@@ -772,38 +792,62 @@ for option in filter_options:
                     sig_data = {'methods':set()}
                     sig_data['methods'].add(method)
                     signatures_data[sig] = sig_data
-            report.write('-- Stability Selection - '+name+' --\n')
+            report.write('-- Type 5 -- Stability Selection - '+name+' --\n')
             report.write('Number of proteins with score > %f (max-deltaRankCutoff): %d:\n%s\n' %(cutoffScore, len(genes_to_show), str(genes_to_show)))
             report.write('\n\n')
 
         for estimator in estimators:
-            print('Stability selection: %s\n' % estimator['name'])
+            print('Stability selection: %s' % estimator['name'])
             stabilitySelectionScores(estimator, train_dataset)
 
-
-
-    type6 =False
+   
     #---------- Type 6 - Mean Decrease Accuracy ----------
     if type6:
-
-        scores = []
-        clf = RandomForestClassifier()
-        score_normal = np.mean(cross_val_score(clf, X, y, cv = 10))
-
-        # X_shuffled = X.copy()
-        # np.random.shuffle(X_shuffled[X.columns[i]])
-
-        # X_shuffled.meanfreq
-        for i in range(num_features):
-            X_shuffled = X.copy()
-            scores_shuffle = []
-            for j in range(3):
-                np.random.seed(j*3)
-                np.random.shuffle(X_shuffled[X.columns[i]])
-                score = np.mean(cross_val_score(clf, X_shuffled, y, cv = 10))
-                scores_shuffle.append(score)
-                
-            scores.append((score_normal - np.mean(scores_shuffle), X.columns[i]))
+        print('\nExecuting Type 6\n')
+        def meanDecreaseAccuracyScore(estimator, traindata):
+            X = traindata.X()
+            y = traindata.Y()
+            scores = []
+            name = estimator['name']  
+            method = name.lower().replace(" ","_")  
+            score_normal = np.mean(cross_val_score(estimator['model'], X, y, cv = k, scoring=scoreEstimator))
+            
+            for i in range(len(traindata.genes)):
+                X_shuffled = X.copy()
+                scores_shuffle = []
+                for j in range(3):
+                    np.random.seed(j*3)
+                    np.random.shuffle(X_shuffled[:,i])
+                    score = np.mean(cross_val_score(estimator['model'], X_shuffled, y, cv = k, scoring=scoreEstimator))
+                    scores_shuffle.append(score)               
+                gene_name = traindata.genes[i]
+                scores.append((score_normal - np.mean(scores_shuffle), geneIndex[gene_name], gene_name))
+                        
+            scores = sorted(scores, reverse = True)
+            saveRank(scores, results_path_rank+'rank_t6_decrease_acc_'+method+'.csv')            
+            scores = normalizeScores(scores)
+            ranks['t6_decrease_acc_'+method] = scores        
+            saveRank(scores, results_path_rank+'rank_t6_decrease_acc_'+method+'_normalizedMinMax.csv') 
+            maxScore = max(scores,key=lambda item:item[0])[0]
+            cutoffScore = maxScore-deltaScore
+            genes_to_show = [item for item in scores if item[0] > cutoffScore]
+            genes_for_signature = []
+            for i in range(1,getMaxNumberOfProteins(scores, maxNumberOfProteins)+2):
+                genes_indexes = [item[1] for item in scores[0:i]]
+                sig = Signature(genes_indexes)
+                if sig in signatures_data:
+                    signatures_data[sig]['methods'].add(method)
+                else:
+                    sig_data = {'methods':set()}
+                    sig_data['methods'].add(method)
+                    signatures_data[sig] = sig_data
+            report.write('-- Type 6 --- Mean Decrease Accuracy - '+name+' --\n')
+            report.write('Number of proteins with score > %f (max-deltaRankCutoff): %d:\n%s\n' %(cutoffScore, len(genes_to_show), str(genes_to_show)))
+            report.write('\n\n')        
+        
+        for estimator in estimators:            
+            print('Decrease Accuracy: %s' % estimator['name'])
+            meanDecreaseAccuracyScore(estimator, train_dataset)
 
 
 

@@ -1,1 +1,1 @@
-python ./src/main.py --projectName romenia_run1 --train dataset/romenia_all_samples.csv --k 6  --limitSignatureSize --onlyFilter  --nJobs 8 --ignoreWarnings
+python ./src/main.py --projectName tati_run_fdr --train dataset/tatiane_all_samples.csv --k 9  --limitSignatureSize --onlyFilter --fdr --nJobs 8 --ignoreWarnings --testSize 0
