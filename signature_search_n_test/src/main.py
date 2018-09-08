@@ -393,8 +393,8 @@ for option in filter_options:
         {'name': 'Random Forest', 'model': RandomForestClassifier()},
         {'name': 'Ada Boost', 'model': AdaBoostClassifier()},
         {'name': 'Gradient Boosting', 'model': GradientBoostingClassifier()},
-        {'name': 'Lasso', 'model': LogisticRegression(penalty='l1')},
-        {'name': 'Ridge', 'model': LogisticRegression(penalty='l2')},
+        {'name': 'Lasso', 'model': LogisticRegression(penalty='l1', C=LassoBestC)},
+        {'name': 'Ridge', 'model': LogisticRegression(penalty='l2', C=RidgeBestC)},
         {'name': 'Linear SVM', 'model': LinearSVC()},
         {'name': 'Linear Discriminant Analysis', 'model': LinearDiscriminantAnalysis()}
     ]
@@ -780,28 +780,44 @@ for option in filter_options:
 
 
     # Protein names are listed, values of the matrix are their Scores
-    matrix = ['method']+train_dataset.genes
+    matrix = [['method']+train_dataset.genes]
     for name in sorted(ranks.keys()):
-        rank = ranks[name]                
+        rank = ranks[name]    
+        # TODO VERIFY THE ORDER OF VALUES AND GENES... SEEMS TO BE UNPAIRED            
         order_by_index = sorted(rank, key=lambda tup: tup[1])
-        row = [name] + [score[0] for score in order_by_index]
-        matrix.append(row)
-    print('size1: %d : %s' % (len(matrix),matrix[0]))
-    print('size2: %d : %s' % (len(matrix[0]),matrix[0]))
-    print('size3: %d : %s' % (len(matrix[1]),matrix[1]))
-    matrix = np.matrix(matrix).transpose()
+        values = [score[0] for score in order_by_index]
+        row = [name] + values
+        matrix.append(row)        
+    matrix = np.matrix(matrix).transpose()   
+    mean_column = ['mean'] + np.array(matrix[1:,1:]).astype(float).mean(axis=1).tolist()
+    std_column = ['std'] +   np.array(matrix[1:,1:]).astype(float).std(axis=1).tolist()
+    new_matrix = np.matrix([mean_column,std_column]).transpose()
+    matrix = np.concatenate((matrix, new_matrix), axis=1)    
+    sorted_matrix = matrix[1:,:]
+    sorted_matrix.sort(axis=-2)
+    matrix = np.concatenate((matrix[0,:],sorted_matrix[::-1]), axis=0) #! Score: the greater the value, the more important is the protein
+
     filename = results_path+'all_ranks_scores.csv'
     np.savetxt(filename, matrix, delimiter=",", fmt='%s')
 
 
     # Protein names are listed, values of the matrix are their Positions/Ranks
-    matrix = ['method']+train_dataset.genes 
+    matrix = [['method']+train_dataset.genes]
     for name in sorted(ranks.keys()):
         rank = ranks[name]    
         new_scores = [(rank[i][0], rank[i][1], rank[i][2], i) for i in range(len(rank))]
-        row = [name] + [score[3] for score in sorted(new_scores, key=lambda tup: tup[1])]
+        values = [score[3] for score in sorted(new_scores, key=lambda tup: tup[1])]
+        row = [name] + values
         matrix.append(row)
-    matrix = np.matrix(matrix).transpose()
+    matrix = np.matrix(matrix).transpose()   
+    mean_column = ['mean'] + np.array(matrix[1:,1:]).astype(int).mean(axis=1).tolist()
+    std_column = ['std'] +   np.array(matrix[1:,1:]).astype(int).std(axis=1).tolist()
+    new_matrix = np.matrix([mean_column,std_column]).transpose()
+    matrix = np.concatenate((matrix, new_matrix), axis=1)    
+    sorted_matrix = matrix[1:,:]
+    sorted_matrix.sort(axis=-2)
+    matrix = np.concatenate((matrix[0,:],sorted_matrix), axis=0)  #! Position: the lower the value, the more important is the protein
+
     filename = results_path+'all_ranks_positions.csv'
     np.savetxt(filename, matrix, delimiter=",", fmt='%s')    
 
