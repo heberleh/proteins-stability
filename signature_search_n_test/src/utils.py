@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
+import csv
 
 def saveHistogram(values, filename='histogram.png', dpi=300,  title='Histogram', xlabel='Values', ylabel='Counts', bins=20, rwidth=0.9, color='#607c8e', grid=True, ygrid=True, alpha=0.75, xlim=(0, 1)):
     commutes = pd.Series(np.array(values))
@@ -77,3 +78,9 @@ def getMaxNumberOfProteins(scores, maxNumberOfProteins):
         if score[0] > 0:
             non_zeros +=1
     return min([non_zeros,maxNumberOfProteins])
+
+def saveMatrix(matrix, csvfilepath):
+    #Assuming res is a list of lists
+    with open(csvfilepath, "w") as output:
+        writer = csv.writer(output, lineterminator='\n')
+        writer.writerows(matrix)

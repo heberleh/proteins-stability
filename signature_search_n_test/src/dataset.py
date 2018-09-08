@@ -9,9 +9,7 @@ from sklearn import preprocessing
 from numpy import matrix
 import csv
 import numpy as np
-import pandas as pd
-
-
+from pandas import factorize, DataFrame
 
 
 class Dataset(object):
@@ -127,7 +125,7 @@ class Dataset(object):
         col_labels = self.genes + ['class']    
             
         print(np.matrix(m))
-        d = pd.DataFrame(np.matrix(m), index=self.samples, columns=col_labels)
+        d = DataFrame(np.matrix(m), index=self.samples, columns=col_labels)
 
         print(d)
         return d
@@ -151,3 +149,9 @@ class Dataset(object):
         self.matrix = self.matrix[indexes, :]
         self.labels = list(np.array(self.labels)[indexes])
         self.samples = list(np.array(self.samples)[indexes])
+
+    def X(self):
+        return self.matrix
+    
+    def Y(self):
+        return factorize(self.labels)[0]

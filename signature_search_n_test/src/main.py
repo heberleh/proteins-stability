@@ -74,7 +74,7 @@ from kruskal import KruskalRankSumTest3Classes
 from wilcoxon import WilcoxonRankSumTest
 from ttest import TTest
 from utils import saveHistogram, saveHeatMap, saveScatterPlots
-
+from pandas import DataFrame
 # import pandas as pd
 # import numpy as np
 
@@ -176,7 +176,16 @@ for option in filter_options:
         print ("Creation of the directory %s failed" % results_path)
         exit()
     else:  
-        print ("Successfully created the directory %s " % results_path)        
+        print ("Successfully created the directory %s " % results_path)       
+
+    results_path_rank = results_path+'rank/'
+    try:  
+        os.mkdir(results_path_rank)
+    except OSError:  
+        print ("Creation of the directory %s failed" % results_path)
+        exit()
+    else:  
+        print ("Successfully created the directory %s " % results_path)    
 
     if option == 'filter':
         stat_test_name = ''
@@ -326,7 +335,7 @@ for option in filter_options:
     from sklearn.ensemble import RandomForestClassifier
     from sklearn.model_selection import cross_val_score
     from sklearn.preprocessing import StandardScaler
-    from sklearn.pipeline import make_pipeline
+    from sklearn.pipeline import make_pipeline, Pipeline
     from sklearn.model_selection import GridSearchCV
     from sklearn.linear_model import LogisticRegression, Lars
     from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
@@ -364,12 +373,48 @@ for option in filter_options:
         maxNumberOfProteins = len(train_dataset.samples)
 
     type1, type2, type3, type4, type5, type6, type7 = True, True, True, True, True, True, True
+
+
+    # Benchmark of best parameter C for L1 and L2
+    param_grid = {'logisticregression__C': [0.001, 0.01, 0.1, 1, 10, 100]}
+    pipe = make_pipeline(StandardScaler(), LogisticRegression(penalty = 'l1'))     
+    grid = GridSearchCV(pipe, param_grid, cv = k)
+    grid.fit(train_dataset.X(), train_dataset.Y())
+    LassoBestC = grid.best_params_['logisticregression__C']
+
+
+    pipe = make_pipeline(StandardScaler(), LogisticRegression(penalty = 'l2'))     
+    grid = GridSearchCV(pipe, param_grid, cv = k)
+    grid.fit(train_dataset.X(), train_dataset.Y())
+    RidgeBestC = grid.best_params_['logisticregression__C']  
+
+    estimators = [
+        {'name': 'Decision Tree', 'model': DecisionTreeClassifier()},
+        {'name': 'Random Forest', 'model': RandomForestClassifier()},
+        {'name': 'Ada Boost', 'model': AdaBoostClassifier()},
+        {'name': 'Gradient Boosting', 'model': GradientBoostingClassifier()},
+        {'name': 'Lasso', 'model': LogisticRegression(penalty='l1')},
+        {'name': 'Ridge', 'model': LogisticRegression(penalty='l2')},
+        {'name': 'Linear SVM', 'model': LinearSVC()},
+        {'name': 'Linear Discriminant Analysis', 'model': LinearDiscriminantAnalysis()}
+    ]
+
+    def getScore(traindata, pipe, estimator_name, i):
+        if estimator_name in ['Lasso', 'Ridge', 'Linear SVM', 'Linear Discriminant Analysis']:
+            if len(traindata.levels()) == 2:
+                return pipe.coef_[i]
+            else:
+                return np.mean(pipe.coef_[:,i])
+        else:
+            return pipe.feature_importances_[i]
+
+
+
     # Type 1: Model Based Ranking
-    # Type 2: Regularization (L1 and L2)
-    # Type 3: Univariate Feature Selection
+    # Type 2: Attributes' Weights
+    # Type 3: Univariate Feature Selection (Statistics)
     # Type 4: Recursive Feature Elimination
-    # Type 5: Random Forest Feature Importance ?
-    # Type 6: Stability Selection ****** RandomizedLasso 
+    # Type 5: Stability Selection
 
     # ---------------------- Type 1 - Model Based Ranks -------------------------
     if type1:
@@ -377,376 +422,77 @@ for option in filter_options:
         clf = RandomForestClassifier()
         scores = []
         for i in range(len(train_dataset.genes)):
-            x_train = train_dataset.matrix[:, i] # data matrix
-            y_train = factorize(train_dataset.labels)[0]  # classes/labels of each sample from 
+            x_train = train_dataset.X()[:, i] # data matrix
+            y_train = train_dataset.Y()  # classes/labels of each sample from 
             scores_cv = cross_val_score(clf, x_train, y_train, cv=k)        
             score = np.mean(scores_cv)
             scores.append((score, geneIndex[train_dataset.genes[i]], train_dataset.genes[i]))
-
         scores = sorted(scores, reverse = True)
-
-        saveRank(scores, results_path+'rank_t1_uni_rf_mean_accuracy.csv')
-
+        saveRank(scores, results_path_rank+'rank_t1_uni_random_forest_mean_accuracy.csv')
         scores = normalizeScores(scores)
-
-        ranks['t1_uni_rf'] = scores
-
-        saveRank(scores, results_path+'rank_t1_uni_rf_mean_accuracy_normalized01.csv')
-
+        ranks['t1_uni_random_forest'] = scores
+        saveRank(scores, results_path_rank+'rank_t1_uni_random_forest_mean_accuracy_normalizedMinMax.csv')
         maxScore = max(scores,key=lambda item:item[0])[0]
         cutoffScore = maxScore-deltaScore
         genes_to_show = [item for item in scores if item[0] > cutoffScore]
-
         genes_for_signature = []
-        
         for i in range(1,getMaxNumberOfProteins(scores, maxNumberOfProteins)+2):
             genes_indexes = [item[1] for item in scores[0:i]]
             sig = Signature(genes_indexes)
             if sig in signatures_data:
-                signatures_data[sig]['methods'].add('model_based_rank_random_forest')
+                signatures_data[sig]['methods'].add('type1_random_forest')
             else:
                 sig_data = {'methods':set()}
-                sig_data['methods'].add('model_based_rank_random_forest')
+                sig_data['methods'].add('type1_random_forest')
                 signatures_data[sig] = sig_data
-
-        report.write('-- Model Based Rank - Random Forests --\n')
-        report.write('Max Mean Accuracy by individual protein: %f\n' %maxScore)
-        report.write('%d proteins have mean accuracy > %f (max-deltaRankCutoff): %s\n' %(len(genes_to_show), cutoffScore, str(genes_to_show)))    
+        report.write('-- Type1 - Model Based Rank - Random Forests --\n')
+        report.write('Number of proteins with score > %f (max-deltaRankCutoff): %d:\n%s\n' %(cutoffScore, len(genes_to_show), str(genes_to_show))) 
         report.write('\n\n')
 
 
 
-    # ---------------------- Type 2 - Regularization (L1 and L2) -------------------------
+    # ---------------------- Type 2 -------------------------
     if type2:
-        # --------- L1 ----------
-        # Benchmark of best parameter C
-        param_grid = {'logisticregression__C': [0.001, 0.01, 0.1, 1, 10, 100]}
-        pipe = make_pipeline(StandardScaler(), LogisticRegression(penalty = 'l1'))     
-        grid = GridSearchCV(pipe, param_grid, cv = k)
-        x_train = train_dataset.matrix
-        y_train = factorize(train_dataset.labels)[0] 
-        grid.fit(x_train, y_train)
-        bestC = grid.best_params_['logisticregression__C']
-
-        # Fit a model and get the coefficient of each attribute
-        x_scaled = train_dataset.get_scaled_data()
-        clf = LogisticRegression(penalty = 'l1', C = bestC)
-        clf.fit(x_scaled,y_train)
-        scores = []
-        count_coef_nonzero = 0
-        for i in range(len(train_dataset.genes)):
-            score = None
-            if len(train_dataset.levels()) == 2:
-                score = clf.coef_[i]
-            else:
-                score = np.mean(clf.coef_[:,i])
-
-            scores.append((abs(score), geneIndex[train_dataset.genes[i]], train_dataset.genes[i]))
-            if score != 0:
-                count_coef_nonzero += 1
         
-        scores = sorted(scores, reverse = True)    
-        saveRank(scores, results_path+'rank_t2_mult_lr_l1_lasso_attweight.csv')
-        scores = normalizeScores(scores)
-        ranks['t2_mult_lr_l1_lasso']= scores
-        saveRank(scores, results_path+'rank_t2_mult_lr_l1_lasso_attweight_normalized01.csv')
+        def regularizationRank(estimator, traindata):
+            model = estimator['model']
+            name = estimator['name']
+            method = name.lower().replace(" ","_")
 
-        maxScore = max(scores,key=lambda item:item[0])[0]
-        cutoffScore = maxScore-deltaScore
-        genes_to_show = [item for item in scores if item[0] > cutoffScore]
+            pipe = Pipeline([('scaler', StandardScaler()), ('clf', model)])           
+            pipe.fit(traindata.X(), traindata.Y())
+            scores = []
+            count_coef_nonzero = 0
+            for i in range(len(train_dataset.genes)):
+                score = getScore(traindata, pipe.named_steps['clf'], name, i)
+                scores.append((abs(score), geneIndex[train_dataset.genes[i]], train_dataset.genes[i]))            
+            scores = sorted(scores, reverse = True)
+            saveRank(scores, results_path_rank+'rank_t2_weights_'+method+'.csv')
+            scores = normalizeScores(scores)
+            ranks['t2_weights_rank_'+method]= scores
+            saveRank(scores, results_path_rank+'rank_t2_weights_'+method+'_normalizedMinMax.csv')
 
-        genes_for_signature = []
-        method = 'regularization_rank_lr_l1_lasso'
-        for i in range(1,getMaxNumberOfProteins(scores, maxNumberOfProteins)+2):
-            genes_indexes = [item[1] for item in scores[0:i]]
-            sig = Signature(genes_indexes)
-            if sig in signatures_data:
-                signatures_data[sig]['methods'].add(method)
-            else:
-                sig_data = {'methods':set()}
-                sig_data['methods'].add(method)
-                signatures_data[sig] = sig_data
+            maxScore = max(scores,key=lambda item:item[0])[0]
+            cutoffScore = maxScore-deltaScore
+            genes_to_show = [item for item in scores if item[0] > cutoffScore]
 
-        report.write('-- Model Based Rank - Log. Reg. L1 (Lasso) --\n')
-        report.write('Max normalized 0-1 protein coefficient: %f\n' %maxScore)
-        report.write('Number of proteins with coefficient non-zero: %d' %count_coef_nonzero )
-        report.write('%d proteins have coefficient > %f (max-deltaRankCutoff): %s\n' %(len(genes_to_show), cutoffScore, str(genes_to_show)))
-        report.write('\n\n')
-        # ------------------------------------------------------------------
+            genes_for_signature = []
+            for i in range(1,getMaxNumberOfProteins(scores, maxNumberOfProteins)+2):
+                genes_indexes = [item[1] for item in scores[0:i]]
+                sig = Signature(genes_indexes)
+                if sig in signatures_data:
+                    signatures_data[sig]['methods'].add('type2_'+method)
+                else:
+                    sig_data = {'methods':set()}
+                    sig_data['methods'].add('type2_'+method)
+                    signatures_data[sig] = sig_data
+            report.write('-- Type2 - Attributes\' Weights - '+name+' --\n') 
+            report.write('Number of proteins with score > %f (max-deltaRankCutoff): %d:\n%s\n' %(cutoffScore, len(genes_to_show), str(genes_to_show)))
+            report.write('\n\n')        
+        
 
-
-        # --------- L2 ----------
-        # Benchmark of best parameter C
-        param_grid = {'logisticregression__C': [0.001, 0.01, 0.1, 1, 10, 100]}
-        pipe = make_pipeline(StandardScaler(), LogisticRegression(penalty = 'l2'))     
-        grid = GridSearchCV(pipe, param_grid, cv = k)
-        x_train = train_dataset.matrix
-        y_train = factorize(train_dataset.labels)[0] 
-        grid.fit(x_train, y_train)
-        bestC = grid.best_params_['logisticregression__C']    
-        x_scaled = train_dataset.get_scaled_data()
-        clf = LogisticRegression(penalty = 'l2', C = bestC)
-        clf.fit(x_scaled,y_train)
-        scores = []
-        for i in range(len(train_dataset.genes)):
-            score = None
-            if len(train_dataset.levels()) == 2:
-                score = clf.coef_[i]
-            else:
-                score = np.mean(clf.coef_[:,i])
-            scores.append((abs(score), geneIndex[train_dataset.genes[i]], train_dataset.genes[i]))
-        scores = sorted(scores, reverse = True)
-        saveRank(scores, results_path+'rank_t2_mult_lr_l2_ridge_attweight.csv') 
-        scores = normalizeScores(scores)
-        ranks['t2_mult_lr_l2_ridge'] = scores
-        saveRank(scores, results_path+'rank_t2_mult_lr_l2_ridge_attweight_normalized01.csv') 
-        maxScore = max(scores,key=lambda item:item[0])[0]
-        cutoffScore = maxScore-deltaScore
-        genes_to_show = [item for item in scores if item[0] > cutoffScore]
-        genes_for_signature = []
-        method = 'regularization_rank_lr_l2_ridge'
-        for i in range(1,getMaxNumberOfProteins(scores, maxNumberOfProteins)+2):
-            genes_indexes = [item[1] for item in scores[0:i]]
-            sig = Signature(genes_indexes)
-            if sig in signatures_data:
-                signatures_data[sig]['methods'].add(method)
-            else:
-                sig_data = {'methods':set()}
-                sig_data['methods'].add(method)
-                signatures_data[sig] = sig_data
-        report.write('-- Model Based Rank - Log. Reg. L2 (Ridge) --\n')
-        report.write('Max normalized 0-1 protein coefficient: %f\n' %maxScore)
-        report.write('%d proteins have coefficient > %f (max-deltaRankCutoff): %s\n' %(len(genes_to_show), cutoffScore, str(genes_to_show)))
-        report.write('\n\n')
-
-
-
-
-        # ------------------------------------------------------------------
-        # --------- Linear Discriminant Analysis ----------
-        method = 'regularization_lda'
-        y_train = factorize(train_dataset.labels)[0]
-        x_scaled = train_dataset.get_scaled_data()
-        clf = LinearDiscriminantAnalysis()
-        clf.fit(x_scaled,y_train)
-        scores = []
-        for i in range(len(train_dataset.genes)):
-            score = None
-            if len(train_dataset.levels()) == 2:
-                score = clf.coef_[i]
-            else:
-                score = np.mean(abs(clf.coef_[:,i]))
-            scores.append((abs(score), geneIndex[train_dataset.genes[i]], train_dataset.genes[i]))
-        scores = sorted(scores, reverse = True)
-        saveRank(scores, results_path+'rank_t2_'+method+'.csv') 
-        scores = normalizeScores(scores)
-        ranks['t2_'+method] = scores
-        saveRank(scores, results_path+'rank_t2_'+method+'_normalized01.csv') 
-        maxScore = max(scores,key=lambda item:item[0])[0]
-        cutoffScore = maxScore-deltaScore
-        genes_to_show = [item for item in scores if item[0] > cutoffScore]
-        genes_for_signature = []
-        for i in range(1,getMaxNumberOfProteins(scores, maxNumberOfProteins)+2):
-            genes_indexes = [item[1] for item in scores[0:i]]
-            sig = Signature(genes_indexes)
-            if sig in signatures_data:
-                signatures_data[sig]['methods'].add(method)
-            else:
-                sig_data = {'methods':set()}
-                sig_data['methods'].add(method)
-                signatures_data[sig] = sig_data
-        report.write('-- Regularization Rank - Linear Discriminant Analysis --\n')
-        report.write('Max normalized 0-1 protein coefficient: %f\n' %maxScore)
-        report.write('%d proteins have coefficient > %f (max-deltaRankCutoff): %s\n' %(len(genes_to_show), cutoffScore, str(genes_to_show)))
-        report.write('\n\n')
-        # ------------------------------------------------------------------
-
-
-
-        # ------------------------------------------------------------------
-        # --------- Decision Tree ----------
-        method = 'regularization_decision_tree'
-        y_train = factorize(train_dataset.labels)[0]
-        x_scaled = train_dataset.matrix #do not scale for decision tree
-        clf = DecisionTreeClassifier()
-        clf.fit(x_scaled,y_train)
-        scores = []
-        for i in range(len(train_dataset.genes)):
-            score = clf.feature_importances_[i]
-            scores.append((abs(score), geneIndex[train_dataset.genes[i]], train_dataset.genes[i]))
-        scores = sorted(scores, reverse = True)
-        saveRank(scores, results_path+'rank_t2_'+method+'.csv') 
-        scores = normalizeScores(scores)
-        ranks['t2_'+method] = scores
-        saveRank(scores, results_path+'rank_t2_'+method+'_normalized01.csv') 
-        maxScore = max(scores,key=lambda item:item[0])[0]
-        cutoffScore = maxScore-deltaScore
-        genes_to_show = [item for item in scores if item[0] > cutoffScore]
-        genes_for_signature = []
-        for i in range(1,getMaxNumberOfProteins(scores, maxNumberOfProteins)+2):
-            genes_indexes = [item[1] for item in scores[0:i]]
-            sig = Signature(genes_indexes)
-            if sig in signatures_data:
-                signatures_data[sig]['methods'].add(method)
-            else:
-                sig_data = {'methods':set()}
-                sig_data['methods'].add(method)
-                signatures_data[sig] = sig_data
-        report.write('-- Regularization Rank - Decision Tree --\n')
-        report.write('Max normalized 0-1 protein coefficient: %f\n' %maxScore)
-        report.write('%d proteins have coefficient > %f (max-deltaRankCutoff): %s\n' %(len(genes_to_show), cutoffScore, str(genes_to_show)))
-        report.write('\n\n')
-        # ------------------------------------------------------------------
-
-
-        # ------------------------------------------------------------------
-        # --------- Random Forest ----------
-        method = 'regularization_random_forest'
-        y_train = factorize(train_dataset.labels)[0]
-        x_scaled = train_dataset.matrix #decision trees do not require normalization/scaling
-        clf = RandomForestClassifier()
-        clf.fit(x_scaled,y_train)
-        scores = []
-        for i in range(len(train_dataset.genes)):
-            score = clf.feature_importances_[i]
-            scores.append((abs(score), geneIndex[train_dataset.genes[i]], train_dataset.genes[i]))
-        scores = sorted(scores, reverse = True)
-        saveRank(scores, results_path+'rank_t2_'+method+'.csv') 
-        scores = normalizeScores(scores)
-        ranks['t2_'+method] = scores
-        saveRank(scores, results_path+'rank_t2_'+method+'_normalized01.csv') 
-        maxScore = max(scores,key=lambda item:item[0])[0]
-        cutoffScore = maxScore-deltaScore
-        genes_to_show = [item for item in scores if item[0] > cutoffScore]
-        genes_for_signature = []
-        for i in range(1,getMaxNumberOfProteins(scores, maxNumberOfProteins)+2):
-            genes_indexes = [item[1] for item in scores[0:i]]
-            sig = Signature(genes_indexes)
-            if sig in signatures_data:
-                signatures_data[sig]['methods'].add(method)
-            else:
-                sig_data = {'methods':set()}
-                sig_data['methods'].add(method)
-                signatures_data[sig] = sig_data
-        report.write('-- Regularization - Random Forest --\n')
-        report.write('Max normalized 0-1 protein coefficient: %f\n' %maxScore)
-        report.write('%d proteins have coefficient > %f (max-deltaRankCutoff): %s\n' %(len(genes_to_show), cutoffScore, str(genes_to_show)))
-        report.write('\n\n')
-        # ------------------------------------------------------------------
-
-
-        # ------------------------------------------------------------------
-        # --------- Gradient Boosting ----------
-        method = 'regularization_gradient_boosting'
-        y_train = factorize(train_dataset.labels)[0]
-        x_scaled = train_dataset.get_scaled_data()
-        clf = GradientBoostingClassifier()
-        clf.fit(x_scaled,y_train)
-        scores = []
-        for i in range(len(train_dataset.genes)):
-            score = clf.feature_importances_[i]
-            scores.append((abs(score), geneIndex[train_dataset.genes[i]], train_dataset.genes[i]))
-        scores = sorted(scores, reverse = True)
-        saveRank(scores, results_path+'rank_t2_'+method+'.csv') 
-        scores = normalizeScores(scores)
-        ranks['t2_'+method] = scores
-        saveRank(scores, results_path+'rank_t2_'+method+'_normalized01.csv') 
-        maxScore = max(scores,key=lambda item:item[0])[0]
-        cutoffScore = maxScore-deltaScore
-        genes_to_show = [item for item in scores if item[0] > cutoffScore]
-        genes_for_signature = []
-        for i in range(1,getMaxNumberOfProteins(scores, maxNumberOfProteins)+2):
-            genes_indexes = [item[1] for item in scores[0:i]]
-            sig = Signature(genes_indexes)
-            if sig in signatures_data:
-                signatures_data[sig]['methods'].add(method)
-            else:
-                sig_data = {'methods':set()}
-                sig_data['methods'].add(method)
-                signatures_data[sig] = sig_data
-        report.write('-- Regularization - Gradient Boosting --\n')
-        report.write('Max normalized 0-1 protein coefficient: %f\n' %maxScore)
-        report.write('%d proteins have coefficient > %f (max-deltaRankCutoff): %s\n' %(len(genes_to_show), cutoffScore, str(genes_to_show)))
-        report.write('\n\n')
-        # ------------------------------------------------------------------
-
-
-
-        # ------------------------------------------------------------------
-        # --------- Ada Boost ----------
-        method = 'regularization_ada_boost'
-        y_train = factorize(train_dataset.labels)[0]
-        x_scaled = train_dataset.get_scaled_data()
-        clf = AdaBoostClassifier()
-        clf.fit(x_scaled,y_train)
-        scores = []
-        for i in range(len(train_dataset.genes)):
-            score = clf.feature_importances_[i]
-            scores.append((abs(score), geneIndex[train_dataset.genes[i]], train_dataset.genes[i]))
-        scores = sorted(scores, reverse = True)
-        saveRank(scores, results_path+'rank_t2_'+method+'.csv') 
-        scores = normalizeScores(scores)
-        ranks['t2_'+method] = scores
-        saveRank(scores, results_path+'rank_t2_'+method+'_normalized01.csv') 
-        maxScore = max(scores,key=lambda item:item[0])[0]
-        cutoffScore = maxScore-deltaScore
-        genes_to_show = [item for item in scores if item[0] > cutoffScore]
-        genes_for_signature = []
-        for i in range(1,getMaxNumberOfProteins(scores, maxNumberOfProteins)+2):
-            genes_indexes = [item[1] for item in scores[0:i]]
-            sig = Signature(genes_indexes)
-            if sig in signatures_data:
-                signatures_data[sig]['methods'].add(method)
-            else:
-                sig_data = {'methods':set()}
-                sig_data['methods'].add(method)
-                signatures_data[sig] = sig_data
-        report.write('-- Regularization - Ada Boost --\n')
-        report.write('Max normalized 0-1 protein coefficient: %f\n' %maxScore)
-        report.write('%d proteins have coefficient > %f (max-deltaRankCutoff): %s\n' %(len(genes_to_show), cutoffScore, str(genes_to_show)))
-        report.write('\n\n')
-        # ------------------------------------------------------------------
-
-
-
-        # ------------------------------------------------------------------
-        # --------- Linear Support Vector Classification ----------
-        method = 'regularization_linear_svc'
-        y_train = factorize(train_dataset.labels)[0]
-        x_scaled = train_dataset.get_scaled_data()
-        clf = LinearSVC()
-        clf.fit(x_scaled,y_train)    
-        scores = []    
-        for i in range(len(train_dataset.genes)):
-            score = None
-            if len(train_dataset.levels()) == 2:
-                score = clf.coef_[i]
-            else:
-                score = np.mean(abs(clf.coef_[:,i]))
-            scores.append((abs(score), geneIndex[train_dataset.genes[i]], train_dataset.genes[i]))
-        scores = sorted(scores, reverse = True)
-        saveRank(scores, results_path+'rank_t2_'+method+'.csv') 
-        scores = normalizeScores(scores)
-        ranks['t2_'+method] = scores
-        saveRank(scores, results_path+'rank_t2_'+method+'_normalized01.csv') 
-        maxScore = max(scores,key=lambda item:item[0])[0]
-        cutoffScore = maxScore-deltaScore
-        genes_to_show = [item for item in scores if item[0] > cutoffScore]
-        genes_for_signature = []
-        for i in range(1,getMaxNumberOfProteins(scores, maxNumberOfProteins)+2):
-            genes_indexes = [item[1] for item in scores[0:i]]
-            sig = Signature(genes_indexes)
-            if sig in signatures_data:
-                signatures_data[sig]['methods'].add(method)
-            else:
-                sig_data = {'methods':set()}
-                sig_data['methods'].add(method)
-                signatures_data[sig] = sig_data
-        report.write('-- Regularization - Linear Support Vector Classification --\n')
-        report.write('Max normalized 0-1 protein coefficient: %f\n' %maxScore)
-        report.write('%d proteins have coefficient > %f (max-deltaRankCutoff): %s\n' %(len(genes_to_show), cutoffScore, str(genes_to_show)))
-        report.write('\n\n')
-    # ------------------------------------------------------------------
+        for estimator in estimators:
+            regularizationRank(estimator, train_dataset)
 
 
 
@@ -781,20 +527,20 @@ for option in filter_options:
             scores.append(score)
 
         scores = sorted(scores, reverse = False)
-        saveRank(scores, results_path+'rank_t3_uni_'+name+'_pvalue.csv')
+        saveRank(scores, results_path_rank+'rank_t3_uni_'+name+'_pvalue.csv')
         # ! Weight of attribute is 1-p_value
         scores_weight  = [(1-score[0],score[1],score[2]) for score in scores]
         scores = sorted(scores, reverse = True)
         scores_weight = normalizeScores(scores_weight)
         ranks['t3_uni_'+name]=scores
-        saveRank(scores_weight, results_path+'rank_t3_uni_'+name+'_1MinusPvalue_normalized01.csv')
+        saveRank(scores_weight, results_path_rank+'rank_t3_uni_'+name+'_1MinusPvalue_normalizedMinMax.csv')
 
         minScore = min(scores,key=lambda item:item[0])[0]
         cutoffScore = minScore+deltaScore
         genes_to_show = [item for item in scores if item[0] < cutoffScore]
 
         genes_for_signature = []
-        method = 'univariate_rank'
+        method = 'univariate_statistic'
         for i in range(1,getMaxNumberOfProteins(scores, maxNumberOfProteins)+2):
             genes_indexes = [item[1] for item in scores[0:i]]
             sig = Signature(genes_indexes)        
@@ -805,7 +551,7 @@ for option in filter_options:
                 sig_data['methods'].add(method+'_'+name)
                 signatures_data[sig] = sig_data
 
-        report.write('-- Model Based Rank - '+name+' --\n')
+        report.write('-- Type 3 - Univariate by Statistical-test P-value - '+name+' --\n')
         report.write('Minimum p-value: %f\n' %minScore)
         report.write('%d proteins have p-value < %f (min+deltaRankCutoff): %s\n' %(len(genes_to_show), cutoffScore, str(genes_to_show)))
         report.write('\n\n')
@@ -823,17 +569,17 @@ for option in filter_options:
             score = test.scores_[i]
             scores.append((score, geneIndex[train_dataset.genes[i]], train_dataset.genes[i]))
         scores = sorted(scores, reverse = True)
-        saveRank(scores, results_path+'rank_t3_uni_chi_squared_score.csv')
+        saveRank(scores, results_path_rank+'rank_t3_uni_chi_squared_score.csv')
         scores = normalizeScores(scores)
         ranks['t3_uni_chi_squared'] = scores
-        saveRank(scores, results_path+'rank_t3_uni_chi_squared_score_normalized01.csv')
+        saveRank(scores, results_path_rank+'rank_t3_uni_chi_squared_score_normalized01.csv')
 
         maxScore = max(scores,key=lambda item:item[0])[0]
         cutoffScore = maxScore-deltaScore
         genes_to_show = [item for item in scores if item[0] > cutoffScore]
 
         genes_for_signature = []
-        method = 'univariate_rank_chi_squared'
+        method = 'univariate_chi_squared'
         for i in range(1,getMaxNumberOfProteins(scores, maxNumberOfProteins)+2):
             genes_indexes = [item[1] for item in scores[0:i]]
             sig = Signature(genes_indexes)
@@ -844,9 +590,8 @@ for option in filter_options:
                 sig_data['methods'].add(method)
                 signatures_data[sig] = sig_data
 
-        report.write('-- Univariate Rank - Chi-Squared --\n')
-        report.write('Max normalized 0-1 protein score: %f\n' %maxScore)
-        report.write('%d proteins have score > %f (max-deltaRankCutoff): %s\n' %(len(genes_to_show), cutoffScore, str(genes_to_show)))
+        report.write('-- Type 3 - Univariate by Statistical-test - Chi-Squared --\n')
+        report.write('Number of proteins with score > %f (max-deltaRankCutoff): %d:\n%s\n' %(cutoffScore, len(genes_to_show), str(genes_to_show)))
         report.write('\n\n')
 
 
@@ -864,17 +609,17 @@ for option in filter_options:
             scores.append((score, geneIndex[train_dataset.genes[i]], train_dataset.genes[i]))
         
         scores = sorted(scores, reverse = True)
-        saveRank(scores, results_path+'rank_t3_uni_mutual_inf_score.csv')
+        saveRank(scores, results_path_rank+'rank_t3_uni_mutual_inf_score.csv')
         scores = normalizeScores(scores)
         ranks['t3_uni_mutual_inf'] = scores
-        saveRank(scores, results_path+'rank_t3_uni_mutual_inf_score_normalized01.csv')
+        saveRank(scores, results_path_rank+'rank_t3_uni_mutual_inf_score_normalized01.csv')
 
         maxScore = max(scores,key=lambda item:item[0])[0]
         cutoffScore = maxScore-deltaScore
         genes_to_show = [item for item in scores if item[0] > cutoffScore]
 
         genes_for_signature = []
-        method = 'univariate_rank_mutual_information'
+        method = 'univariate_mutual_information'
         for i in range(1,getMaxNumberOfProteins(scores, maxNumberOfProteins)+2):
             genes_indexes = [item[1] for item in scores[0:i]]
             sig = Signature(genes_indexes)
@@ -885,9 +630,8 @@ for option in filter_options:
                 sig_data['methods'].add(method)
                 signatures_data[sig] = sig_data
 
-        report.write('-- Univariate Rank - Mutual Information --\n')
-        report.write('Max normalized 0-1 protein score: %f\n' %maxScore)
-        report.write('%d proteins have score > %f (max-deltaRankCutoff): %s\n' %(len(genes_to_show), cutoffScore, str(genes_to_show)))
+        report.write('-- Type 3 - Univariate by Statistical-test - Mutual Information --\n')        
+        report.write('Number of proteins with score > %f (max-deltaRankCutoff): %d:\n%s\n' %(cutoffScore, len(genes_to_show), str(genes_to_show)))
         report.write('\n\n')
 
 
@@ -904,17 +648,17 @@ for option in filter_options:
             scores.append((score, geneIndex[train_dataset.genes[i]], train_dataset.genes[i]))
         
         scores = sorted(scores, reverse = True)
-        saveRank(scores, results_path+'rank_t3_uni_anova_fvalue_score.csv')
+        saveRank(scores, results_path_rank+'rank_t3_uni_anova_fvalue_score.csv')
         scores = normalizeScores(scores)
         ranks['t3_uni_anova_fvalue'] = scores
-        saveRank(scores, results_path+'rank_t3_uni_anova_fvalue_score_normalized01.csv')
+        saveRank(scores, results_path_rank+'rank_t3_uni_anova_fvalue_score_normalized01.csv')
 
         maxScore = max(scores,key=lambda item:item[0])[0]
         cutoffScore = maxScore-deltaScore
         genes_to_show = [item for item in scores if item[0] > cutoffScore]
 
         genes_for_signature = []
-        method = 'univariate_rank_anova_fvalue'
+        method = 'univariate_anova_fvalue'
         for i in range(1,getMaxNumberOfProteins(scores, maxNumberOfProteins)+2):
             genes_indexes = [item[1] for item in scores[0:i]]
             sig = Signature(genes_indexes)
@@ -924,11 +668,9 @@ for option in filter_options:
                 sig_data = {'methods':set()}
                 sig_data['methods'].add(method)
                 signatures_data[sig] = sig_data
-
         
-        report.write('-- Univariate Rank - ANOVA F-value --\n')
-        report.write('Max normalized 0-1 protein score: %f\n' %maxScore)
-        report.write('%d proteins have score > %f (max-deltaRankCutoff): %s\n' %(len(genes_to_show), cutoffScore, str(genes_to_show)))
+        report.write('-- Type 3 - Univariate by Statistical-test - ANOVA F-value --\n')
+        report.write('Number of proteins with score > %f (max-deltaRankCutoff): %d:\n%s\n' %(cutoffScore, len(genes_to_show), str(genes_to_show)))
         report.write('\n\n')
 
 
@@ -937,380 +679,132 @@ for option in filter_options:
     #---------- Recursive Feature Elimination (RFE) ----------
     if type4:
 
-        # ------------------- RFE - Linear SVM ------------------------
-        # --------- SVM ----------
-        # Benchmark of best parameter C
-        param_grid = {'linearsvc__C': [0.1, 1, 10, 100, 1000]}
-        pipe = make_pipeline(StandardScaler(), LinearSVC())     
-        grid = GridSearchCV(pipe, param_grid, cv = k)
-        x_train = train_dataset.matrix
-        y_train = factorize(train_dataset.labels)[0] 
-        grid.fit(x_train, y_train)
-        bestC = grid.best_params_['linearsvc__C']
-        print('\nBest SVM C parameter %f\n\n' % bestC)
+        def rfeRank(estimator, traindata):        
+            model = estimator['model']
+            name = estimator['name']
+            method = name.lower().replace(" ","_")
+                    
+            rfe = RFE(model, n_features_to_select=1)
+            rfe.fit(StandardScaler().fit_transform(traindata.X()),traindata.Y())
+            scores = []        
+            for i in range(len(traindata.genes)):
+                score = float(rfe.ranking_[i])
+                scores.append((abs(score), geneIndex[traindata.genes[i]], traindata.genes[i]))          
+            scores = sorted(scores, reverse = False)
+            saveRank(scores, results_path_rank+'rank_t4_rfe_'+method+'.csv')
 
-        # Recursive elimination
-        method = 'rfe_linear_svm'
-        y_train = factorize(train_dataset.labels)[0]
-        x_scaled = train_dataset.get_scaled_data()
-        rfe = RFE(LinearSVC(C = bestC), n_features_to_select=1)
-        rfe.fit(x_scaled,y_train)
-        scores = []        
-        for i in range(len(train_dataset.genes)):
-            score = float(rfe.ranking_[i])
-            scores.append((abs(score), geneIndex[train_dataset.genes[i]], train_dataset.genes[i]))
-        scores = sorted(scores, reverse = False)        
-        saveRank(scores, results_path+'rank_t4_'+method+'.csv')
-        scores_weight = [(len(scores)-score[0],score[1],score[2]) for score in scores]
-        scores_weight = normalizeScores(scores_weight)
-        ranks['t4_'+method] = scores_weight        
-        saveRank(scores_weight, results_path+'rank_t4_'+method+'_normalized01.csv') 
-        maxScore = max(scores_weight,key=lambda item:item[0])[0]
-        cutoffScore = maxScore-deltaScore
-        genes_to_show = [item for item in scores if item[0] > cutoffScore]
-        genes_for_signature = []
-        for i in range(1,getMaxNumberOfProteins(scores, maxNumberOfProteins)+2):
-            genes_indexes = [item[1] for item in scores[0:i]]
-            sig = Signature(genes_indexes)
-            if sig in signatures_data:
-                signatures_data[sig]['methods'].add(method)
-            else:
-                sig_data = {'methods':set()}
-                sig_data['methods'].add(method)
-                signatures_data[sig] = sig_data
-        report.write('-- RFE - Linear SVM --\n')
-        report.write('Max normalized 0-1 protein coefficient: %f\n' %maxScore)
-        report.write('%d proteins have coefficient > %f (max-deltaRankCutoff): %s\n' %(len(genes_to_show), cutoffScore, str(genes_to_show)))
-        report.write('\n\n')
+            scores_weight = [(len(scores)-score[0],score[1],score[2]) for score in scores]
+            scores_weight = normalizeScores(scores_weight)
+            
+            ranks['t4_'+method] = scores_weight        
+            saveRank(scores_weight, results_path_rank+'rank_t4_rfe_'+method+'_normalizedMinMax.csv') 
+            maxScore = max(scores_weight,key=lambda item:item[0])[0]
+            cutoffScore = maxScore-deltaScore
+            genes_to_show = [item for item in scores if item[0] > cutoffScore]
+
+            genes_for_signature = []
+            for i in range(1,getMaxNumberOfProteins(scores, maxNumberOfProteins)+2):
+                genes_indexes = [item[1] for item in scores[0:i]]
+                sig = Signature(genes_indexes)
+                if sig in signatures_data:
+                    signatures_data[sig]['methods'].add('type4_'+method)
+                else:
+                    sig_data = {'methods':set()}
+                    sig_data['methods'].add('type4_'+method)
+                    signatures_data[sig] = sig_data
+            report.write('-- Type 3 - Recursive Feature Elimination - '+name+' --\n') 
+            report.write('Number of proteins with normalized score > %f (max-deltaRankCutoff): %d:\n%s\n' %(cutoffScore, len(genes_to_show), str(genes_to_show)))
+            report.write('\n\n')
 
 
-        # ------------------- RFE - Logistic Regression L1 ------------------------
-        # --------- L1 ----------
-        # Benchmark of best parameter C
-        param_grid = {'logisticregression__C': [0.001, 0.01, 0.1, 1, 10, 100]}
-        pipe = make_pipeline(StandardScaler(), LogisticRegression(penalty = 'l1'))     
-        grid = GridSearchCV(pipe, param_grid, cv = k)
-        x_train = train_dataset.matrix
-        y_train = factorize(train_dataset.labels)[0] 
-        grid.fit(x_train, y_train)
-        bestC = grid.best_params_['logisticregression__C']
-
-        # Recursive elimination
-        method = 'rfe_lasso'
-        y_train = factorize(train_dataset.labels)[0]
-        x_scaled = train_dataset.get_scaled_data()
-        rfe = RFE(LogisticRegression(penalty = 'l1', C = bestC), n_features_to_select=1)
-        rfe.fit(x_scaled,y_train)
-        scores = []        
-        for i in range(len(train_dataset.genes)):
-            score = float(rfe.ranking_[i])
-            scores.append((abs(score), geneIndex[train_dataset.genes[i]], train_dataset.genes[i]))
-        scores = sorted(scores, reverse = False)        
-        saveRank(scores, results_path+'rank_t4_'+method+'.csv')
-        scores_weight = [(len(scores)-score[0],score[1],score[2]) for score in scores]
-        scores_weight = normalizeScores(scores_weight)
-        ranks['t4_'+method] = scores_weight        
-        saveRank(scores_weight, results_path+'rank_t4_'+method+'_normalized01.csv') 
-        maxScore = max(scores_weight,key=lambda item:item[0])[0]
-        cutoffScore = maxScore-deltaScore
-        genes_to_show = [item for item in scores if item[0] > cutoffScore]
-        genes_for_signature = []
-        for i in range(1,getMaxNumberOfProteins(scores, maxNumberOfProteins)+2):
-            genes_indexes = [item[1] for item in scores[0:i]]
-            sig = Signature(genes_indexes)
-            if sig in signatures_data:
-                signatures_data[sig]['methods'].add(method)
-            else:
-                sig_data = {'methods':set()}
-                sig_data['methods'].add(method)
-                signatures_data[sig] = sig_data
-        report.write('-- RFE - Lasso --\n')
-        report.write('Max normalized 0-1 protein coefficient: %f\n' %maxScore)
-        report.write('%d proteins have coefficient > %f (max-deltaRankCutoff): %s\n' %(len(genes_to_show), cutoffScore, str(genes_to_show)))
-        report.write('\n\n')
+        for estimator in estimators:
+            print('Rfe for '+estimator['name']+'\n')
+            rfeRank(estimator, train_dataset)
 
 
-        # ------------------- RFE - Logistic Regression L2 ------------------------
-        # --------- L2 ----------
-        # Benchmark of best parameter C
-        param_grid = {'logisticregression__C': [0.001, 0.01, 0.1, 1, 10, 100]}
-        pipe = make_pipeline(StandardScaler(), LogisticRegression(penalty = 'l2'))     
-        grid = GridSearchCV(pipe, param_grid, cv = k)
-        x_train = train_dataset.matrix
-        y_train = factorize(train_dataset.labels)[0] 
-        grid.fit(x_train, y_train)
-        bestC = grid.best_params_['logisticregression__C']
-
-        # Recursive elimination
-        method = 'rfe_ridge'
-        y_train = factorize(train_dataset.labels)[0]
-        x_scaled = train_dataset.get_scaled_data()
-        rfe = RFE(LogisticRegression(penalty = 'l2', C = bestC), n_features_to_select=1)
-        rfe.fit(x_scaled,y_train)
-        scores = []        
-        for i in range(len(train_dataset.genes)):
-            score = float(rfe.ranking_[i])
-            scores.append((abs(score), geneIndex[train_dataset.genes[i]], train_dataset.genes[i]))
-        scores = sorted(scores, reverse = False)        
-        saveRank(scores, results_path+'rank_t4_'+method+'.csv')
-        scores_weight = [(len(scores)-score[0],score[1],score[2]) for score in scores]
-        scores_weight = normalizeScores(scores_weight)
-        ranks['t4_'+method] = scores_weight        
-        saveRank(scores_weight, results_path+'rank_t4_'+method+'_normalized01.csv') 
-        maxScore = max(scores_weight,key=lambda item:item[0])[0]
-        cutoffScore = maxScore-deltaScore
-        genes_to_show = [item for item in scores if item[0] > cutoffScore]
-        genes_for_signature = []
-        for i in range(1,getMaxNumberOfProteins(scores, maxNumberOfProteins)+2):
-            genes_indexes = [item[1] for item in scores[0:i]]
-            sig = Signature(genes_indexes)
-            if sig in signatures_data:
-                signatures_data[sig]['methods'].add(method)
-            else:
-                sig_data = {'methods':set()}
-                sig_data['methods'].add(method)
-                signatures_data[sig] = sig_data
-        report.write('-- RFE - Ridge --\n')
-        report.write('Max normalized 0-1 protein coefficient: %f\n' %maxScore)
-        report.write('%d proteins have coefficient > %f (max-deltaRankCutoff): %s\n' %(len(genes_to_show), cutoffScore, str(genes_to_show)))
-        report.write('\n\n')
+        
 
 
-        # ------------------- RFE - Decision Tree ------------------------
-        # --------- Decision Tree ----------
-        # Recursive elimination
-        method = 'rfe_decision_tree'
-        y_train = factorize(train_dataset.labels)[0]
-        x_scaled = train_dataset.get_scaled_data()
-        rfe = RFE(DecisionTreeClassifier(), n_features_to_select=1)
-        rfe.fit(x_scaled,y_train)
-        scores = []        
-        for i in range(len(train_dataset.genes)):
-            score = float(rfe.ranking_[i])
-            scores.append((abs(score), geneIndex[train_dataset.genes[i]], train_dataset.genes[i]))
-        scores = sorted(scores, reverse = False)        
-        saveRank(scores, results_path+'rank_t4_'+method+'.csv')
-        scores_weight = [(len(scores)-score[0],score[1],score[2]) for score in scores]
-        scores_weight = normalizeScores(scores_weight)
-        ranks['t4_'+method] = scores_weight        
-        saveRank(scores_weight, results_path+'rank_t4_'+method+'_normalized01.csv') 
-        maxScore = max(scores_weight,key=lambda item:item[0])[0]
-        cutoffScore = maxScore-deltaScore
-        genes_to_show = [item for item in scores if item[0] > cutoffScore]
-        genes_for_signature = []
-        for i in range(1,getMaxNumberOfProteins(scores, maxNumberOfProteins)+2):
-            genes_indexes = [item[1] for item in scores[0:i]]
-            sig = Signature(genes_indexes)
-            if sig in signatures_data:
-                signatures_data[sig]['methods'].add(method)
-            else:
-                sig_data = {'methods':set()}
-                sig_data['methods'].add(method)
-                signatures_data[sig] = sig_data
-        report.write('-- RFE - Decision Tree--\n')
-        report.write('Max normalized 0-1 protein coefficient: %f\n' %maxScore)
-        report.write('%d proteins have coefficient > %f (max-deltaRankCutoff): %s\n' %(len(genes_to_show), cutoffScore, str(genes_to_show)))
-        report.write('\n\n')
+    type5 = False
+    #---------- type 6 - Stability Selection ----------
+    if type5:
+        from stability_selection import StabilitySelection
+
+        def stabilitySelectionScores(estimator, traindata):          
+            base_estimator = Pipeline([('scaler', StandardScaler()), ('model', estimator['model'])])
+            selector = StabilitySelection(base_estimator=base_estimator).fit(x, y)
+            scores = [] 
+            name = estimator['name']  
+            method = name.lower().replace(" ","_")     
+            for i in range(len(traindata.genes)):
+                score = float(selector.stability_scores_[i])
+                scores.append((abs(score), geneIndex[traindata.genes[i]], traindata.genes[i]))
+            scores = sorted(scores, reverse = True)
+            saveRank(scores, results_path_rank+'rank_t5_'+method+'.csv')
+            scores_weight = [(len(scores)-score[0],score[1],score[2]) for score in scores]
+            scores_weight = normalizeScores(scores_weight)
+            ranks['t5_'+method] = scores_weight        
+            saveRank(scores_weight, results_path_rank+'rank_t5_'+method+'_normalized01.csv') 
+            maxScore = max(scores_weight,key=lambda item:item[0])[0]
+            cutoffScore = maxScore-deltaScore
+            genes_to_show = [item for item in scores if item[0] > cutoffScore]
+            genes_for_signature = []
+            for i in range(1,getMaxNumberOfProteins(scores, maxNumberOfProteins)+2):
+                genes_indexes = [item[1] for item in scores[0:i]]
+                sig = Signature(genes_indexes)
+                if sig in signatures_data:
+                    signatures_data[sig]['methods'].add(method)
+                else:
+                    sig_data = {'methods':set()}
+                    sig_data['methods'].add(method)
+                    signatures_data[sig] = sig_data
+            report.write('-- Stability Selection - '+name+' --\n')
+            report.write('Number of proteins with score > %f (max-deltaRankCutoff): %d:\n%s\n' %(cutoffScore, len(genes_to_show), str(genes_to_show)))
+            report.write('\n\n')
+
+        for estimator in estimators:
+            stabilitySelectionScores(estimator, train_dataset)
 
 
+    #! scores lists must be already sorted
 
-        # ------------------- RFE - Random Forest ------------------------
-        # --------- Random Forest ----------
-        # Recursive elimination
-        method = 'rfe_random_forest'
-        y_train = factorize(train_dataset.labels)[0]
-        x_scaled = train_dataset.get_scaled_data()
-        rfe = RFE(RandomForestClassifier(), n_features_to_select=1)
-        rfe.fit(x_scaled,y_train)
-        scores = []        
-        for i in range(len(train_dataset.genes)):
-            score = float(rfe.ranking_[i])
-            scores.append((abs(score), geneIndex[train_dataset.genes[i]], train_dataset.genes[i]))
-        scores = sorted(scores, reverse = False)        
-        saveRank(scores, results_path+'rank_t4_'+method+'.csv')
-        scores_weight = [(len(scores)-score[0],score[1],score[2]) for score in scores]
-        scores_weight = normalizeScores(scores_weight)
-        ranks['t4_'+method] = scores_weight        
-        saveRank(scores_weight, results_path+'rank_t4_'+method+'_normalized01.csv') 
-        maxScore = max(scores_weight,key=lambda item:item[0])[0]
-        cutoffScore = maxScore-deltaScore
-        genes_to_show = [item for item in scores if item[0] > cutoffScore]
-        genes_for_signature = []
-        for i in range(1,getMaxNumberOfProteins(scores, maxNumberOfProteins)+2):
-            genes_indexes = [item[1] for item in scores[0:i]]
-            sig = Signature(genes_indexes)
-            if sig in signatures_data:
-                signatures_data[sig]['methods'].add(method)
-            else:
-                sig_data = {'methods':set()}
-                sig_data['methods'].add(method)
-                signatures_data[sig] = sig_data
-        report.write('-- RFE - Random Forest --\n')
-        report.write('Max normalized 0-1 protein coefficient: %f\n' %maxScore)
-        report.write('%d proteins have coefficient > %f (max-deltaRankCutoff): %s\n' %(len(genes_to_show), cutoffScore, str(genes_to_show)))
-        report.write('\n\n')
+    # Protein names are ordered by rank
+    matrix = []  
+    for name in sorted(ranks.keys()):
+        rank = ranks[name]              
+        row = [name] + [score[2] for score in rank]
+        matrix.append(row)
+    matrix = np.matrix(matrix).transpose()    
+    filename = results_path+'all_ranks_prot_names.csv'
+    np.savetxt(filename, matrix, delimiter=",", fmt='%s')
 
 
-        # ------------------- RFE - Ada Boost ------------------------
-        # --------- Ada Boost ----------
-        # Recursive elimination
-        method = 'rfe_ada_boost'
-        y_train = factorize(train_dataset.labels)[0]
-        x_scaled = train_dataset.get_scaled_data()
-        rfe = RFE(AdaBoostClassifier(), n_features_to_select=1)
-        rfe.fit(x_scaled,y_train)
-        scores = []        
-        for i in range(len(train_dataset.genes)):
-            score = float(rfe.ranking_[i])
-            scores.append((abs(score), geneIndex[train_dataset.genes[i]], train_dataset.genes[i]))
-        scores = sorted(scores, reverse = False)        
-        saveRank(scores, results_path+'rank_t4_'+method+'.csv')
-        scores_weight = [(len(scores)-score[0],score[1],score[2]) for score in scores]
-        scores_weight = normalizeScores(scores_weight)
-        ranks['t4_'+method] = scores_weight        
-        saveRank(scores_weight, results_path+'rank_t4_'+method+'_normalized01.csv') 
-        maxScore = max(scores_weight,key=lambda item:item[0])[0]
-        cutoffScore = maxScore-deltaScore
-        genes_to_show = [item for item in scores if item[0] > cutoffScore]
-        genes_for_signature = []
-        for i in range(1,getMaxNumberOfProteins(scores, maxNumberOfProteins)+2):
-            genes_indexes = [item[1] for item in scores[0:i]]
-            sig = Signature(genes_indexes)
-            if sig in signatures_data:
-                signatures_data[sig]['methods'].add(method)
-            else:
-                sig_data = {'methods':set()}
-                sig_data['methods'].add(method)
-                signatures_data[sig] = sig_data
-        report.write('-- RFE - Ada Boost --\n')
-        report.write('Max normalized 0-1 protein coefficient: %f\n' %maxScore)
-        report.write('%d proteins have coefficient > %f (max-deltaRankCutoff): %s\n' %(len(genes_to_show), cutoffScore, str(genes_to_show)))
-        report.write('\n\n')
+    # Protein names are listed, values of the matrix are their Scores
+    matrix = ['method']+train_dataset.genes
+    for name in sorted(ranks.keys()):
+        rank = ranks[name]                
+        order_by_index = sorted(rank, key=lambda tup: tup[1])
+        row = [name] + [score[0] for score in order_by_index]
+        matrix.append(row)
+    print('size1: %d : %s' % (len(matrix),matrix[0]))
+    print('size2: %d : %s' % (len(matrix[0]),matrix[0]))
+    print('size3: %d : %s' % (len(matrix[1]),matrix[1]))
+    matrix = np.matrix(matrix).transpose()
+    filename = results_path+'all_ranks_scores.csv'
+    np.savetxt(filename, matrix, delimiter=",", fmt='%s')
 
 
+    # Protein names are listed, values of the matrix are their Positions/Ranks
+    matrix = ['method']+train_dataset.genes 
+    for name in sorted(ranks.keys()):
+        rank = ranks[name]    
+        new_scores = [(rank[i][0], rank[i][1], rank[i][2], i) for i in range(len(rank))]
+        row = [name] + [score[3] for score in sorted(new_scores, key=lambda tup: tup[1])]
+        matrix.append(row)
+    matrix = np.matrix(matrix).transpose()
+    filename = results_path+'all_ranks_positions.csv'
+    np.savetxt(filename, matrix, delimiter=",", fmt='%s')    
 
-        # ------------------- RFE - Gradient Boosting ------------------------
-        # --------- Gradient Boosting----------
-        # Recursive elimination
-        method = 'rfe_gradient_boosting'
-        y_train = factorize(train_dataset.labels)[0]
-        x_scaled = train_dataset.get_scaled_data()
-        rfe = RFE(GradientBoostingClassifier(), n_features_to_select=1)
-        rfe.fit(x_scaled,y_train)
-        scores = []        
-        for i in range(len(train_dataset.genes)):
-            score = float(rfe.ranking_[i])
-            scores.append((abs(score), geneIndex[train_dataset.genes[i]], train_dataset.genes[i]))
-        scores = sorted(scores, reverse = False)        
-        saveRank(scores, results_path+'rank_t4_'+method+'.csv')
-        scores_weight = [(len(scores)-score[0],score[1],score[2]) for score in scores]
-        scores_weight = normalizeScores(scores_weight)
-        ranks['t4_'+method] = scores_weight        
-        saveRank(scores_weight, results_path+'rank_t4_'+method+'_normalized01.csv') 
-        maxScore = max(scores_weight,key=lambda item:item[0])[0]
-        cutoffScore = maxScore-deltaScore
-        genes_to_show = [item for item in scores if item[0] > cutoffScore]
-        genes_for_signature = []
-        for i in range(1,getMaxNumberOfProteins(scores, maxNumberOfProteins)+2):
-            genes_indexes = [item[1] for item in scores[0:i]]
-            sig = Signature(genes_indexes)
-            if sig in signatures_data:
-                signatures_data[sig]['methods'].add(method)
-            else:
-                sig_data = {'methods':set()}
-                sig_data['methods'].add(method)
-                signatures_data[sig] = sig_data
-        report.write('-- RFE - Gradient Boosting --\n')
-        report.write('Max normalized 0-1 protein coefficient: %f\n' %maxScore)
-        report.write('%d proteins have coefficient > %f (max-deltaRankCutoff): %s\n' %(len(genes_to_show), cutoffScore, str(genes_to_show)))
-        report.write('\n\n')
-
-
-        # ------------------- RFE - Linear Discriminant Analysis ------------------------
-        # --------- Linear Discriminant Analysis----------
-        # Recursive elimination
-        method = 'rfe_lda'
-        y_train = factorize(train_dataset.labels)[0]
-        x_scaled = train_dataset.get_scaled_data()
-        rfe = RFE(GradientBoostingClassifier(), n_features_to_select=1)
-        rfe.fit(x_scaled,y_train)
-        scores = []        
-        for i in range(len(train_dataset.genes)):
-            score = float(rfe.ranking_[i])
-            scores.append((abs(score), geneIndex[train_dataset.genes[i]], train_dataset.genes[i]))
-        scores = sorted(scores, reverse = False)        
-        saveRank(scores, results_path+'rank_t4_'+method+'.csv')
-        scores_weight = [(len(scores)-score[0],score[1],score[2]) for score in scores]
-        scores_weight = normalizeScores(scores_weight)
-        ranks['t4_'+method] = scores_weight        
-        saveRank(scores_weight, results_path+'rank_t4_'+method+'_normalized01.csv') 
-        maxScore = max(scores_weight,key=lambda item:item[0])[0]
-        cutoffScore = maxScore-deltaScore
-        genes_to_show = [item for item in scores if item[0] > cutoffScore]
-        genes_for_signature = []
-        for i in range(1,getMaxNumberOfProteins(scores, maxNumberOfProteins)+2):
-            genes_indexes = [item[1] for item in scores[0:i]]
-            sig = Signature(genes_indexes)
-            if sig in signatures_data:
-                signatures_data[sig]['methods'].add(method)
-            else:
-                sig_data = {'methods':set()}
-                sig_data['methods'].add(method)
-                signatures_data[sig] = sig_data
-        report.write('-- RFE - Linear Discriminant Analysis --\n')
-        report.write('Max normalized 0-1 protein coefficient: %f\n' %maxScore)
-        report.write('%d proteins have coefficient > %f (max-deltaRankCutoff): %s\n' %(len(genes_to_show), cutoffScore, str(genes_to_show)))
-        report.write('\n\n')        
-
-    #---------- Stability Selection ----------
-    from stability_selection import StabilitySelection
-
-
-    # StabilitySelection(base_estimator=LogisticRegression(penalty='l1'), lambda_name='C',
-    #              lambda_grid=np.logspace(-5, -2, 25), n_bootstrap_iterations=100,
-    #              sample_fraction=0.5, threshold=0.6, bootstrap_func=bootstrap_without_replacement,
-    #              bootstrap_threshold=None, verbose=0, n_jobs=1, pre_dispatch='2*n_jobs',
-    #              random_state=None)
-
-    import numpy as np
-
-    from sklearn.linear_model import LogisticRegression
-    from sklearn.pipeline import Pipeline
-    from sklearn.preprocessing import StandardScaler
-    from sklearn.utils import check_random_state
-    from stability_selection import StabilitySelection
-    y_train = factorize(train_dataset.labels)[0]
-    x_scaled = train_dataset.get_scaled_data()
-
-    def _generate_dummy_classification_data(p=1000, n=1000, k=5, random_state=123321):
-
-        rng = check_random_state(random_state)
-
-        X = rng.normal(loc=0.0, scale=1.0, size=(n, p))
-        betas = np.zeros(p)
-        important_betas = np.sort(rng.choice(a=np.arange(p), size=k))
-        betas[important_betas] = rng.uniform(size=k)
-
-        probs = 1 / (1 + np.exp(-1 * np.matmul(X, betas)))
-        y = (probs > 0.5).astype(int)
-
-        return X, y, important_betas
-
-
-    n, p, k = 500, 1000, 5
-
-    X, y, important_betas = _generate_dummy_classification_data(n=n, k=k)
-    base_estimator = Pipeline([
-        ('scaler', StandardScaler()),
-        ('model', LogisticRegression(penalty='l2'))
-    ])
-    selector = StabilitySelection(base_estimator=base_estimator, lambda_name='model__C',
-                                lambda_grid=np.logspace(-5, -1, 50)).fit(x_scaled, y_train)
-
-    print(selector.stability_scores_)
-    for i in range(len(selector.stability_scores_)):
-        print(np.mean(selector.stability_scores_[i]), np.std(selector.stability_scores_[i]),train_dataset.genes[i])
-    print(selector.get_support(indices=True))
 
 
 
@@ -1358,8 +852,16 @@ for option in filter_options:
     # ! The cutoff of the rank must be based ON scores > 0 and on Cross-validation
 
 
+# ! variable importance Heatmap
+# from sklearn.feature_selection import mutual_info_classif
+# kepler_mutual_information = mutual_info_classif(kepler_X, kepler_y)
 
-
+# plt.subplots(1, figsize=(26, 1))
+# sns.heatmap(kepler_mutual_information[:, np.newaxis].T, cmap='Blues', cbar=False, linewidths=1, annot=True)
+# plt.yticks([], [])
+# plt.gca().set_xticklabels(kepler.columns[1:], rotation=45, ha='right', fontsize=12)
+# plt.suptitle("Kepler Variable Importance (mutual_info_classif)", fontsize=18, y=1.2)
+# plt.gcf().subplots_adjust(wspace=0.2)
 
 
 
