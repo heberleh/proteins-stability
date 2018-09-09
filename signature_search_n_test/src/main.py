@@ -21,7 +21,7 @@ ap.add_argument('--saveGraphics', help='Save Heatmaps, Scatterplots and others g
 
 ap.add_argument('--fdr', help='Correct the Wilcoxon/Kruskal p-values used for filtering proteins by False Discovery Rate.', action='store_true')
 
-ap.add_argument('--fdrPvalue', help='Minimun p-value used as cutoff after FDR correction.', action='store', type=int, default=0.1)
+ap.add_argument('--fdrPvalue', help='Minimun p-value used as cutoff after FDR correction.', action='store', type=int, default=0.05)
 
 ap.add_argument('--minFdr', help='Minimun number of proteins to consider the FDR result to filter.', action='store', type=int, default=4)
 
@@ -178,6 +178,8 @@ report.write('Number of samples in the independent test dataset: %d \n\n' % len(
 report.write('Train samples: %s\n\n' % str(train_dataset.samples))
 report.write('Test samples: %s\n\n' % str(test_dataset.samples))
 
+report.write('Number of classes: %d\n' % len(train_dataset.levels()))
+report.write('Classes: %s' % str(train_dataset.levels()))
 
 if args['noFilter']:
     filter_options = ['noFilter']
@@ -401,7 +403,7 @@ for option in filter_options:
     if limitSigSize:
         maxNumberOfProteins = len(train_dataset.samples)
 
-    type1, type2, type3, type4, type5, type6, type7 = True, True, True, True, True, True, True
+    type1, type2, type3, type4, type5, type6, type7 = True, True, True, True, True, True, True#False, False, False, False, True, True, True#
 
 
     # Benchmark of best parameter C for L1 and L2
@@ -418,19 +420,21 @@ for option in filter_options:
     RidgeBestC = grid.best_params_['logisticregression__C']  
 
     estimators = [  #lambda_name='model__C',lambda_grid=np.logspace(-5, -1, 50)
+        {'name': 'Linear SVM', 'model': LinearSVC(), 'lambda_name':'model__C', 'lambda_grid': np.arange(3, 10)},
+
         {'name': 'Decision Tree', 'model': DecisionTreeClassifier(), 'lambda_name':'model__max_depth', 'lambda_grid': np.arange(1, 20)}, #'max_depth': np.arange(3, 10)
 
         {'name': 'Random Forest', 'model': RandomForestClassifier(n_estimators=100,n_jobs=nJobs), 'lambda_name':'model__max_features', 'lambda_grid': np.array([0.5, 0.7, 0.85, 1.0])},
 
-        {'name': 'Ada Boost', 'model': AdaBoostClassifier(n_estimators=100), 'lambda_name':'model__learning_rate', 'lambda_grid': np.array([0.01, 0.1, 0.3, 0.6, 1.0])},
+        {'name': 'Ada Boost (Decision Trees)', 'model': AdaBoostClassifier(n_estimators=100), 'lambda_name':'model__learning_rate', 'lambda_grid': np.array([0.01, 0.1, 0.3, 0.6, 1.0])},
 
-        {'name': 'Gradient Boosting', 'model': GradientBoostingClassifier(n_estimators=100), 'lambda_name':'model__learning_rate', 'lambda_grid': np.array([0.01, 0.1, 0.3, 0.6, 1.0])},
+        {'name': 'Gradient Boosting', 'model': GradientBoostingClassifier(n_estimators=100, loss="deviance" ), 'lambda_name':'model__learning_rate', 'lambda_grid': np.array([0.01, 0.1, 0.3, 0.6, 1.0])},
 
         {'name': 'Lasso', 'model': LogisticRegression(penalty='l1', C=LassoBestC), 'lambda_name':'model__C', 'lambda_grid': np.logspace(-5, 0, 10)},
 
         {'name': 'Ridge', 'model': LogisticRegression(penalty='l2', C=RidgeBestC), 'lambda_name':'model__C', 'lambda_grid': np.logspace(-5, 0, 10)},
 
-        {'name': 'Linear SVM', 'model': LinearSVC(), 'lambda_name':'model__C', 'lambda_grid': np.arange(3, 10)},
+
 
         {'name': 'Linear Discriminant Analysis', 'model': LinearDiscriminantAnalysis(), 'lambda_name':'model__n_components', 'lambda_grid': None} #! need to be set after filtering
     ]
@@ -761,15 +765,50 @@ for option in filter_options:
     #---------- Type 5 - Stability Selection ----------
     if type5:
         print('\nExecuting Type 5\n')
-        from stability_selection import StabilitySelection
+        from stability_selection import StabilitySelection  
+        from sklearn.model_selection import StratifiedShuffleSplit      
+
+        def stratified_subsampling(y, n_subsamples, random_state=7):
+
+            if n_subsamples < 2*len(np.unique(y)):
+                n_subsamples = 2*len(np.unique(y))
+                if n_subsamples > len(y):
+                    raise Exception('Number of sample is too small to run stability selection.')
+
+            test_size = len(y)-n_subsamples
+            if test_size < len(np.unique(y)):
+                test_size = len(np.unique(y))
+            test_size = test_size/float(len(y))
+            sss = StratifiedShuffleSplit(n_splits=1, test_size=test_size, random_state=random_state)
+            x_indexes = []
+            for i in range(len(y)):
+                x_indexes.append([i])                
+            for train_indexes, test_indexes in sss.split(x_indexes, y):                     
+                return sorted(train_indexes)
+
 
         def stabilitySelectionScores(estimator, traindata): 
             if estimator['name'] == 'Linear Discriminant Analysis':
                 estimator['lambda_grid'] = np.arange(2, len(traindata.genes), 3)
             base_estimator = Pipeline([('scaler', StandardScaler()), ('model', estimator['model'])])
-            selector = StabilitySelection(base_estimator=base_estimator, lambda_name=estimator['lambda_name'], lambda_grid=estimator['lambda_grid'], n_jobs=nJobs).fit(traindata.X(), traindata.Y())
-            scores = [] 
             name = estimator['name']  
+            selector = None
+            try:                
+                selector = StabilitySelection(base_estimator=base_estimator, sample_fraction=0.75, lambda_name=estimator['lambda_name'], lambda_grid=estimator['lambda_grid'], n_jobs=nJobs, bootstrap_func=stratified_subsampling).fit(traindata.X(), traindata.Y()) #
+            except Exception as e:
+                message = None
+                if hasattr(e, 'message'):
+                    message = e.message
+                else:
+                    message = str(e)
+                report.write('-- Type 5 -- Stability Selection - '+name+' --\n')
+                report.write('!!! - Error: could not run '+name+' because of the following error: '+ message)
+                print('!!! - Error: could not run '+name+' because of the following error: '+ message+ '\nThe script will continue computing the ranks based on next Estimator.')
+                print("Y data for stability selection: %s" % str( traindata.Y()))
+                return None
+
+            
+            scores = []             
             method = name.lower().replace(" ","_")     
             for i in range(len(traindata.genes)):                
                 score = np.mean(selector.stability_scores_[i])
