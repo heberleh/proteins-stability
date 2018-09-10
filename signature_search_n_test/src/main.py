@@ -192,6 +192,8 @@ else:
 complete_train = train_dataset
 complete_test = test_dataset
 
+n_estimators = 100
+
 global_results_path = results_path
 for option in filter_options:
     report.write('\n\n============================='+option+'=============================\n')
@@ -403,7 +405,9 @@ for option in filter_options:
     if limitSigSize:
         maxNumberOfProteins = len(train_dataset.samples)
 
-    type1, type2, type3, type4, type5, type6, type7 = True, True, True, True, True, True, True#False, False, False, False, True, True, True#
+    type1, type2, type3, type4, type5, type6, type7 = True, True, True, True, True, True, True
+    # True, True, True, True, True, True, True
+    # False, False, False, False, True, True, True
 
 
     # Benchmark of best parameter C for L1 and L2
@@ -424,11 +428,11 @@ for option in filter_options:
 
         {'name': 'Decision Tree', 'model': DecisionTreeClassifier(), 'lambda_name':'model__max_depth', 'lambda_grid': np.arange(1, 20)}, #'max_depth': np.arange(3, 10)
 
-        {'name': 'Random Forest', 'model': RandomForestClassifier(n_estimators=100,n_jobs=nJobs), 'lambda_name':'model__max_features', 'lambda_grid': np.array([0.5, 0.7, 0.85, 1.0])},
+        {'name': 'Random Forest', 'model': RandomForestClassifier(n_estimators=n_estimators,n_jobs=nJobs), 'lambda_name':'model__max_features', 'lambda_grid': np.array([0.5, 0.7, 0.85, 1.0])},
 
-        {'name': 'Ada Boost (Decision Trees)', 'model': AdaBoostClassifier(n_estimators=100), 'lambda_name':'model__learning_rate', 'lambda_grid': np.array([0.01, 0.1, 0.3, 0.6, 1.0])},
+        {'name': 'Ada Boost (Decision Trees)', 'model': AdaBoostClassifier(n_estimators=n_estimators), 'lambda_name':'model__learning_rate', 'lambda_grid': np.array([0.01, 0.1, 0.3, 0.6, 1.0])},
 
-        {'name': 'Gradient Boosting', 'model': GradientBoostingClassifier(n_estimators=100, loss="deviance" ), 'lambda_name':'model__learning_rate', 'lambda_grid': np.array([0.01, 0.1, 0.3, 0.6, 1.0])},
+        {'name': 'Gradient Boosting', 'model': GradientBoostingClassifier(n_estimators=n_estimators, loss="deviance" ), 'lambda_name':'model__learning_rate', 'lambda_grid': np.array([0.01, 0.1, 0.3, 0.6, 1.0])},
 
         {'name': 'Lasso', 'model': LogisticRegression(penalty='l1', C=LassoBestC), 'lambda_name':'model__C', 'lambda_grid': np.logspace(-5, 0, 10)},
 
@@ -449,18 +453,21 @@ for option in filter_options:
             return pipe.feature_importances_[i]
 
 
+    report.write('\n\nNumber of features: %d\n\n' % len(train_dataset.genes))
+
 
     # Type 1: Model Based Ranking
     # Type 2: Attributes' Weights
     # Type 3: Univariate Feature Selection (Statistics)
     # Type 4: Recursive Feature Elimination
     # Type 5: Stability Selection
+    # Type 6: Decrease of Accuracy
 
     # ---------------------- Type 1 - Model Based Ranks -------------------------
     if type1:
         print('\nExecuting Type 1\n')
         # Random Forests
-        clf = RandomForestClassifier(n_jobs=nJobs, n_estimators=100)
+        clf = RandomForestClassifier(n_jobs=nJobs, n_estimators=n_estimators)
         scores = []
         for i in range(len(train_dataset.genes)):
             x_train = train_dataset.X()[:, i] # data matrix
@@ -468,7 +475,7 @@ for option in filter_options:
             scores_cv = cross_val_score(clf, x_train, y_train, cv=k, scoring=scoreEstimator)        
             score = np.mean(scores_cv)
             scores.append((score, geneIndex[train_dataset.genes[i]], train_dataset.genes[i]))
-        scores = sorted(scores, reverse = True)
+        scores = sorted(scores, reverse = True, key=lambda tup: tup[0])
         saveRank(scores, results_path_rank+'rank_t1_uni_random_forest_mean_accuracy.csv')
         scores = normalizeScores(scores)
         ranks['t1_uni_random_forest'] = scores
@@ -506,7 +513,7 @@ for option in filter_options:
             for i in range(len(train_dataset.genes)):
                 score = getScore(traindata, pipe.named_steps['clf'], name, i)
                 scores.append((abs(score), geneIndex[train_dataset.genes[i]], train_dataset.genes[i]))            
-            scores = sorted(scores, reverse = True)
+            scores = sorted(scores, reverse = True, key=lambda tup: tup[0])
             saveRank(scores, results_path_rank+'rank_t2_weights_'+method+'.csv')
             scores = normalizeScores(scores)
             ranks['t2_weights_rank_'+method]= scores
@@ -567,13 +574,13 @@ for option in filter_options:
             score = (p[i],  geneIndex[train_dataset.genes[i]],  train_dataset.genes[i])
             scores.append(score)
 
-        scores = sorted(scores, reverse = False)
+        scores = sorted(scores, reverse = False, key=lambda tup: tup[0])
         saveRank(scores, results_path_rank+'rank_t3_uni_'+name+'_pvalue.csv')
         # ! Weight of attribute is 1-p_value
         scores_weight  = [(1-score[0],score[1],score[2]) for score in scores]
-        scores = sorted(scores, reverse = True)
+        scores = sorted(scores, reverse = True, key=lambda tup: tup[0])
         scores_weight = normalizeScores(scores_weight)
-        ranks['t3_uni_'+name]=scores
+        ranks['t3_uni_'+name]=scores_weight
         saveRank(scores_weight, results_path_rank+'rank_t3_uni_'+name+'_1MinusPvalue_normalizedMinMax.csv')
 
         minScore = min(scores,key=lambda item:item[0])[0]
@@ -609,7 +616,7 @@ for option in filter_options:
         for i in range(len(train_dataset.genes)):
             score = test.scores_[i]
             scores.append((score, geneIndex[train_dataset.genes[i]], train_dataset.genes[i]))
-        scores = sorted(scores, reverse = True)
+        scores = sorted(scores, reverse = True, key=lambda tup: tup[0])
         saveRank(scores, results_path_rank+'rank_t3_uni_chi_squared_score.csv')
         scores = normalizeScores(scores)
         ranks['t3_uni_chi_squared'] = scores
@@ -649,7 +656,7 @@ for option in filter_options:
             score = test.scores_[i]
             scores.append((score, geneIndex[train_dataset.genes[i]], train_dataset.genes[i]))
         
-        scores = sorted(scores, reverse = True)
+        scores = sorted(scores, reverse = True, key=lambda tup: tup[0])
         saveRank(scores, results_path_rank+'rank_t3_uni_mutual_inf_score.csv')
         scores = normalizeScores(scores)
         ranks['t3_uni_mutual_inf'] = scores
@@ -688,7 +695,7 @@ for option in filter_options:
             score = test.scores_[i]
             scores.append((score, geneIndex[train_dataset.genes[i]], train_dataset.genes[i]))
         
-        scores = sorted(scores, reverse = True)
+        scores = sorted(scores, reverse = True, key=lambda tup: tup[0])
         saveRank(scores, results_path_rank+'rank_t3_uni_anova_fvalue_score.csv')
         scores = normalizeScores(scores)
         ranks['t3_uni_anova_fvalue'] = scores
@@ -729,7 +736,7 @@ for option in filter_options:
             for i in range(len(traindata.genes)):
                 score = float(rfe.ranking_[i])
                 scores.append((abs(score), geneIndex[traindata.genes[i]], traindata.genes[i]))          
-            scores = sorted(scores, reverse = False)
+            scores = sorted(scores, reverse = False, key=lambda tup: tup[0])
             saveRank(scores, results_path_rank+'rank_t4_rfe_'+method+'.csv')
 
             scores_weight = [(len(scores)-score[0],score[1],score[2]) for score in scores]
@@ -813,7 +820,7 @@ for option in filter_options:
             for i in range(len(traindata.genes)):                
                 score = np.mean(selector.stability_scores_[i])
                 scores.append((abs(score), geneIndex[traindata.genes[i]], traindata.genes[i]))
-            scores = sorted(scores, reverse = True)
+            scores = sorted(scores, reverse = True, key=lambda tup: tup[0])
             saveRank(scores, results_path_rank+'rank_t5_stability_'+method+'.csv')            
             scores = normalizeScores(scores)
             ranks['t5_stability_'+method] = scores        
@@ -862,7 +869,7 @@ for option in filter_options:
                 gene_name = traindata.genes[i]
                 scores.append((score_normal - np.mean(scores_shuffle), geneIndex[gene_name], gene_name))
                         
-            scores = sorted(scores, reverse = True)
+            scores = sorted(scores, reverse = True, key=lambda tup: tup[0])
             saveRank(scores, results_path_rank+'rank_t6_decrease_acc_'+method+'.csv')            
             scores = normalizeScores(scores)
             ranks['t6_decrease_acc_'+method] = scores        
@@ -899,7 +906,7 @@ for option in filter_options:
     matrix = []  
     for name in sorted(ranks.keys()):
         rank = ranks[name]              
-        row = [name] + [score[2] for score in rank]
+        row = [name] + [score[2] for score in sorted(rank, key=lambda tup: tup[0], reverse=True)]
         matrix.append(row)
     matrix = np.matrix(matrix).transpose()    
     filename = results_path+'all_ranks_prot_names.csv'
@@ -909,20 +916,19 @@ for option in filter_options:
     # Protein names are listed, values of the matrix are their Scores
     matrix = [['method']+train_dataset.genes]
     for name in sorted(ranks.keys()):
-        rank = ranks[name]    
-        # TODO VERIFY THE ORDER OF VALUES AND GENES... SEEMS TO BE UNPAIRED            
+        rank = ranks[name]                  
         order_by_index = sorted(rank, key=lambda tup: tup[1])
         values = [score[0] for score in order_by_index]
         row = [name] + values
         matrix.append(row)        
     matrix = np.matrix(matrix).transpose()   
-    mean_column = ['mean'] + np.array(matrix[1:,1:]).astype(float).mean(axis=1).tolist()
-    std_column = ['std'] +   np.array(matrix[1:,1:]).astype(float).std(axis=1).tolist()
-    new_matrix = np.matrix([mean_column,std_column]).transpose()
-    matrix = np.concatenate((matrix, new_matrix), axis=1)    
-    sorted_matrix = matrix[1:,:]
-    sorted_matrix.sort(axis=-2)
-    matrix = np.concatenate((matrix[0,:],sorted_matrix[::-1]), axis=0) #! Score: the greater the value, the more important is the protein
+    # mean_column = ['mean'] + np.array(matrix[1:,1:]).astype(float).mean(axis=1).tolist()
+    # std_column = ['std'] +   np.array(matrix[1:,1:]).astype(float).std(axis=1).tolist()
+    # new_matrix = np.matrix([mean_column,std_column]).transpose()
+    # matrix = np.concatenate((matrix, new_matrix), axis=1)    
+    # sorted_matrix = matrix[1:,:]
+    # sorted_matrix.sort(axis=-2)
+    # matrix = np.concatenate((matrix[0,:],sorted_matrix[::-1]), axis=0) #! Score: the greater the value, the more important is the protein
 
     filename = results_path+'all_ranks_scores.csv'
     np.savetxt(filename, matrix, delimiter=",", fmt='%s')
@@ -937,17 +943,36 @@ for option in filter_options:
         row = [name] + values
         matrix.append(row)
     matrix = np.matrix(matrix).transpose()   
-    mean_column = ['mean'] + np.array(matrix[1:,1:]).astype(int).mean(axis=1).tolist()
-    std_column = ['std'] +   np.array(matrix[1:,1:]).astype(int).std(axis=1).tolist()
-    new_matrix = np.matrix([mean_column,std_column]).transpose()
-    matrix = np.concatenate((matrix, new_matrix), axis=1)    
-    sorted_matrix = matrix[1:,:]
-    sorted_matrix.sort(axis=-2)
-    matrix = np.concatenate((matrix[0,:],sorted_matrix), axis=0)  #! Position: the lower the value, the more important is the protein
+    # mean_column = ['mean'] + np.array(matrix[1:,1:]).astype(int).mean(axis=1).tolist()
+    # std_column = ['std'] +   np.array(matrix[1:,1:]).astype(int).std(axis=1).tolist()
+    # new_matrix = np.matrix([mean_column,std_column]).transpose()
+    # matrix = np.concatenate((matrix, new_matrix), axis=1)    
+    # sorted_matrix = matrix[1:,:]
+    # sorted_matrix.sort(axis=-2)
+    # matrix = np.concatenate((matrix[0,:],sorted_matrix), axis=0)  #! Position: the lower the value, the more important is the protein
 
     filename = results_path+'all_ranks_positions.csv'
     np.savetxt(filename, matrix, delimiter=",", fmt='%s')    
 
+
+    freq_prot = {}
+    for gene in train_dataset.genes:
+        freq_prot[gene] = 0
+
+    for name in sorted(ranks.keys()):
+        rank = ranks[name][0:10]
+        for score in rank:
+            gene = score[2]
+            if gene in freq_prot:
+                freq_prot[gene]+=1
+
+    matrix = []
+    for gene in freq_prot.keys():
+        matrix.append([gene,freq_prot[gene]])
+
+    matrix = sorted(matrix, key=lambda tup: tup[1], reverse=True)
+    filename = results_path+'top_10_prot_frequency.csv'
+    np.savetxt(filename, matrix, delimiter=",", fmt='%s')
 
 
 

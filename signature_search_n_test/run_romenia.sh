@@ -1,0 +1,1 @@
+python ./src/main.py --projectName romenia_run_kruskal_fdr_100p_8fold --train dataset/romenia_all_samples.csv --k 8  --limitSignatureSize --onlyFilter --nJobs 8 --ignoreWarnings --testSize 0 
