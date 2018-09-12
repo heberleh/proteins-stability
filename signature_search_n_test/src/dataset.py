@@ -19,6 +19,7 @@ class Dataset(object):
         self.samples = None
         self.matrix = None
         self.labels = None
+        self.__geneIndex = {}
 
 
         if filename != None:
@@ -47,7 +48,7 @@ class Dataset(object):
 
         self.complete_dataset = np.matrix(self.complete_dataset)
         self.matrix = np.matrix(self.complete_dataset[2:, 1:]).astype(float).transpose()
-        self.genes = list(np.array(self.complete_dataset[2:, 0].transpose())[0])
+        self.setGenes(list(np.array(self.complete_dataset[2:, 0].transpose())[0]))        
         self.samples = list(np.array(self.complete_dataset[0, 1:])[0])
         self.labels = list(np.array(self.complete_dataset[1, 1:])[0])
         print("\n----- dataset reader ---------\n Samples found:" +str(self.samples) +"\n total size: " + str(len(self.samples))+'\n------------------------------\n')
@@ -57,6 +58,14 @@ class Dataset(object):
         """ Normalize into range 0-1
         """
         self.matrix = np.matrix(preprocessing.normalize(self.matrix))
+
+    def setGenes(self, genes):
+        self.genes = genes
+        self.__setGenesIndex()
+
+    def __setGenesIndex(self):
+        for index in range(len(self.genes)):
+            self.__geneIndex[self.genes[index]] = index
 
     def get_normalized_data(self):
         return preprocessing.normalize(self.matrix)
@@ -81,10 +90,10 @@ class Dataset(object):
         Parameters:
             genes: the genes will appear in the returned dataset.
         """
-        indexes = [self.genes.index(gene) for gene in genes]
+        indexes = [self.geneIndex(gene) for gene in genes]
 
         new_dataset = Dataset()
-        new_dataset.genes = genes
+        new_dataset.setGenes(genes)        
         new_dataset.matrix = self.matrix[:, indexes]
         new_dataset.labels = self.labels
         new_dataset.samples = self.samples
@@ -99,7 +108,7 @@ class Dataset(object):
         """        
         indexes = samples_indexes
         new_dataset = Dataset()
-        new_dataset.genes = self.genes
+        new_dataset.setGenes(self.genes)
         new_dataset.matrix = self.matrix[indexes, :]
         new_dataset.labels = list(np.array(self.labels)[indexes])
         new_dataset.samples = list(np.array(self.samples)[indexes])
@@ -155,3 +164,40 @@ class Dataset(object):
     
     def Y(self):
         return factorize(self.labels)[0]
+
+    def geneIndex(self, gene_name):        
+        return self.__geneIndex[gene_name]
+
+    def correlatedAttributes(self, threshold=0.95):
+        df = DataFrame(self.matrix)
+        corr_matrix = df.corr().abs()
+        upper = corr_matrix.where(np.triu(np.ones(corr_matrix.shape), k=1).astype(np.bool))
+        to_drop = [column for column in upper.columns if any(upper[column] > threshold)]
+        correlated_genes = {}
+        for gene in self.genes:
+            correlated_genes[gene] = set()
+
+        for i in to_drop:
+            for j in upper.columns:
+                if upper[i][j] > threshold:     
+                    correlated_genes[self.genes[j]].add(self.genes[i])
+        
+        genes_to_drop = [self.genes[i] for i in to_drop]
+
+
+        # for cases like  0 (1, 2)      2  (3)
+        # where 3 is highly correlated to 2, but is not highly as >threshold to 1 and 0...
+        # identify and consider them to be correlated, cause 3 and 2 will be dropped, and 3 needs to be linked to some other variable
+        for gene1 in correlated_genes:
+            for gene2 in correlated_genes[gene1]:
+                if len(correlated_genes[gene2]) > 0:
+                    correlated_genes[gene1] = correlated_genes[gene1] | correlated_genes[gene2]
+
+        new_correlated_genes = {}
+        for gene in correlated_genes.keys():
+            if gene not in genes_to_drop and len(correlated_genes[gene]) > 0:
+                new_correlated_genes[gene] = correlated_genes[gene]
+        correlated_genes = new_correlated_genes        
+
+        return {'corr_matrix':corr_matrix, 'correlated_genes':correlated_genes, 'genes_to_drop': genes_to_drop}
+

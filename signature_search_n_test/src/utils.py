@@ -6,6 +6,7 @@ import seaborn as sns
 import csv
 
 def saveHistogram(values, filename='histogram.png', dpi=300,  title='Histogram', xlabel='Values', ylabel='Counts', bins=20, rwidth=0.9, color='#607c8e', grid=True, ygrid=True, alpha=0.75, xlim=(0, 1)):
+
     commutes = pd.Series(np.array(values))
 
     commutes.plot.hist(grid=grid, bins=bins, rwidth=rwidth,
@@ -13,6 +14,9 @@ def saveHistogram(values, filename='histogram.png', dpi=300,  title='Histogram',
     plt.title(title)
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
+    plt.xticks(np.arange(0, 1, 0.025))
+    plt.tick_params(axis='both', which='major', labelsize=7, labelrotation=90)
+    plt.tick_params(axis='both', which='minor', labelsize=7, labelrotation=90)
     if ygrid:
         plt.grid(axis='y', alpha=alpha)
     plt.savefig(filename, dpi=dpi)
@@ -39,13 +43,19 @@ def saveScatterPlots(dataset, filename):
     g.savefig(filename, dpi=300)
     plt.close()
 
-def saveHeatMap(matrix, rows_labels, cols_labels, filename, metric='correlation', xticklabels=False):
+def saveHeatMap(matrix, rows_labels, cols_labels, filename, metric='correlation', xticklabels=False, yticklabels=True):
     dataset = pd.DataFrame(matrix, index=rows_labels, columns=cols_labels)
 
-    g = sns.clustermap(dataset, metric=metric, xticklabels=xticklabels)
+    g = sns.clustermap(dataset, metric=metric, xticklabels=xticklabels, yticklabels=yticklabels)
     g.savefig(filename, dpi=300)
     plt.close()
 
+def saveHeatMapScores(matrix, rows_labels, cols_labels, filename, metric='correlation'):
+    sns.set(font_scale=0.7)
+    dataset = pd.DataFrame(matrix, index=rows_labels, columns=cols_labels)
+    g = sns.clustermap(dataset, metric=metric, xticklabels=cols_labels, yticklabels=rows_labels)
+    g.savefig(filename, dpi=300)
+    plt.close()
 
 #todo save rank
 def saveRank(scores, filename):
@@ -84,3 +94,22 @@ def saveMatrix(matrix, csvfilepath):
     with open(csvfilepath, "w") as output:
         writer = csv.writer(output, lineterminator='\n')
         writer.writerows(matrix)
+
+    
+def saveScoresHistograms(methods_scores, n_col, filename='histogram.png', dpi=300,  title='Histogram', xlabel='Values', ylabel='Counts', bins=20, rwidth=0.9, color='#607c8e', grid=True, ygrid=True, alpha=0.75, xlim=(0, 1)):
+    n_hist = len(methods_scores)
+    n_row = h_hist/n_col
+
+    fig, axes = plt.subplots(nrows=n_row, ncols=n_col)
+    
+    count = 0
+    methods = sort(methods_scores.keys())
+    for row in axes:
+        for col in row:
+
+            values = [score[0] for score in methods_scores[methods[count]]]
+            count += 1
+
+            col.hist(values, n_bins=bins, density=True, histtype='bar', color=color) #, label=colors
+    plt.savefig(filename, dpi=dpi)
+    plt.close()
