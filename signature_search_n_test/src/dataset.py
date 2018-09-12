@@ -14,7 +14,7 @@ from pandas import factorize, DataFrame
 
 class Dataset(object):
 
-    def __init__(self, filename=None, scale=False, normalize=False, sep=";"):
+    def __init__(self, filename=None, scale=False, normalize=False, sep=","):
         self.genes = None
         self.samples = None
         self.matrix = None
@@ -36,7 +36,17 @@ class Dataset(object):
         if self.scale:
             self.__scale()
 
-    def __load(self, filename, sep=";"):
+    def save(self, filename, sep=","):
+        m = [[''] + self.samples]
+        m.append(['Protein'] + self.labels)
+        m_transposed = self.matrix.transpose()
+        for i in range(len(self.genes)):
+            m.append([self.genes[i] + m_transposed[i]])    
+        m = np.matrix(m).astype(float)
+        np.savetxt(filename, m, delimiter=sep, fmt='%s')    
+
+
+    def __load(self, filename, sep=","):
         self.complete_dataset = []
 
         with open(filename, 'rb') as csv_file:

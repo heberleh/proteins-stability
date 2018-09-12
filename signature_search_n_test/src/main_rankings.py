@@ -36,19 +36,9 @@ ap.add_argument('--train', help='Path for the train dataset.', action='store', r
 ap.add_argument('--test', help='Path for the independent test dataset.', action='store')
 
 default_test_size= 0.15
-ap.add_argument('--testSize', help='If --test is not defined, --test_size is used to define the independent test set size. If --test_size is set to 0.0, then the independent test is not performed; that is, only the CV is performed to evaluate the selected signatures.', action='store', type=float, default=-1)
-
-ap.add_argument('--nSSearch', help='Set the maximum number of proteins to search for small signatures formed by all prot. combinations (signature size).', action='store', type=int, default=3)
-
-ap.add_argument('--nSmall', help='Set the number of proteins considered small. If the total number of proteins in a dataset is smaller or equal than NSMALL, it will compute all combinations of proteins to form signatures. Otherwise, it will consider NSSEARCH to compute only combinations of size up to the value set for this parameter.', action='store', type=int, default=10)
-
-ap.add_argument('--topN', help='Create all combinations of top-N signatures from the average of ranks.', action='store', type=int, default=10)
-
-ap.add_argument('--deltaRankCutoff', help='The percentage of difference from the maximum score value that is used as cutoff univariate ranks. The scores are normalized between 0 and 1. So, if the maximum value is 0.9, and deltaRankCutoff is set to 0.05, the cutoff value is 0.85. Proteins with score >= 0.85 are selected to form signatures by top-N proteins.', action='store', type=float, default=0.10)
+ap.add_argument('--testSize', help='If --test is not defined, --test_size is used to define the independent test set size.', action='store', type=float, default=-1)
 
 ap.add_argument('--k', help='The value of K for all k-fold cross-validations.', action='store', type=int, default=10)
-
-ap.add_argument('--limitSignatureSize', help='Limit the size of signatures created by rank to the number of samples. For instance, when selecting top-N proteins using 30 samples, the maximum value of N is 30.', action='store_true')
 
 ap.add_argument('--nJobs', help='Number of parallel jobs when fitting models.', action='store', type=int, default=1)
 
@@ -66,20 +56,11 @@ print(args) # Values are saved in the report.txt file
 
 
 
-
-
-
-
-
-
-
-
-
 # ======== MAIN =========
 
 from random import shuffle
 from dataset import Dataset
-import datetime
+from datetime import datetime
 from time import gmtime, strftime
 import os
 from statsmodels.stats.multitest import fdrcorrection
@@ -93,12 +74,17 @@ import numpy as np
 from utils import saveRank, normalizeScores, getMaxNumberOfProteins, saveHeatMapScores
 from sklearn.metrics import f1_score
 from sklearn.preprocessing import label_binarize
+import seaborn as sns
 
 # detect the current working directory and print it
 current_path = os.getcwd()  
+
 print ("The current working directory is %s" % current_path)  
 
-dt = strftime("%d-%m-%y %H:%M:%S",gmtime())
+starting_time  = datetime.now()
+
+dt = datetime.now().strftime('%y-%m-%d %H-%M-%S')
+
 new_dir = current_path+'/results/'+ str(args['projectName']) +' ('+dt+')'
 try:  
     os.mkdir(new_dir)
@@ -109,10 +95,15 @@ else:
 results_path = new_dir + '/'
 
 
+
+
 train_dataset_path = args['train']
 dataset = Dataset(train_dataset_path, scale=False, normalize=False, sep=',')
 
+dataset.save(filename=results_path+'testing_save_dataset.csv')
+
 scoreEstimator = None
+
 
 
 # =========== Score estimator ===================
@@ -167,6 +158,10 @@ nJobs = args['nJobs']
 
 report.write('\n\n Score used for rankings with Classifiers is: %s\n' % scoreEstimator)
 report.write("Info about score: %s: \n\n" % scoreEstimatorInfo)
+
+report.write('Number of samples in the original dataset: %d\n' % len(dataset.samples))
+report.write('\n\nNumber of features in the original dataset: %d\n\n' % len(dataset.genes))
+report.flush()
 
 if test_dataset_path != None:
     try:
@@ -234,6 +229,8 @@ report.write('Test samples: %s\n\n' % str(test_dataset.samples))
 
 report.write('Number of classes: %d\n' % len(train_dataset.levels()))
 report.write('Classes: %s' % str(train_dataset.levels()))
+
+report.flush()
 
 if args['noFilter']:
     filter_options = ['noFilter']
@@ -354,9 +351,9 @@ for option in filter_options:
     fdr_cutoff = args['fdrPvalue']
     print('Computing corrected p-values by FDR.\n')
     #correct p-values
-    print('\nP-values before correction: %s \n\n' % str(p_values))
+    #print('\nP-values before correction: %s \n\n' % str(p_values))
     p_values_corrected = fdrcorrection(p_values, alpha=0.25, method='indep', is_sorted=False)[1]
-    print('P-values after correction: %s\n\n' % str(p_values_corrected))
+    #print('P-values after correction: %s\n\n' % str(p_values_corrected))
     filtered = [train_dataset.genes[i] for i in range(len(train_dataset.genes)) if p_values_corrected[i]<fdr_cutoff]
 
     method = stat_test_name+'_corrected_fdr.csv'
@@ -370,7 +367,7 @@ for option in filter_options:
     print('\nSelected proteins IF FDR correction: %s\n\n' % str(filtered))
 
     report.write('P-values were corrected by FDR and these are the remaining proteins with p-value < %f IF "--fdr" is set: %s\n' % (fdr_cutoff, str(filtered)))
-
+    report.flush()
     # ========= save graphics after FDR correction ===========
     if saveGraphics:
         saveHistogram(filename=results_path+'histogram_p_values_corrected_fdr.png', values=p_values_corrected, title=stat_test_name+' (corrected)', xlabel='p-values', ylabel='counts', bins=40, rwidth=0.9, color='#607c8e', grid=False, ygrid=True, alpha=0.75) 
@@ -440,7 +437,7 @@ for option in filter_options:
         for gene in correlated_genes:
             report.write('%s:     %s\n' % (gene, str(list(correlated_genes[gene]))))
         report.write('\n\n')
-
+        report.flush()
         # drop the correlated proteins
         genes = [gene for gene in train_dataset.genes]
         for gene in genes_to_drop:
@@ -457,13 +454,7 @@ for option in filter_options:
         exit()
 
 
-
-
-    #================== signatures by ranking =========================
-    # for each ranking method, create signatures by selecting top-N proteins
-    # if a signature exists, add the method to its methods list
-    # sum the ranks position for each protein
-    # SAVE ALL THE RANKS
+    #================== RANKING / ATTRIBUTE SCORES =========================
 
     from pandas import factorize    
     
@@ -487,9 +478,6 @@ for option in filter_options:
     from sklearn.feature_selection import SelectKBest
     from sklearn.feature_selection import chi2, mutual_info_classif
         
-    from signature import Signature
-
-    signatures_data = dict()
     proteins_ranks = []
     ranks = {}
 
@@ -502,12 +490,6 @@ for option in filter_options:
         print("Max value for K: %d\n" % train_dataset.getMinNumberOfSamplesPerClass())
         exit()
 
-    deltaScore = float(args['deltaRankCutoff'])
-
-    limitSigSize = args['limitSignatureSize']
-    maxNumberOfProteins = len(train_dataset.genes)
-    if limitSigSize:
-        maxNumberOfProteins = len(train_dataset.samples)
 
     type1, type2, type3, type4, type5, type6, type7 = True, True, True, True, True, True, True
     # True, True, True, True, True, True, True
@@ -557,8 +539,8 @@ for option in filter_options:
             return pipe.feature_importances_[i]
 
 
-    report.write('\n\nNumber of features: %d\n\n' % len(train_dataset.genes))
-
+    report.write('\n\nNumber of features to be ranked: %d\n\n' % len(train_dataset.genes))
+    report.flush()
 
     # Type 1: Model Based Ranking
     # Type 2: Attributes' Weights
@@ -567,37 +549,42 @@ for option in filter_options:
     # Type 5: Stability Selection
     # Type 6: Decrease of Accuracy
 
+    import re
+    def reportTop10Proteins(report, scores, correlated, header):
+        #! scores must be sorted
+        top_scores = scores[0:10]
+        genes = [item[2] for item in top_scores]        
+        scores_values = [item[0] for item in top_scores]
 
-    def storeSignaturesMaxSize(scores, method, signatures_data, maxNumberOfProteins):
-        for i in range(1,getMaxNumberOfProteins(scores, maxNumberOfProteins)+2):
-            genes_indexes = [item[1] for item in scores[0:i]]
-            sig = Signature(genes_indexes)
-            if sig in signatures_data:
-                signatures_data[sig]['methods'].add(method)
-            else:
-                sig_data = {'methods':set()}
-                sig_data['methods'].add(method)
-                signatures_data[sig] = sig_data
-    
-    def getBestSignatureByCV(scores, estimator, maxNumberOfProteins, k, rep, n_jobs):            
-        signatures = []
-        max_score = 0.0       
-        cv_scores = []
-        genes_indexes = [item[1] for item in scores] #ordered by rank
-        for i in range(1, getMaxNumberOfProteins(scores, maxNumberOfProteins)+2):            
-            sig_indexes = genes_indexes[0:i]
-            # evaluate this signature for each estimator
-            # cross-validation
-            cv_score = None
-            #? store cv score (F1?) and estimator name in Signature
-            if max_score < cv_score:
-                max_score = cv_score
-            cv_scores.append(cv_scores)
-        
-        n = cv_scores.index(max_score)
-        # n: 0 -> genes_indexes[0:1]        
-        return {'genes_indexes': genes_indexes[0:n+1], 'cv_score': max_score}
+        correlated_genes = set()
+        for gene in genes:
+            if gene in correlated:
+                for corr in correlated[gene]:
+                    correlated_genes.add(corr)
 
+        genes_str = re.sub('[|]|(|)|set','',str(genes))
+        correlated_genes_str = re.sub('[|]|(|)|set','',str(correlated_genes))
+        report.write(header+'\n')
+        report.write('Min/Max scores of top-10 proteins: %s\n' % (str(np.min(scores_values))+'/'+str(np.max(scores_values))))
+        report.write('Top-10 proteins:\n %s\n' % genes_str)
+        report.write('Correlated genes: %s\n\n' % correlated_genes_str)
+        report.flush()
+
+    def sortSaveNormalizeAndSave(scores, path, filename, inverse=False):
+        reverse = True
+        if inverse:
+            reverse = False
+
+        scores = sorted(scores, reverse = reverse, key=lambda tup: tup[0])        
+        saveRank(scores, path + filename + '.csv')
+
+        if inverse:        
+            scores = [(1-score[0], score[1], score[2]) for score in scores]             
+
+        scores = normalizeScores(scores)        
+        saveRank(scores, path + filename + '_normalizedMinMax.csv' )
+
+        return scores
 
 
     # ---------------------- Type 1 - Model Based Ranks -------------------------
@@ -613,22 +600,13 @@ for option in filter_options:
             scores_cv = cross_val_score(clone(clf), x_train, y_train, cv=k, scoring=scoreEstimator)
             score = np.mean(scores_cv)
             scores.append((score, train_dataset.geneIndex(train_dataset.genes[i]), train_dataset.genes[i]))
-        scores = sorted(scores, reverse = True, key=lambda tup: tup[0])
-        saveRank(scores, results_path_rank+'rank_t1_uni_random_forest_mean_accuracy.csv')
-        scores = normalizeScores(scores)
-        ranks['t1_uni_random_forest'] = scores
-        saveRank(scores, results_path_rank+'rank_t1_uni_random_forest_mean_accuracy_normalizedMinMax.csv')
-        maxScore = max(scores,key=lambda item:item[0])[0]
-        cutoffScore = maxScore-deltaScore
-        genes_to_show = [item for item in scores if item[0] > cutoffScore]
-        
-        method = 'type1_random_forest'
-        storeSignaturesMaxSize(scores, method, signatures_data, maxNumberOfProteins)
-        
-        report.write('-- Type 1 - Model Based Rank - Random Forests --\n')
-        report.write('Number of proteins with score > %f (max-deltaRankCutoff): %d:\n%s\n' %(cutoffScore, len(genes_to_show), str(genes_to_show))) 
-        report.write('\n\n')
 
+        filename = 'rank_t1_uni_random_forest'
+        method_name = 't1_uni_random_forest'
+        header = '-- Type 1 - Model Based Rank - Random Forests --'
+        ranks[method_name] = sortSaveNormalizeAndSave(scores, results_path_rank, filename)        
+        reportTop10Proteins(report, scores, correlated_genes, header)                     
+    
 
     # ---------------------- Type 2 - Rank based on attribute Weights -------------------------
     if type2:
@@ -643,28 +621,19 @@ for option in filter_options:
             scores = []
             for i in range(len(train_dataset.genes)):
                 score = getScore(traindata, pipe.named_steps['clf'], name, i)
-                scores.append((abs(score), train_dataset.geneIndex(train_dataset.genes[i]), train_dataset.genes[i]))            
-            scores = sorted(scores, reverse = True, key=lambda tup: tup[0])
-            saveRank(scores, results_path_rank+'rank_t2_weights_'+method+'.csv')
-            scores = normalizeScores(scores)
-            ranks['t2_weights_rank_'+method]= scores
-            saveRank(scores, results_path_rank+'rank_t2_weights_'+method+'_normalizedMinMax.csv')
+                scores.append((abs(score), train_dataset.geneIndex(train_dataset.genes[i]), train_dataset.genes[i]))       
 
-            maxScore = max(scores,key=lambda item:item[0])[0]
-            cutoffScore = maxScore-deltaScore
-            genes_to_show = [item for item in scores if item[0] > cutoffScore]
+            filename = 'rank_t2_weights_'+method
+            method_name = 't2_weights_rank_'+method
+            header = '-- Type 2 - Attributes\' Weights - '+name+' --'
+            ranks[method_name] = sortSaveNormalizeAndSave(scores, results_path_rank, filename)   
+            reportTop10Proteins(report, scores, correlated_genes, header)   
 
-            method='type2_'+method
-            storeSignaturesMaxSize(scores, method, signatures_data, maxNumberOfProteins)
-
-            report.write('-- Type 2 - Attributes\' Weights - '+name+' --\n') 
-            report.write('Number of proteins with score > %f (max-deltaRankCutoff): %d:\n%s\n' %(cutoffScore, len(genes_to_show), str(genes_to_show)))
-            report.write('\n\n')        
-        
 
         for estimator in estimators:
             print('Attribute Weights: %s' % estimator['name'])
             regularizationRank(estimator, train_dataset)
+        
 
     # 
     # ---------------------- Type 3 - Univariate Ranks -------------------------
@@ -698,26 +667,12 @@ for option in filter_options:
             score = (p[i],  train_dataset.geneIndex(train_dataset.genes[i]),  train_dataset.genes[i])
             scores.append(score)
 
-        scores = sorted(scores, reverse = False, key=lambda tup: tup[0])
-        saveRank(scores, results_path_rank+'rank_t3_uni_'+name+'_pvalue.csv')
-        # ! Weight of attribute is 1-p_value
-        scores_weight  = [(1-score[0],score[1],score[2]) for score in scores]
-        scores = sorted(scores, reverse = True, key=lambda tup: tup[0])
-        scores_weight = normalizeScores(scores_weight)
-        ranks['t3_uni_'+name]=scores_weight
-        saveRank(scores_weight, results_path_rank+'rank_t3_uni_'+name+'_1MinusPvalue_normalizedMinMax.csv')
-
-        minScore = min(scores,key=lambda item:item[0])[0]
-        cutoffScore = minScore+deltaScore
-        genes_to_show = [item for item in scores if item[0] < cutoffScore]
-        
-        method = 'univariate_statistic'+'_'+name
-        storeSignaturesMaxSize(scores_weight, method, signatures_data, maxNumberOfProteins)
-
-        report.write('-- Type 3 - Univariate by Statistical-test P-value - '+name+' --\n')
-        report.write('Minimum p-value: %f\n' %minScore)
-        report.write('%d proteins have p-value < %f (min+deltaRankCutoff): %s\n' %(len(genes_to_show), cutoffScore, str(genes_to_show)))
-        report.write('\n\n')
+        filename = 'rank_t3_uni_'+name
+        method_name = 't3_uni_'+name
+        header = '-- Type 3 - Univariate by Statistical-test P-value - '+name+' --'
+        #! inverse must be True, so that the function will do [1-p-value] to be the score
+        ranks[method_name] = sortSaveNormalizeAndSave(scores, results_path_rank, filename, inverse=True)        
+        reportTop10Proteins(report, scores, correlated_genes, header)   
         #-----------------------------------------------------------------------------
 
 
@@ -732,24 +687,12 @@ for option in filter_options:
         for i in range(len(train_dataset.genes)):
             score = test.scores_[i]
             scores.append((score, train_dataset.geneIndex(train_dataset.genes[i]), train_dataset.genes[i]))
-        scores = sorted(scores, reverse = True, key=lambda tup: tup[0])
-        saveRank(scores, results_path_rank+'rank_t3_uni_chi_squared_score.csv')
-        scores = normalizeScores(scores)
-        ranks['t3_uni_chi_squared'] = scores
-        saveRank(scores, results_path_rank+'rank_t3_uni_chi_squared_score_normalized01.csv')
 
-        maxScore = max(scores,key=lambda item:item[0])[0]
-        cutoffScore = maxScore-deltaScore
-        genes_to_show = [item for item in scores if item[0] > cutoffScore]
-
-        
-        method = 'univariate_chi_squared'
-        storeSignaturesMaxSize(scores, method, signatures_data, maxNumberOfProteins)
-
-        report.write('-- Type 3 - Univariate by Statistical-test - Chi-Squared --\n')
-        report.write('Number of proteins with score > %f (max-deltaRankCutoff): %d:\n%s\n' %(cutoffScore, len(genes_to_show), str(genes_to_show)))
-        report.write('\n\n')
-
+        filename = 'rank_t3_uni_chi_squared'
+        method_name = 't3_uni_chi_squared'
+        header = '-- Type 3 - Univariate by Statistical-test - Chi-Squared --'
+        ranks[method_name] = sortSaveNormalizeAndSave(scores, results_path_rank, filename)   
+        reportTop10Proteins(report, scores, correlated_genes, header)  
 
 
 
@@ -763,25 +706,12 @@ for option in filter_options:
         for i in range(len(train_dataset.genes)):
             score = test.scores_[i]
             scores.append((score, train_dataset.geneIndex(train_dataset.genes[i]), train_dataset.genes[i]))
-        
-        scores = sorted(scores, reverse = True, key=lambda tup: tup[0])
-        saveRank(scores, results_path_rank+'rank_t3_uni_mutual_inf_score.csv')
-        scores = normalizeScores(scores)
-        ranks['t3_uni_mutual_inf'] = scores
-        saveRank(scores, results_path_rank+'rank_t3_uni_mutual_inf_score_normalized01.csv')
 
-        maxScore = max(scores,key=lambda item:item[0])[0]
-        cutoffScore = maxScore-deltaScore
-        genes_to_show = [item for item in scores if item[0] > cutoffScore]
-
-        
-        method = 'univariate_mutual_information'
-        storeSignaturesMaxSize(scores, method, signatures_data, maxNumberOfProteins)
-
-        report.write('-- Type 3 - Univariate by Statistical-test - Mutual Information --\n')        
-        report.write('Number of proteins with score > %f (max-deltaRankCutoff): %d:\n%s\n' %(cutoffScore, len(genes_to_show), str(genes_to_show)))
-        report.write('\n\n')
-
+        filename = 'rank_t3_uni_mutual_inf'
+        method_name = 't3_uni_mutual_inf'
+        header = '-- Type 3 - Univariate by Statistical-test - Mutual Information --'
+        ranks[method_name] = sortSaveNormalizeAndSave(scores, results_path_rank, filename)   
+        reportTop10Proteins(report, scores, correlated_genes, header)  
 
 
         #---------- ANOVA F-value ----------
@@ -795,23 +725,11 @@ for option in filter_options:
             score = test.scores_[i]
             scores.append((score, train_dataset.geneIndex(train_dataset.genes[i]), train_dataset.genes[i]))
         
-        scores = sorted(scores, reverse = True, key=lambda tup: tup[0])
-        saveRank(scores, results_path_rank+'rank_t3_uni_anova_fvalue_score.csv')
-        scores = normalizeScores(scores)
-        ranks['t3_uni_anova_fvalue'] = scores
-        saveRank(scores, results_path_rank+'rank_t3_uni_anova_fvalue_score_normalized01.csv')
-
-        maxScore = max(scores,key=lambda item:item[0])[0]
-        cutoffScore = maxScore-deltaScore
-        genes_to_show = [item for item in scores if item[0] > cutoffScore]
-
-        
-        method = 'univariate_anova_fvalue'
-        storeSignaturesMaxSize(scores, method, signatures_data, maxNumberOfProteins)
-        
-        report.write('-- Type 3 - Univariate by Statistical-test - ANOVA F-value --\n')
-        report.write('Number of proteins with score > %f (max-deltaRankCutoff): %d:\n%s\n' %(cutoffScore, len(genes_to_show), str(genes_to_show)))
-        report.write('\n\n')
+        filename = 'rank_t3_uni_anova_fvalue'
+        method_name = 't3_uni_anova_fvalue'
+        header = '-- Type 3 - Univariate by Statistical-test - ANOVA F-value --'
+        ranks[method_name] = sortSaveNormalizeAndSave(scores, results_path_rank, filename)   
+        reportTop10Proteins(report, scores, correlated_genes, header)  
 
 
     #---------- Type 4 - Recursive Feature Elimination (RFE) ----------
@@ -828,25 +746,12 @@ for option in filter_options:
             for i in range(len(traindata.genes)):
                 score = float(rfe.ranking_[i])
                 scores.append((abs(score), train_dataset.geneIndex(traindata.genes[i]), traindata.genes[i]))          
-            scores = sorted(scores, reverse = False, key=lambda tup: tup[0])
-            saveRank(scores, results_path_rank+'rank_t4_rfe_'+method+'.csv')
 
-            scores_weight = [(len(scores)-score[0],score[1],score[2]) for score in scores]
-            scores_weight = normalizeScores(scores_weight)
-            
-            ranks['t4_'+method] = scores_weight        
-            saveRank(scores_weight, results_path_rank+'rank_t4_rfe_'+method+'_normalizedMinMax.csv') 
-            maxScore = max(scores_weight,key=lambda item:item[0])[0]
-            cutoffScore = maxScore-deltaScore
-            genes_to_show = [item for item in scores if item[0] > cutoffScore]
-
-            
-            storeSignaturesMaxSize(scores_weight, method, signatures_data, maxNumberOfProteins)
-
-            report.write('-- Type 3 - Recursive Feature Elimination - '+name+' --\n') 
-            report.write('Number of proteins with normalized score > %f (max-deltaRankCutoff): %d:\n%s\n' %(cutoffScore, len(genes_to_show), str(genes_to_show)))
-            report.write('\n\n')
-
+            filename = 'rank_t4_rfe_'+method
+            method_name = 't4_rfe_'+method
+            header = '-- Type 4 - Recursive Feature Elimination - '+name+' --'
+            ranks[method_name] = sortSaveNormalizeAndSave(scores, results_path_rank, filename)   
+            reportTop10Proteins(report, scores, correlated_genes, header)              
 
         for estimator in estimators:
             print('RFE: '+estimator['name'])
@@ -905,20 +810,12 @@ for option in filter_options:
             for i in range(len(traindata.genes)):                
                 score = np.mean(selector.stability_scores_[i])
                 scores.append((abs(score), train_dataset.geneIndex(traindata.genes[i]), traindata.genes[i]))
-            scores = sorted(scores, reverse = True, key=lambda tup: tup[0])
-            saveRank(scores, results_path_rank+'rank_t5_stability_'+method+'.csv')            
-            scores = normalizeScores(scores)
-            ranks['t5_stability_'+method] = scores        
-            saveRank(scores, results_path_rank+'rank_t5_stability_'+method+'_normalizedMinMax.csv') 
-            maxScore = max(scores,key=lambda item:item[0])[0]
-            cutoffScore = maxScore-deltaScore
-            genes_to_show = [item for item in scores if item[0] > cutoffScore]
-            
-            storeSignaturesMaxSize(scores, method, signatures_data, maxNumberOfProteins)
-
-            report.write('-- Type 5 -- Stability Selection - '+name+' --\n')
-            report.write('Number of proteins with score > %f (max-deltaRankCutoff): %d:\n%s\n' %(cutoffScore, len(genes_to_show), str(genes_to_show)))
-            report.write('\n\n')
+                
+            filename = 'rank_t5_stability_'+method
+            method_name = 't5_stability_'+method
+            header = '-- Type 5 -- Stability Selection - '+name+' --'
+            ranks[method_name] = sortSaveNormalizeAndSave(scores, results_path_rank, filename)   
+            reportTop10Proteins(report, scores, correlated_genes, header)                
 
         for estimator in estimators:
             print('Stability selection: %s' % estimator['name'])
@@ -945,22 +842,13 @@ for option in filter_options:
                     score = np.mean(cross_val_score(clone(estimator['model']), X_shuffled, y, cv = k, scoring=scoreEstimator))
                     scores_shuffle.append(score)               
                 gene_name = traindata.genes[i]
-                scores.append((score_normal - np.mean(scores_shuffle), train_dataset.geneIndex(gene_name), gene_name))
-                        
-            scores = sorted(scores, reverse = True, key=lambda tup: tup[0])
-            saveRank(scores, results_path_rank+'rank_t6_decrease_acc_'+method+'.csv')            
-            scores = normalizeScores(scores)
-            ranks['t6_decrease_acc_'+method] = scores        
-            saveRank(scores, results_path_rank+'rank_t6_decrease_acc_'+method+'_normalizedMinMax.csv') 
-            maxScore = max(scores,key=lambda item:item[0])[0]
-            cutoffScore = maxScore-deltaScore
-            genes_to_show = [item for item in scores if item[0] > cutoffScore]
-            
-            storeSignaturesMaxSize(scores, method, signatures_data, maxNumberOfProteins)
+                scores.append((score_normal - np.mean(scores_shuffle), train_dataset.geneIndex(gene_name), gene_name))                    
 
-            report.write('-- Type 6 --- Mean Decrease Accuracy - '+name+' --\n')
-            report.write('Number of proteins with score > %f (max-deltaRankCutoff): %d:\n%s\n' %(cutoffScore, len(genes_to_show), str(genes_to_show)))
-            report.write('\n\n')        
+            filename = 'rank_t6_decrease_acc_'+method
+            method_name = 't6_decrease_acc_'+method
+            header = '-- Type 6 --- Mean Decrease Accuracy - '+name+' --'
+            ranks[method_name] = sortSaveNormalizeAndSave(scores, results_path_rank, filename)   
+            reportTop10Proteins(report, scores, correlated_genes, header)    
         
         for estimator in estimators:            
             print('Decrease Accuracy: %s' % estimator['name'])
@@ -1052,6 +940,42 @@ for option in filter_options:
     filename = results_path+'all_ranks_positions.csv'
     np.savetxt(filename, matrix, delimiter=",", fmt='%s')    
 
+    # save Heatmap of positions    
+    row_lables = np.squeeze(np.asarray(matrix[1:,0]))
+    cols_labels=np.squeeze(np.asarray(matrix[0,1:]))
+    num_matrix = matrix[1:,1:].astype(int)
+
+
+    cmap = "Blues"
+
+    filename = results_path+'all_ranks_positions_heatmap_euclidean.png'
+    saveHeatMapScores(num_matrix, rows_labels=row_lables , cols_labels=cols_labels, filename=filename, metric='euclidean', colors=cmap)
+
+    if len(train_dataset.genes) > 3:
+        filename = results_path+'all_ranks_positions_heatmap_euclidean_cutoff_3.png'
+        num_matrix_cutoff = num_matrix.copy()
+        np.minimum(num_matrix_cutoff, 3, num_matrix_cutoff)
+        saveHeatMapScores(num_matrix_cutoff, rows_labels=row_lables , cols_labels=cols_labels, filename=filename, metric='euclidean', colors=cmap)
+
+    if len(train_dataset.genes) > 5:
+        filename = results_path+'all_ranks_positions_heatmap_euclidean_cutoff_5.png'
+        num_matrix_cutoff = num_matrix.copy()
+        np.minimum(num_matrix_cutoff, 5, num_matrix_cutoff)
+        saveHeatMapScores(num_matrix_cutoff, rows_labels=row_lables , cols_labels=cols_labels, filename=filename, metric='euclidean', colors=cmap)
+
+    if len(train_dataset.genes) > 10: 
+        filename = results_path+'all_ranks_positions_heatmap_euclidean_cutoff_10.png'
+        num_matrix_cutoff = num_matrix.copy()
+        np.minimum(num_matrix_cutoff, 10, num_matrix_cutoff)
+        saveHeatMapScores(num_matrix_cutoff, rows_labels=row_lables , cols_labels=cols_labels, filename=filename, metric='euclidean', colors=cmap)
+
+    if len(train_dataset.genes) > 15: 
+        filename = results_path+'all_ranks_positions_heatmap_euclidean_cutoff_15.png'
+        num_matrix_cutoff = num_matrix.copy()
+        np.minimum(num_matrix_cutoff, 15, num_matrix_cutoff)
+        saveHeatMapScores(num_matrix_cutoff, rows_labels=row_lables , cols_labels=cols_labels, filename=filename, metric='euclidean', colors=cmap)
+
+
 
     freq_prot = {}
     for gene in train_dataset.genes:
@@ -1093,8 +1017,11 @@ for option in filter_options:
     # todo write results on Report
 
 
-report.close()
+time_message = '\n\nIt took %s to complete the script.\n' % str(datetime.now()-starting_time )
+print(time_message)
+report.write(time_message)
 
+report.close()
 
 #  ================ END MAIN ===============
 

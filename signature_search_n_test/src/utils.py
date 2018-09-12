@@ -50,10 +50,10 @@ def saveHeatMap(matrix, rows_labels, cols_labels, filename, metric='correlation'
     g.savefig(filename, dpi=300)
     plt.close()
 
-def saveHeatMapScores(matrix, rows_labels, cols_labels, filename, metric='correlation'):
+def saveHeatMapScores(matrix, rows_labels, cols_labels, filename, metric='correlation', colors=sns.cm.rocket):
     sns.set(font_scale=0.7)
     dataset = pd.DataFrame(matrix, index=rows_labels, columns=cols_labels)
-    g = sns.clustermap(dataset, metric=metric, xticklabels=cols_labels, yticklabels=rows_labels)
+    g = sns.clustermap(dataset, metric=metric, xticklabels=cols_labels, yticklabels=rows_labels, cmap=colors)
     g.savefig(filename, dpi=300)
     plt.close()
 
