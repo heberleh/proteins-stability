@@ -77,6 +77,7 @@ from utils import saveRank, normalizeScores, getMaxNumberOfProteins, saveHeatMap
 from sklearn.metrics import f1_score
 from sklearn.preprocessing import label_binarize
 import seaborn as sns
+from recursiveFeatureAddition import RFA
 
 # detect the current working directory and print it
 current_path = os.getcwd()  
@@ -452,7 +453,7 @@ for option in filter_options:
             for gene2 in correlated_genes[gene1]:
                 corr_genes_indexes.add(train_dataset.geneIndex(gene2))
 
-        corr_genes_indexes = list(corr_genes_indexes)        
+        corr_genes_indexes = list(corr_genes_indexes)
         corr_genes_names = np.array(train_dataset.genes)[corr_genes_indexes]
         correlated_correlation_matrix = np.matrix(corr_matrix).astype(float)
         ixgrid = np.ix_(corr_genes_indexes, corr_genes_indexes)
@@ -532,7 +533,7 @@ for option in filter_options:
     type1, type2, type3, type4, type5, type6, type7 = True, True, True, True, True, True, True
     # True, True, True, True, True, True, True
     #type1, type2, type3, type4, type5, type6, type7 = False, False, True, False, False, False, False
-    #type1, type2, type3, type4, type5, type6, type7 = False, True, True, False, False, False, False
+    type1, type2, type3, type4, type5, type6, type7 = False, False, False, True, False, False, True
 
 
     # Benchmark of best parameter C for L1 and L2
@@ -613,10 +614,11 @@ for option in filter_options:
         scores = sorted(scores, reverse = reverse, key=lambda tup: tup[0])        
         saveRank(scores, path + filename + '.csv')
 
+        scores = normalizeScores(scores) 
+
         if inverse:        
             scores = [(1-score[0], score[1], score[2]) for score in scores]             
-
-        scores = normalizeScores(scores)        
+               
         saveRank(scores, path + filename + '_normalizedMinMax.csv' )
 
         return scores
@@ -791,7 +793,7 @@ for option in filter_options:
             filename = 'rank_t4_rfe_'+method
             method_name = 't4_rfe_'+method
             header = '-- Type 4 - Recursive Feature Elimination - '+name+' --'
-            scores = sortSaveNormalizeAndSave(scores, results_path_rank, filename)
+            scores = sortSaveNormalizeAndSave(scores, results_path_rank, filename, inverse=True)
             ranks[method_name] = scores     
             reportTop10Proteins(report, scores, correlated_genes, header)               
 
@@ -900,6 +902,32 @@ for option in filter_options:
 
 
 
+    #---------- Type 7 - Recursive Feature Elimination (RFA) ----------
+    if type7:
+        print('\nExecuting Type 7\n')
+        def rfaRank(estimator, traindata):        
+            model = clone(estimator['model'])
+            name = estimator['name']
+            method = name.lower().replace(" ","_")
+                    
+            rfa = RFA(model, n_features_to_select=1)
+            rfa.fit(StandardScaler().fit_transform(traindata.X()),traindata.Y())
+            scores = []        
+            for i in range(len(traindata.genes)):
+                score = float(rfa.ranking_[i])
+                scores.append((abs(score), train_dataset.geneIndex(traindata.genes[i]), traindata.genes[i]))          
+
+            filename = 'rank_t7_rfa_'+method
+            method_name = 't7_rfa_'+method
+            header = '-- Type 7 - Recursive Feature Addition - '+name+' --'
+            scores = sortSaveNormalizeAndSave(scores, results_path_rank, filename, inverse=True)
+            ranks[method_name] = scores     
+            reportTop10Proteins(report, scores, correlated_genes, header)               
+
+        for estimator in estimators:
+            print('RFA: '+estimator['name'])
+            rfaRank(estimator, train_dataset)
+        print("\n")
 
 
 
@@ -1041,15 +1069,16 @@ for option in filter_options:
     np.savetxt(filename, matrix, delimiter=",", fmt='%s')
 
 
-    filename = results_path+'correlated_genes.csv'
-    with open(filename, 'w') as csv_file:        
-        for gene1 in correlated_genes.keys():            
-            line = gene1
-            for gene2 in correlated_genes[gene1]:
-                line = line+','+gene2
-            line+='\n'
-            csv_file.write(line)
-        csv_file.close()
+    if correlation:
+        filename = results_path+'correlated_genes.csv'
+        with open(filename, 'w') as csv_file:        
+            for gene1 in correlated_genes.keys():            
+                line = gene1
+                for gene2 in correlated_genes[gene1]:
+                    line = line+','+gene2
+                line+='\n'
+                csv_file.write(line)
+            csv_file.close()
 
 
 
