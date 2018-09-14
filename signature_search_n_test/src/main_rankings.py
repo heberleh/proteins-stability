@@ -50,6 +50,8 @@ ap.add_argument('--corrThreshold', help='Cuttoff for correlation.', action='stor
 
 ap.add_argument('--positiveClass', help='The positive class name.', action='store')
 
+ap.add_argument('--smote', help='Balance the dataset with oversampling.', action='store_true')
+
 args = vars(ap.parse_args())
 print(args) # Values are saved in the report.txt file
 
@@ -95,20 +97,18 @@ else:
 results_path = new_dir + '/'
 
 
-
-
 train_dataset_path = args['train']
 dataset = Dataset(train_dataset_path, scale=False, normalize=False, sep=',')
 
-dataset.save(filename=results_path+'testing_save_dataset.csv')
+dataset.saveFile(filename=results_path+'testing_save_dataset.csv')
 
 scoreEstimator = None
 
 
-
 # =========== Score estimator ===================
-from sklearn.metrics import make_scorer, matthews_corrcoef
+from sklearn.metrics import make_scorer, matthews_corrcoef, cohen_kappa_score
 matthews_scorer = make_scorer(matthews_corrcoef)
+kappa_scorer = make_scorer(cohen_kappa_score)
 
 uni, counts = np.unique(dataset.Y(), return_counts=True)
 
@@ -117,7 +117,7 @@ if len(dataset.levels()) == 2 and counts[0] == counts[1]:
     scoreEstimatorInfo = """
     """
 elif len(dataset.levels()) == 3 or len(dataset.levels()) == 2:
-    scoreEstimator = matthews_scorer#'matthews_corrcoef'
+    scoreEstimator = kappa_scorer#'matthews_corrcoef'
     scoreEstimatorInfo = """
     
     Chosen score estimator for imbalanced classes.
@@ -138,9 +138,6 @@ else:
 
 
 #===================================
-
-
-
 
 
 geneNames = [gene for gene in dataset.genes]
@@ -352,7 +349,7 @@ for option in filter_options:
     print('Computing corrected p-values by FDR.\n')
     #correct p-values
     #print('\nP-values before correction: %s \n\n' % str(p_values))
-    p_values_corrected = fdrcorrection(p_values, alpha=0.25, method='indep', is_sorted=False)[1]
+    p_values_corrected = fdrcorrection(p_values, alpha=0.05, method='indep', is_sorted=False)[1]
     #print('P-values after correction: %s\n\n' % str(p_values_corrected))
     filtered = [train_dataset.genes[i] for i in range(len(train_dataset.genes)) if p_values_corrected[i]<fdr_cutoff]
 
@@ -413,7 +410,9 @@ for option in filter_options:
     if correlation:       
         print('Filtering by Correlation.\n') 
         result = train_dataset.correlatedAttributes(threshold=corr_threshold)
-        corr_matrix = result['corr_matrix']
+        corr_matrix = abs(result['corr_matrix'])
+        corr_pvalues = result['p_values_matrix']
+        corr_pvalues_corrected = result['p_values_corrected_matrix']
         correlated_genes = result['correlated_genes']
         genes_to_drop = result['genes_to_drop']
         
@@ -424,7 +423,7 @@ for option in filter_options:
         new_matrix = []
         for row in corr_matrix:           
             new_row = []
-            for value in corr_matrix[row]:                                
+            for value in row:                                
                 if value < corr_threshold:
                     new_row.append(0.0)
                 else:
@@ -436,13 +435,35 @@ for option in filter_options:
         report.write('\nThe following Genes are correlated to another and will not be considered in the Machine Learning steps: %s\n\nCorrelated Genes:\n' % str(genes_to_drop))
         for gene in correlated_genes:
             report.write('%s:     %s\n' % (gene, str(list(correlated_genes[gene]))))
+
+        report.write('\nCorrelations:\n\n')
+        for gene1 in correlated_genes:
+            for gene2 in correlated_genes[gene1]:
+                it, jt = train_dataset.geneIndex(gene1), train_dataset.geneIndex(gene2)
+                i = min([it,jt])
+                j = max([it,jt])
+                report.write(gene1 + ' * ' + gene2 + '= corr: ' +str(np.round(corr_matrix[i,j], decimals=2)) +  ', pvalue: ' + str(np.round(corr_pvalues[i,j],decimals=5)) + ', fdr: '+ str(np.round(corr_pvalues_corrected[i,j], decimals=5))+'\n')
         report.write('\n\n')
         report.flush()
+
+        corr_genes_indexes = set()        
+        for gene1 in correlated_genes:
+            corr_genes_indexes.add(train_dataset.geneIndex(gene1))
+            for gene2 in correlated_genes[gene1]:
+                corr_genes_indexes.add(train_dataset.geneIndex(gene2))
+
+        corr_genes_indexes = list(corr_genes_indexes)        
+        corr_genes_names = np.array(train_dataset.genes)[corr_genes_indexes]
+        correlated_correlation_matrix = np.matrix(corr_matrix).astype(float)
+        ixgrid = np.ix_(corr_genes_indexes, corr_genes_indexes)
+        correlated_correlation_matrix= correlated_correlation_matrix[ixgrid]
+        print(correlated_correlation_matrix)
+        saveHeatMap(abs(correlated_correlation_matrix), corr_genes_names, corr_genes_names, xticklabels=corr_genes_names, yticklabels=corr_genes_names, filename=results_path+'heatmap_correlated_genes.png', metric='euclidean')
+
         # drop the correlated proteins
         genes = [gene for gene in train_dataset.genes]
         for gene in genes_to_drop:
             genes.remove(gene)
-
         train_dataset = train_dataset.get_sub_dataset(genes)
         test_dataset = test_dataset.get_sub_dataset(genes)
 
@@ -454,7 +475,24 @@ for option in filter_options:
         exit()
 
 
-    #================== RANKING / ATTRIBUTE SCORES =========================
+
+    # ======================================================================
+    # ================== RANKING / ATTRIBUTE SCORES ========================
+    # ======================================================================
+
+    test_dataset.saveFile(filename=results_path+'dataset_test_from_scrip.csv')
+    train_dataset.saveFile(filename=results_path+'dataset_train_from_scrip.csv')
+    if args['smote']:
+        report.write("\n\n Number of samples before SMOTE: %d" % len(train_dataset.samples))
+        train_dataset = train_dataset.getSmote(invert=True)
+        train_dataset.saveFile(filename=results_path+'dataset_train_from_scrip_SMOTEs.csv')
+        report.write("\n\n Number of samples after SMOTE: %d" % len(train_dataset.samples))
+
+    report.write('Number of samples used in the ML: %d\n' % len(train_dataset.samples))
+    report.write('Number of samples in the independent test dataset used in the ML: %d \n\n' % len(test_dataset.samples))
+    report.write('\n\nNumber of features to be ranked: %d\n\n' % len(train_dataset.genes))
+    report.flush()
+
 
     from pandas import factorize    
     
@@ -539,9 +577,6 @@ for option in filter_options:
             return pipe.feature_importances_[i]
 
 
-    report.write('\n\nNumber of features to be ranked: %d\n\n' % len(train_dataset.genes))
-    report.flush()
-
     # Type 1: Model Based Ranking
     # Type 2: Attributes' Weights
     # Type 3: Univariate Feature Selection (Statistics)
@@ -562,8 +597,8 @@ for option in filter_options:
                 for corr in correlated[gene]:
                     correlated_genes.add(corr)
 
-        genes_str = re.sub('[|]|(|)|set','',str(genes))
-        correlated_genes_str = re.sub('[|]|(|)|set','',str(correlated_genes))
+        genes_str = re.sub(r'\[|\]|\(|\)|set','',str(genes))
+        correlated_genes_str = re.sub(r'\[|\]|\(|\)|set','',str(correlated_genes))
         report.write(header+'\n')
         report.write('Min/Max scores of top-10 proteins: %s\n' % (str(np.min(scores_values))+'/'+str(np.max(scores_values))))
         report.write('Top-10 proteins:\n %s\n' % genes_str)
@@ -604,7 +639,8 @@ for option in filter_options:
         filename = 'rank_t1_uni_random_forest'
         method_name = 't1_uni_random_forest'
         header = '-- Type 1 - Model Based Rank - Random Forests --'
-        ranks[method_name] = sortSaveNormalizeAndSave(scores, results_path_rank, filename)        
+        scores = sortSaveNormalizeAndSave(scores, results_path_rank, filename)
+        ranks[method_name] = scores     
         reportTop10Proteins(report, scores, correlated_genes, header)                     
     
 
@@ -626,8 +662,9 @@ for option in filter_options:
             filename = 'rank_t2_weights_'+method
             method_name = 't2_weights_rank_'+method
             header = '-- Type 2 - Attributes\' Weights - '+name+' --'
-            ranks[method_name] = sortSaveNormalizeAndSave(scores, results_path_rank, filename)   
-            reportTop10Proteins(report, scores, correlated_genes, header)   
+            scores = sortSaveNormalizeAndSave(scores, results_path_rank, filename)
+            ranks[method_name] = scores     
+            reportTop10Proteins(report, scores, correlated_genes, header)  
 
 
         for estimator in estimators:
@@ -671,8 +708,9 @@ for option in filter_options:
         method_name = 't3_uni_'+name
         header = '-- Type 3 - Univariate by Statistical-test P-value - '+name+' --'
         #! inverse must be True, so that the function will do [1-p-value] to be the score
-        ranks[method_name] = sortSaveNormalizeAndSave(scores, results_path_rank, filename, inverse=True)        
-        reportTop10Proteins(report, scores, correlated_genes, header)   
+        scores = sortSaveNormalizeAndSave(scores, results_path_rank, filename, inverse=True)
+        ranks[method_name] = scores     
+        reportTop10Proteins(report, scores, correlated_genes, header)  
         #-----------------------------------------------------------------------------
 
 
@@ -691,8 +729,9 @@ for option in filter_options:
         filename = 'rank_t3_uni_chi_squared'
         method_name = 't3_uni_chi_squared'
         header = '-- Type 3 - Univariate by Statistical-test - Chi-Squared --'
-        ranks[method_name] = sortSaveNormalizeAndSave(scores, results_path_rank, filename)   
-        reportTop10Proteins(report, scores, correlated_genes, header)  
+        scores = sortSaveNormalizeAndSave(scores, results_path_rank, filename)
+        ranks[method_name] = scores     
+        reportTop10Proteins(report, scores, correlated_genes, header)   
 
 
 
@@ -710,8 +749,9 @@ for option in filter_options:
         filename = 'rank_t3_uni_mutual_inf'
         method_name = 't3_uni_mutual_inf'
         header = '-- Type 3 - Univariate by Statistical-test - Mutual Information --'
-        ranks[method_name] = sortSaveNormalizeAndSave(scores, results_path_rank, filename)   
-        reportTop10Proteins(report, scores, correlated_genes, header)  
+        scores = sortSaveNormalizeAndSave(scores, results_path_rank, filename)
+        ranks[method_name] = scores     
+        reportTop10Proteins(report, scores, correlated_genes, header)    
 
 
         #---------- ANOVA F-value ----------
@@ -728,8 +768,9 @@ for option in filter_options:
         filename = 'rank_t3_uni_anova_fvalue'
         method_name = 't3_uni_anova_fvalue'
         header = '-- Type 3 - Univariate by Statistical-test - ANOVA F-value --'
-        ranks[method_name] = sortSaveNormalizeAndSave(scores, results_path_rank, filename)   
-        reportTop10Proteins(report, scores, correlated_genes, header)  
+        scores = sortSaveNormalizeAndSave(scores, results_path_rank, filename)
+        ranks[method_name] = scores     
+        reportTop10Proteins(report, scores, correlated_genes, header)   
 
 
     #---------- Type 4 - Recursive Feature Elimination (RFE) ----------
@@ -750,8 +791,9 @@ for option in filter_options:
             filename = 'rank_t4_rfe_'+method
             method_name = 't4_rfe_'+method
             header = '-- Type 4 - Recursive Feature Elimination - '+name+' --'
-            ranks[method_name] = sortSaveNormalizeAndSave(scores, results_path_rank, filename)   
-            reportTop10Proteins(report, scores, correlated_genes, header)              
+            scores = sortSaveNormalizeAndSave(scores, results_path_rank, filename)
+            ranks[method_name] = scores     
+            reportTop10Proteins(report, scores, correlated_genes, header)               
 
         for estimator in estimators:
             print('RFE: '+estimator['name'])
@@ -814,7 +856,8 @@ for option in filter_options:
             filename = 'rank_t5_stability_'+method
             method_name = 't5_stability_'+method
             header = '-- Type 5 -- Stability Selection - '+name+' --'
-            ranks[method_name] = sortSaveNormalizeAndSave(scores, results_path_rank, filename)   
+            scores = sortSaveNormalizeAndSave(scores, results_path_rank, filename)
+            ranks[method_name] = scores     
             reportTop10Proteins(report, scores, correlated_genes, header)                
 
         for estimator in estimators:
@@ -847,8 +890,9 @@ for option in filter_options:
             filename = 'rank_t6_decrease_acc_'+method
             method_name = 't6_decrease_acc_'+method
             header = '-- Type 6 --- Mean Decrease Accuracy - '+name+' --'
-            ranks[method_name] = sortSaveNormalizeAndSave(scores, results_path_rank, filename)   
-            reportTop10Proteins(report, scores, correlated_genes, header)    
+            scores = sortSaveNormalizeAndSave(scores, results_path_rank, filename)
+            ranks[method_name] = scores     
+            reportTop10Proteins(report, scores, correlated_genes, header)     
         
         for estimator in estimators:            
             print('Decrease Accuracy: %s' % estimator['name'])
@@ -996,25 +1040,17 @@ for option in filter_options:
     filename = results_path+'top_10_prot_frequency.csv'
     np.savetxt(filename, matrix, delimiter=",", fmt='%s')
 
-    # todo plot the freq considereing x-axis: topN, 1 < N < 100
-    # sum the freq, from 1 to 100 and rank the proteins
-    # plot the freq of top 10 proteins
 
+    filename = results_path+'correlated_genes.csv'
+    with open(filename, 'w') as csv_file:        
+        for gene1 in correlated_genes.keys():            
+            line = gene1
+            for gene2 in correlated_genes[gene1]:
+                line = line+','+gene2
+            line+='\n'
+            csv_file.write(line)
+        csv_file.close()
 
-    # todo histogram
-
-
-
-    #!! consider adding this estimator 
-    estimators.append({'name': 'Bagging Classifier Nearest Centroid', 'model': BaggingClassifier(base_estimator=NearestCentroid(), n_estimators=n_estimators), 'lambda_name':'model__max_features', 'lambda_grid': np.array([0.5, 0.75, 1.0])}) #predict_proba(X)
-
-    # todo Compare Rank Scores using Histograms -> we can see who is more Spiked, more specific/general, Use rank Scores varying the number of samples used.
-
-    # todo Compare the mean rank of features now Changing the number os samples used
-
-    # todo pick the best estimator considering all proteins
-    
-    # todo write results on Report
 
 
 time_message = '\n\nIt took %s to complete the script.\n' % str(datetime.now()-starting_time )

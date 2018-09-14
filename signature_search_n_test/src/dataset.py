@@ -10,7 +10,9 @@ from numpy import matrix
 import csv
 import numpy as np
 from pandas import factorize, DataFrame
-
+from imblearn.over_sampling import SMOTE
+from scipy.stats import pearsonr
+from statsmodels.stats.multitest import fdrcorrection
 
 class Dataset(object):
 
@@ -36,13 +38,16 @@ class Dataset(object):
         if self.scale:
             self.__scale()
 
-    def save(self, filename, sep=","):
+    def saveFile(self, filename, sep=","):
         m = [[''] + self.samples]
         m.append(['Protein'] + self.labels)
         m_transposed = self.matrix.transpose()
-        for i in range(len(self.genes)):
-            m.append([self.genes[i] + m_transposed[i]])    
-        m = np.matrix(m).astype(float)
+        m_transposed = np.array(m_transposed).astype(float)
+        for i in range(len(self.genes)):         
+            #print(m_transposed[i])
+            m.append([self.genes[i]] + m_transposed[i].tolist())  
+        #print(m)  
+        m = np.matrix(m)
         np.savetxt(filename, m, delimiter=sep, fmt='%s')    
 
 
@@ -134,8 +139,7 @@ class Dataset(object):
     def getMatrixZscoreWithColClassAsDataFrame(self):
         levels = self.levels().tolist()
 
-        m = self.get_scaled_data().tolist()
-        print(m)
+        m = self.get_scaled_data().tolist()        
 
         for i in range(len(self.labels)):
             lindex = levels.index(self.labels[i])
@@ -178,11 +182,51 @@ class Dataset(object):
     def geneIndex(self, gene_name):        
         return self.__geneIndex[gene_name]
 
-    def correlatedAttributes(self, threshold=0.95):
+    def correlatedAttributes(self, threshold=0.95, max_pvalue=0.05):
         df = DataFrame(self.matrix)
-        corr_matrix = df.corr().abs()
-        upper = corr_matrix.where(np.triu(np.ones(corr_matrix.shape), k=1).astype(np.bool))
-        to_drop = [column for column in upper.columns if any(upper[column] > threshold)]
+
+        corr_matrix = np.zeros((df.shape[1], df.shape[1]))
+        pvalue_matrix = np.zeros((df.shape[1], df.shape[1]))
+
+        for i in range(df.shape[1]):    
+            for j in range(df.shape[1]):        
+                corrtest = pearsonr(df[df.columns[i]], df[df.columns[j]])  
+                corr_matrix[i,j] = corrtest[0]
+                pvalue_matrix[i,j] = corrtest[1]
+                pvalue_matrix[j,i] = corrtest[1]
+
+        p_values = []
+        for i in range(df.shape[1]):    
+            for j in range(i+1, df.shape[1]):        
+                p_values.append(pvalue_matrix[i,j])
+
+        p_values_corrected = fdrcorrection(p_values, alpha=0.05, method='indep', is_sorted=False)[1]
+        pvalues_corrected_matrix = np.zeros((df.shape[1], df.shape[1]))
+        k = 0
+        for i in range(df.shape[1]):    
+            for j in range(i+1, df.shape[1]):       
+                pvalues_corrected_matrix[i,j] = p_values_corrected[k]
+                pvalues_corrected_matrix[j,i] = p_values_corrected[k]
+                k += 1
+
+
+        to_drop_matrix = np.zeros((df.shape[1], df.shape[1]))
+        for i in range(df.shape[1]):
+            for j in range(i+1, df.shape[1]):
+                if pvalues_corrected_matrix[i,j] < max_pvalue and abs(corr_matrix[i,j]) > threshold:
+                    to_drop_matrix[i, j] = 1
+                else:
+                    if abs(corr_matrix[i,j]) > threshold:
+                        print(self.genes[i] + " * "+ self.genes[j] + 'corr, pvalue, fdr: %f, %f, %f' % (
+                            np.round(corr_matrix[i,j],decimals=3),
+                            np.round(pvalue_matrix[i,j],decimals=3), 
+                            np.round(pvalues_corrected_matrix[i,j],decimals=3)))
+                    to_drop_matrix[i, j] = 0
+
+        to_drop_matrix = DataFrame(to_drop_matrix)
+        upper = to_drop_matrix.where(np.triu(np.ones(corr_matrix.shape), k=1).astype(np.bool))  
+        to_drop = [column for column in upper.columns if any(upper[column] == 1)]
+
         correlated_genes = {}
         for gene in self.genes:
             correlated_genes[gene] = set()
@@ -194,20 +238,44 @@ class Dataset(object):
         
         genes_to_drop = [self.genes[i] for i in to_drop]
 
-
         # for cases like  0 (1, 2)      2  (3)
         # where 3 is highly correlated to 2, but is not highly as >threshold to 1 and 0...
-        # identify and consider them to be correlated, cause 3 and 2 will be dropped, and 3 needs to be linked to some other variable
-        for gene1 in correlated_genes:
-            for gene2 in correlated_genes[gene1]:
-                if len(correlated_genes[gene2]) > 0:
-                    correlated_genes[gene1] = correlated_genes[gene1] | correlated_genes[gene2]
+        # 3 must continue in the dataset
 
         new_correlated_genes = {}
         for gene in correlated_genes.keys():
             if gene not in genes_to_drop and len(correlated_genes[gene]) > 0:
                 new_correlated_genes[gene] = correlated_genes[gene]
-        correlated_genes = new_correlated_genes        
+        correlated_genes = new_correlated_genes             
 
-        return {'corr_matrix':corr_matrix, 'correlated_genes':correlated_genes, 'genes_to_drop': genes_to_drop}
+        # print("p-values")
+        # print(pvalue_matrix)
 
+        return {'corr_matrix':corr_matrix, 'p_values_matrix': pvalue_matrix, 'p_values_corrected_matrix': pvalues_corrected_matrix, 'correlated_genes': correlated_genes, 'genes_to_drop': genes_to_drop}
+
+    def getSmote(self, invert = False):
+        smote = SMOTE(random_state=0)
+
+        X = self.matrix
+        y = self.labels
+        X_resampled, y_resampled = smote.fit_sample(X, y)
+        
+        y_r = np.array(y_resampled)
+        inds = []        
+        if invert: 
+            inds = y_r.argsort()[::-1] #N0 before N+
+        else:
+            inds = y_r.argsort()
+            
+        X_resampled = np.matrix(X_resampled[inds,])
+        y_resampled = y_resampled[inds]
+
+        new_dataset = Dataset()
+        new_dataset.setGenes(self.genes)
+        new_dataset.matrix = X_resampled
+        new_dataset.labels = y_resampled
+        new_dataset.samples = ['smote_'+str(i) for i in range(len(new_dataset.matrix))]
+        new_dataset.name = self.name+"_smote"
+        new_dataset.sortSamplesByClassLabel()
+
+        return new_dataset

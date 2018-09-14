@@ -57,6 +57,24 @@ ap.add_argument('--limitSignatureSize', help='Limit the size of signatures creat
 
 
 
+    # todo plot the freq considereing x-axis: topN, 1 < N < 100
+    # sum the freq, from 1 to 100 and rank the proteins
+    # plot the freq of top 10 proteins
+
+
+
+    #!! consider adding this estimator 
+    estimators.append({'name': 'Bagging Classifier Nearest Centroid', 'model': BaggingClassifier(base_estimator=NearestCentroid(), n_estimators=n_estimators), 'lambda_name':'model__max_features', 'lambda_grid': np.array([0.5, 0.75, 1.0])}) #predict_proba(X)
+
+    # todo Compare Rank Scores using Histograms -> we can see who is more Spiked, more specific/general, Use rank Scores varying the number of samples used.
+
+    # todo Compare the mean rank of features now Changing the number os samples used
+
+    # todo pick the best estimator considering all proteins
+    
+    # todo write results on Report
+
+
 
 
 
