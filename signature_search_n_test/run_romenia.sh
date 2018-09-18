@@ -1,1 +1,1 @@
-python ./src/main_rankings.py --projectName romenia_run_kruskal_fdr_100p_8fold --train dataset/romenia_all_samples.csv --innerK 2  --onlyFilter --nJobs 8 --ignoreWarnings --outerK 7 --fdr --fdrPvalue 0.15 --correlation --corrThreshold 0.95
+python ./src/main_rankings.py --projectName romenia_run_kruskal_fdr_100p_8fold --train dataset/romenia_all_samples.csv --innerK 5  --onlyFilter --nJobs 8 --ignoreWarnings --outerK 7 --pValue 0.05

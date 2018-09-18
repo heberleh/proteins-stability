@@ -71,11 +71,10 @@ from statsmodels.stats.multitest import fdrcorrection
 from kruskal import KruskalRankSumTest3Classes
 from wilcoxon import WilcoxonRankSumTest
 from ttest import TTest
-from utils import saveHistogram, saveHeatMap, saveScatterPlots
+from utils import saveHistogram, saveHeatMap, saveScatterPlots, saveRank, normalizeScores, getMaxNumberOfProteins, saveHeatMapScores, saveBoxplots
 from pandas import DataFrame
 from sklearn.model_selection import train_test_split
 import numpy as np
-from utils import saveRank, normalizeScores, getMaxNumberOfProteins, saveHeatMapScores
 from sklearn.metrics import f1_score
 from sklearn.preprocessing import label_binarize
 import seaborn as sns
@@ -152,6 +151,10 @@ train_dataset = None
 test_dataset_path = args['test']
 k_outer = args['outerK']
 double_cross_validation = False
+
+score_matrices = []
+freq_prot_list = []
+
 if test_dataset_path != None:
     try:
         # TODO Test this parameter -> reading test dataset from file
@@ -550,6 +553,12 @@ for train_index, test_index in datasets_indexes:
 
         from sklearn.feature_selection import SelectKBest
         from sklearn.feature_selection import chi2, mutual_info_classif
+
+        import matplotlib as mpl 
+        ## agg backend is used to create plot as a .png file
+        mpl.use('agg')
+
+        import matplotlib.pyplot as plt 
             
         proteins_ranks = []
         ranks = {}
@@ -567,7 +576,7 @@ for train_index, test_index in datasets_indexes:
         type1, type2, type3, type4, type5, type6, type7 = True, True, True, True, True, True, True
         # True, True, True, True, True, True, True
         #type1, type2, type3, type4, type5, type6, type7 = False, False, True, False, False, False, False
-        type1, type2, type3, type4, type5, type6, type7 = False, False, False, True, False, False, True
+        #type1, type2, type3, type4, type5, type6, type7 = False, False, False, True, False, False, False
 
 
         # Benchmark of best parameter C for L1 and L2
@@ -601,6 +610,7 @@ for train_index, test_index in datasets_indexes:
             {'name': 'Linear Discriminant Analysis', 'model': LinearDiscriminantAnalysis(), 'lambda_name':'model__n_components', 'lambda_grid': None} #! need to be set after filtering
             # predict_proba(X)
         ]
+
 
         def getScore(traindata, pipe, estimator_name, i):
             if estimator_name in ['Lasso', 'Ridge', 'Linear SVM', 'Linear Discriminant Analysis']:
@@ -646,14 +656,14 @@ for train_index, test_index in datasets_indexes:
                 reverse = False
 
             scores = sorted(scores, reverse = reverse, key=lambda tup: tup[0])        
-            saveRank(scores, path + filename + '.csv')
+            #saveRank(scores, path + filename + '.csv')
 
             scores = normalizeScores(scores) 
 
             if inverse:        
                 scores = [(1-score[0], score[1], score[2]) for score in scores]             
                 
-            saveRank(scores, path + filename + '_normalizedMinMax.csv' )
+            #saveRank(scores, path + filename + '_normalizedMinMax.csv' )
 
             return scores
 
@@ -1003,9 +1013,11 @@ for train_index, test_index in datasets_indexes:
         cols_labels=np.squeeze(np.asarray(matrix[0,1:]))
         num_matrix = matrix[1:,1:].astype(float)
 
-        filename = results_path+'all_ranks_scores_heatmap_euclidean.png'
-        saveHeatMapScores(num_matrix, rows_labels=row_lables , cols_labels=cols_labels, filename=filename, metric='euclidean')
+        
 
+        filename = results_path+'all_ranks_scores_heatmap_euclidean.png'
+        df_matrix = saveHeatMapScores(num_matrix, rows_labels=row_lables , cols_labels=cols_labels, filename=filename, metric='euclidean')
+        score_matrices.append(df_matrix)
 
         filename = results_path+'all_ranks_scores_heatmap_euclidean_cutoff_0.8.png'
         num_matrix_cutoff = num_matrix.copy()
@@ -1093,6 +1105,8 @@ for train_index, test_index in datasets_indexes:
                 gene = score[2]
                 if gene in freq_prot:
                     freq_prot[gene]+=1
+        
+        freq_prot_list.append(freq_prot)
 
         matrix = []
         for gene in freq_prot.keys():
@@ -1121,6 +1135,139 @@ for train_index, test_index in datasets_indexes:
     report.write(time_message)
 
     report.close()
+
+
+
+
+
+
+
+all_genes = set()
+for score_m in score_matrices:
+    for gene in score_m.index.tolist():
+        all_genes.add(gene)
+all_genes_list = list(all_genes)
+
+first_dataframe = score_matrices[0]
+methods = first_dataframe.columns.tolist()
+
+first_m = first_dataframe.values
+n_ranks = first_m.shape[1]
+m_size = (len(all_genes),n_ranks)
+
+print("m_size: ")
+print(m_size)
+
+values_matrix = []
+for i in range(len(all_genes)):
+    row = []
+    for j in range(n_ranks):
+        row.append([])
+    values_matrix.append(row)    
+
+var_df = DataFrame(np.full(m_size,-0.5), index=all_genes_list, columns=first_dataframe.columns)
+mean_df = DataFrame(np.full(m_size,-0.5), index=all_genes_list, columns=first_dataframe.columns)
+std_df = DataFrame(np.full(m_size,-0.5), index=all_genes_list, columns=first_dataframe.columns)
+
+for gene in all_genes_list:
+    for method in first_dataframe.columns:
+        for score_df in score_matrices:
+            if gene in score_df.index.tolist():
+                values_matrix[all_genes_list.index(gene)][methods.index(method)].append(score_df[method][gene])
+
+
+for gene in all_genes_list:
+    for method in first_dataframe.columns:
+        values = values_matrix[all_genes_list.index(gene)][methods.index(method)]      
+        var_df[method][gene] = np.var(values)
+        mean_df[method][gene] = np.mean(values)
+        std_df[method][gene] = np.std(values)
+
+row_lables = first_dataframe.index
+cols_labels = first_dataframe.columns
+
+filename = results_path_parent + 'mean_score_headmap.png'
+matrix = np.matrix(mean_df.values).astype(float)
+saveHeatMapScores(matrix, rows_labels=mean_df.index , cols_labels=mean_df.columns, filename=filename, metric='euclidean')
+
+filename = results_path_parent + 'var_score_headmap.png'
+matrix = np.matrix(var_df.values).astype(float)
+saveHeatMapScores(matrix, rows_labels=var_df.index , cols_labels=var_df.columns, filename=filename, metric='euclidean')
+
+filename = results_path_parent + 'std_score_headmap.png'
+matrix = np.matrix(std_df.values).astype(float)
+saveHeatMapScores(matrix, rows_labels=std_df.index , cols_labels=std_df.columns, filename=filename, metric='euclidean')
+
+
+
+global_freq = {}
+for freq_prot in freq_prot_list:
+    for gene in freq_prot.keys():
+        if gene in global_freq:
+            global_freq[gene] += freq_prot[gene]
+        else:
+            global_freq[gene] = freq_prot[gene]
+
+freq_list = []
+for gene in global_freq.keys():
+    if global_freq[gene] > (first_m.shape[1]/3)*k_outer:   # > num_rankings * 1/3  * k_outer
+        freq_list.append((global_freq[gene], gene))
+
+freq_list = sorted(freq_list, reverse=True)
+selected_genes = [item[1] for item in freq_list]
+
+scores_by_gene = {}
+labels = row_lables.tolist()
+for gene in selected_genes:        
+    values = []
+    pen = -0.1
+    for score_df in score_matrices:        
+        if gene in score_df.index.tolist():            
+            for value in score_df.loc[gene].values:
+                values.append(value)            
+        else:
+            #for j in range(first_m.shape[1]):        
+            values.append(pen)
+            pen -= 0.1
+    scores_by_gene[gene] = values
+
+box_plot_values = [scores_by_gene[gene] for gene in selected_genes]
+filename = results_path_parent + 'box_plot_top_10_from_each_loop_appear_in_more_than_33p_of_ranks.png'
+saveBoxplots(box_plot_values, filename=filename, x_labels=selected_genes)
+# Boxplot that shows the scores from genes that appear in more than 1/3 of the ranks among the top-10
+
+
+scores_by_gene = {}
+labels = row_lables.tolist()
+max_n = n_ranks/2
+df = DataFrame(np.full((len(all_genes_list),len(score_matrices)),-0.1), index=all_genes_list, columns=range(k_outer))
+
+for gene in all_genes:        
+    values = []
+    pen = -0.1    
+    for j in range(len(score_matrices)):    
+        score_df = score_matrices[j]    
+        if gene in score_df.index.tolist():            
+            values_score = sorted(score_df.loc[gene].values, reverse=True)[0:max_n]
+            print(values_score)
+            df[j][gene] = np.mean(values_score)
+            for value in values_score:
+                values.append(value)            
+        else:           
+            values.append(pen)
+            pen -= 0.1
+    scores_by_gene[gene] = values
+
+box_plot_values = [scores_by_gene[gene] for gene in selected_genes]
+filename = results_path_parent + 'box_plot_top_10_from_each_loop_50p_higher_scores_per_loop.png'
+saveBoxplots(box_plot_values, filename=filename, x_labels=selected_genes)
+
+matrix = np.matrix(df.values.astype(float))
+filename = results_path_parent + 'mean_50p_higher_scores_pergene_perloop_headmap.png'
+saveHeatMapScores(matrix, rows_labels=df.index , cols_labels=df.columns, filename=filename, metric='euclidean')
+
+
+
 
 #  ================ END MAIN ===============
 

@@ -56,6 +56,7 @@ def saveHeatMapScores(matrix, rows_labels, cols_labels, filename, metric='correl
     g = sns.clustermap(dataset, metric=metric, xticklabels=cols_labels, yticklabels=rows_labels, cmap=colors)
     g.savefig(filename, dpi=300)
     plt.close()
+    return dataset
 
 #todo save rank
 def saveRank(scores, filename):
@@ -112,4 +113,14 @@ def saveScoresHistograms(methods_scores, n_col, filename='histogram.png', dpi=30
 
             col.hist(values, n_bins=bins, density=True, histtype='bar', color=color) #, label=colors
     plt.savefig(filename, dpi=dpi)
+    plt.close()
+
+
+
+def saveBoxplots(lists, filename, x_labels, figsize=(9, 6)):
+    fig = plt.figure(1, figsize=figsize)
+    ax = fig.add_subplot(111)    
+    bp = ax.boxplot(lists)
+    ax.set_xticklabels(x_labels, rotation = 90)    
+    fig.savefig(filename, bbox_inches='tight')
     plt.close()
