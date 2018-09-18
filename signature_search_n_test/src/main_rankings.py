@@ -1,12 +1,55 @@
 
+# import the necessary packages
+import argparse
+import os
 # =================================
 # =========== ARGS ================
 import warnings
+from datetime import datetime
+from random import shuffle
+from time import gmtime, strftime
+
+import matplotlib as mpl
+import matplotlib.pyplot as plt
+import numpy as np
+import seaborn as sns
+from pandas import DataFrame, factorize
+from sklearn.base import clone
+from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
+from sklearn.ensemble import (AdaBoostClassifier, BaggingClassifier,
+                              GradientBoostingClassifier,
+                              RandomForestClassifier)
+from sklearn.feature_selection import (RFE, SelectKBest, chi2,
+                                       mutual_info_classif)
+from sklearn.linear_model import Lars, LogisticRegression
+from sklearn.metrics import (cohen_kappa_score, f1_score, make_scorer,
+                             matthews_corrcoef)
+from sklearn.model_selection import (GridSearchCV, StratifiedKFold,
+                                     cross_val_score, train_test_split)
+from sklearn.naive_bayes import MultinomialNB
+from sklearn.neighbors.nearest_centroid import NearestCentroid
+from sklearn.pipeline import Pipeline, make_pipeline
+from sklearn.preprocessing import StandardScaler, label_binarize
+from sklearn.svm import LinearSVC
+from sklearn.tree import DecisionTreeClassifier
+from statsmodels.stats.multitest import fdrcorrection
+
+from dataset import Dataset
+from kruskal import KruskalRankSumTest3Classes
+from recursiveFeatureAddition import RFA
+from ttest import TTest
+from utils import (getMaxNumberOfProteins, normalizeScores, saveBoxplots,
+                   saveHeatMap, saveHeatMapScores, saveHistogram, saveRank,
+                   saveScatterPlots)
+from wilcoxon import WilcoxonRankSumTest
+
+## agg backend is used to create plot as a .png file
+mpl.use('agg')
+
+
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 warnings.filterwarnings("ignore", category=UserWarning)
 
-# import the necessary packages
-import argparse
 
 # construct the argument parse and parse the arguments
 ap = argparse.ArgumentParser()
@@ -62,24 +105,6 @@ print(args) # Values are saved in the report.txt file
 
 # ======== MAIN =========
 
-from random import shuffle
-from dataset import Dataset
-from datetime import datetime
-from time import gmtime, strftime
-import os
-from statsmodels.stats.multitest import fdrcorrection
-from kruskal import KruskalRankSumTest3Classes
-from wilcoxon import WilcoxonRankSumTest
-from ttest import TTest
-from utils import saveHistogram, saveHeatMap, saveScatterPlots, saveRank, normalizeScores, getMaxNumberOfProteins, saveHeatMapScores, saveBoxplots
-from pandas import DataFrame
-from sklearn.model_selection import train_test_split
-import numpy as np
-from sklearn.metrics import f1_score
-from sklearn.preprocessing import label_binarize
-import seaborn as sns
-from recursiveFeatureAddition import RFA
-from sklearn.model_selection import StratifiedKFold
 
 # detect the current working directory and print it
 current_path = os.getcwd()  
@@ -108,8 +133,6 @@ dataset.saveFile(filename=results_path+'testing_save_dataset.csv')
 scoreEstimator = None
 
 
-# =========== Score estimator ===================
-from sklearn.metrics import make_scorer, matthews_corrcoef, cohen_kappa_score
 matthews_scorer = make_scorer(matthews_corrcoef)
 kappa_scorer = make_scorer(cohen_kappa_score)
 
@@ -272,7 +295,10 @@ for train_index, test_index in datasets_indexes:
     elif args['onlyFilter']:
         filter_options = ['filter']
     else:
-        filter_options = ['filter', 'noFilter']
+        print("You need to set the parameter --noFilder or the parameter --onlyFilter.")
+        exit()
+    #else: #! ignoring the possibility of computing both in 1 run due to complexity
+    #   filter_options = ['filter', 'noFilter']
 
 
     complete_train = train_dataset
@@ -531,34 +557,6 @@ for train_index, test_index in datasets_indexes:
         report.write('\n\nNumber of features to be ranked: %d\n\n' % len(train_dataset.genes))
         report.flush()
 
-
-        from pandas import factorize    
-        
-        from sklearn.ensemble import RandomForestClassifier
-        from sklearn.model_selection import cross_val_score
-        from sklearn.preprocessing import StandardScaler
-        from sklearn.pipeline import make_pipeline, Pipeline
-        from sklearn.model_selection import GridSearchCV
-        from sklearn.linear_model import LogisticRegression, Lars
-        from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
-        from sklearn.neighbors.nearest_centroid import NearestCentroid
-        from sklearn.svm import LinearSVC
-        from sklearn.naive_bayes import MultinomialNB
-        from sklearn.tree import DecisionTreeClassifier
-        from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier, AdaBoostClassifier
-        from sklearn.ensemble import BaggingClassifier
-        from sklearn.base import clone
-
-        from sklearn.feature_selection import RFE    
-
-        from sklearn.feature_selection import SelectKBest
-        from sklearn.feature_selection import chi2, mutual_info_classif
-
-        import matplotlib as mpl 
-        ## agg backend is used to create plot as a .png file
-        mpl.use('agg')
-
-        import matplotlib.pyplot as plt 
             
         proteins_ranks = []
         ranks = {}
@@ -1120,7 +1118,7 @@ for train_index, test_index in datasets_indexes:
         if correlation:
             filename = results_path+'correlated_genes.csv'
             with open(filename, 'w') as csv_file:        
-                for gene1 in correlated_genes.keys():            
+                for gene1 in correlated_genes.keys():
                     line = gene1
                     for gene2 in correlated_genes[gene1]:
                         line = line+','+gene2
@@ -1270,4 +1268,3 @@ saveHeatMapScores(matrix, rows_labels=df.index , cols_labels=df.columns, filenam
 
 
 #  ================ END MAIN ===============
-

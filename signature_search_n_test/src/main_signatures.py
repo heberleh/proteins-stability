@@ -1,57 +1,289 @@
 
+# import the necessary packages
+import argparse
+import csv
+import os
+
+import matplotlib.pyplot as plt
+
+import numpy as np
+
+import pandas as pd
+from pandas import factorize
+
+from sklearn.base import clone
+from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
+from sklearn.ensemble import (AdaBoostClassifier, BaggingClassifier,
+                              GradientBoostingClassifier,
+                              RandomForestClassifier)
+from sklearn.metrics import (cohen_kappa_score, f1_score, make_scorer,
+                             matthews_corrcoef)                              
+from sklearn.feature_selection import (RFE, SelectKBest, chi2,
+                                       mutual_info_classif)
+from sklearn.linear_model import Lars, LogisticRegression
+from sklearn.model_selection import GridSearchCV, cross_val_score
+from sklearn.naive_bayes import MultinomialNB
+from sklearn.neighbors.nearest_centroid import NearestCentroid
+from sklearn.pipeline import Pipeline, make_pipeline
+from sklearn.preprocessing import StandardScaler
+from sklearn.svm import LinearSVC
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.model_selection import LeaveOneOut
+from sklearn.metrics import roc_auc_score
+from sklearn.model_selection import StratifiedShuffleSplit
+
+from signature import Signature, Signatures
+from dataset import Dataset
+
+import warnings
+
+warnings.filterwarnings("ignore", category=DeprecationWarning)
+warnings.filterwarnings("ignore", category=UserWarning)
+
+
+# construct the argument parse and parse the arguments
+ap = argparse.ArgumentParser()
+
+ap.add_argument('--inputFolder', help='The path for the folder where the scores files and others are.', action='store', required=True)
+
 #ap.add_argument('--nSSearch', help='Set the maximum number of proteins to search for small signatures formed by all prot. combinations (signature size).', action='store', type=int, default=3)
 
 #ap.add_argument('--nSmall', help='Set the number of proteins considered small. If the total number of proteins in a dataset is smaller or equal than NSMALL, it will compute all combinations of proteins to form signatures. Otherwise, it will consider NSSEARCH to compute only combinations of size up to the value set for this parameter.', action='store', type=int, default=10)
 
-ap.add_argument('--topN', help='Create all combinations of top-N signatures from the average of ranks.', action='store', type=int, default=10)
+#ap.add_argument('--topN', help='Create all combinations of top-N signatures from the average of ranks.', action='store', type=int, default=10)
 
 
-ap.add_argument('--deltaRankCutoff', help='The percentage of difference from the maximum score value that is used as cutoff univariate ranks. The scores are normalized between 0 and 1. So, if the maximum value is 0.9, and deltaRankCutoff is set to 0.05, the cutoff value is 0.85. Proteins with score >= 0.85 are selected to form signatures by top-N proteins.', action='store', type=float, default=0.10)
+#ap.add_argument('--deltaRankCutoff', help='The percentage of difference from the maximum score value that is used as cutoff univariate ranks. The scores are normalized between 0 and 1. So, if the maximum value is 0.9, and deltaRankCutoff is set to 0.05, the cutoff value is 0.85. Proteins with score >= 0.85 are selected to form signatures by top-N proteins.', action='store', type=float, default=0.10)
 
-ap.add_argument('--limitSignatureSize', help='Limit the size of signatures created by rank to the number of samples. For instance, when selecting top-N proteins using 30 samples, the maximum value of N is 30.', action='store_true')
+#ap.add_argument('--limitSignatureSize', help='Limit the size of signatures created by rank to the number of samples. For instance, when selecting top-N proteins using 30 samples, the maximum value of N is 30.', action='store_true')
+
+args = vars(ap.parse_args())
 
 
-    def storeSignaturesMaxSize(scores, method, signatures_data, maxNumberOfProteins):
-        for i in range(1,getMaxNumberOfProteins(scores, maxNumberOfProteins)+2):
-            genes_indexes = [item[1] for item in scores[0:i]]
-            sig = Signature(genes_indexes)
-            if sig in signatures_data:
-                signatures_data[sig]['methods'].add(method)
+# ==============================================================================================
+
+
+def leaveOneOutScore(X, y, estimator, scorer):
+    loo = LeaveOneOut()
+    y_pred = []
+    y_true = []
+    for train_index, test_index in loo.split(X):
+        classifier = clone(estimator)
+        classifier.fit(X[train_index], y[train_index])
+        y_pred.append(classifier.predict(X[test_index])[0])
+        y_true.append(y[test_index][0])
+    return scorer(y_pred, y_true)
+
+def evaluateRank(dataset_train, dataset_test, scores, rank_id, estimators, max_n, fold_signatures, scorer):
+    scores = sorted(scores, reverse=True)
+    max_score = -np.inf
+    for i in range(1, np.min([len(scores),max_n+1])):        
+        genes = [item[1] for item in scores[0:i]]  
+        train_data = dataset_train.get_sub_dataset(genes)
+        test_data = dataset_test.get_sub_dataset(genes)
+        sss = StratifiedShuffleSplit(n_splits=10, test_size=0.15, random_state=0)
+        signature = fold_signatures.get(genes)
+        for estimator in estimators:
+            mean_cv_score = None
+            if not signature.hasScore(estimator_name=estimator['name']):
+                model = clone(estimator['model'])
+                
+                # CV score
+                cv_scores = cross_val_score(model, train_data.X(), train_data.Y(), scoring=scorer[1], cv=sss, n_jobs=-1)                
+                mean_cv_score = np.round(np.mean(cv_scores), decimals=2)
+                signature.addScore(method=rank_id, estimator_name=estimator['name'], score=mean_cv_score)
+
+                # Independent test score
+                model =  clone(estimator['model'])
+                model.fit(train_data.X(), train_data.Y())
+                y_pred = model.predict(test_data.X())
+                independent_score = scorer[0](test_data.Y(), y_pred)
+                independent_score = np.round(independent_score, decimals=2)
+                signature.addIndependentScore(estimator_name=estimator['name'], score=independent_score, y_pred=y_pred)
+
             else:
-                sig_data = {'methods':set()}
-                sig_data['methods'].add(method)
-                signatures_data[sig] = sig_data
+                mean_cv_score = signature.getScore(estimator_name=estimator['name'])
+            max_score = np.max([max_score, mean_cv_score])            
+    return max_score
+
+input_path = args['inputFolder']
+
+n_estimators = 50
+nJobs = 8
+LassoBestC = 0.1 #! todo run CV on train dataset to get these
+RidgeBestC = 0.1
+
+
+folders = [ item for item in os.listdir(input_path) if os.path.isdir(os.path.join(input_path, item))]
+print(folders)
+
+
+
+for folder_name in folders:
+    folder_path = os.path.join(input_path, folder_name)
+
+    subfolders = [ item for item in os.listdir(folder_path) if os.path.isdir(os.path.join(folder_path, item))]
+
+    if 'filter' in subfolders:
+        folder_path = os.path.join(folder_path, 'filter')
+    elif 'nonFilter' in subfolders:
+        folder_path = os.path.join(folder_path, 'noFilter')
+    else:
+        print("The filter/noFilter folder could not be found.")
+        exit()
+
+
+    train_path = os.path.join(folder_path, 'dataset_train_from_scrip.csv')
+    test_path = os.path.join(folder_path, 'dataset_test_from_scrip.csv')
+
+    train_data = Dataset(train_path, scale=False, normalize=False, sep=',')
+    test_data = Dataset(test_path, scale=False, normalize=False, sep=',')
     
-    def getBestSignatureByCV(scores, estimator, maxNumberOfProteins, k, rep, n_jobs):            
-        signatures = []
-        max_score = 0.0       
-        cv_scores = []
-        genes_indexes = [item[1] for item in scores] #ordered by rank
-        for i in range(1, getMaxNumberOfProteins(scores, maxNumberOfProteins)+2):            
-            sig_indexes = genes_indexes[0:i]
-            # evaluate this signature for each estimator
-            # cross-validation
-            cv_score = None
-            #? store cv score (F1?) and estimator name in Signature
-            if max_score < cv_score:
-                max_score = cv_score
-            cv_scores.append(cv_scores)
+    score_matrix_path = os.path.join(folder_path, 'all_ranks_scores.csv')
+    # read score matrix
+    scores_df = pd.read_csv(score_matrix_path, index_col=0)
+    ranks = {}
+
+    fold_signatures = Signatures()
+
+
+    estimators = [  #lambda_name='model__C',lambda_grid=np.logspace(-5, -1, 50)
+    {'name': 'Linear SVM', 'model': LinearSVC(), 'lambda_name':'model__C', 'lambda_grid': np.arange(3, 10)}, # has decision_function
+
+    {'name': 'Decision Tree', 'model': DecisionTreeClassifier(), 'lambda_name':'model__max_depth', 'lambda_grid': np.arange(1, 20)}, #'max_depth': np.arange(3, 10) #has predict_proba
+
+    {'name': 'Random Forest', 'model': RandomForestClassifier(n_estimators=n_estimators,n_jobs=nJobs), 'lambda_name':'model__max_features', 'lambda_grid': np.array([0.5, 0.75, 1.0])}, # predict_proba(X)
+
+    {'name': 'Ada Boost Decision Trees', 'model': AdaBoostClassifier(base_estimator=DecisionTreeClassifier(), n_estimators=n_estimators), 'lambda_name':'model__learning_rate', 'lambda_grid': np.array([0.01, 0.1, 0.3, 0.6, 1.0])}, # predict_proba(X)
+
+    {'name': 'Gradient Boosting', 'model': GradientBoostingClassifier(n_estimators=n_estimators, loss="deviance" ), 'lambda_name':'model__learning_rate', 'lambda_grid': np.array([0.01, 0.1, 0.3, 0.6, 1.0])}, #predict_proba(X)
+
+    {'name': 'Lasso', 'model': LogisticRegression(penalty='l1', C=LassoBestC), 'lambda_name':'model__C', 'lambda_grid': np.logspace(-5, 0, 10)}, #predict_proba(X)
+
+    {'name': 'Ridge', 'model': LogisticRegression(penalty='l2', C=RidgeBestC), 'lambda_name':'model__C', 'lambda_grid': np.logspace(-5, 0, 10)}, #predict_proba(X)
+
+    {'name': 'Linear Discriminant Analysis', 'model': LinearDiscriminantAnalysis(), 'lambda_name':'model__n_components', 'lambda_grid': None} #! need to be set after filtering
+    # predict_proba(X)
+    ]
+
+    scoreEstimator = None
+    matthews_scorer = make_scorer(matthews_corrcoef)
+    kappa_scorer = make_scorer(cohen_kappa_score)
+
+    uni, counts = np.unique(train_data.Y(), return_counts=True)
+
+    if len(train_data.levels()) == 2 and counts[0] == counts[1]:
+        scoreEstimator = (roc_auc_score, 'roc_auc')
+        scoreEstimatorInfo = """
+        """
+    elif len(train_data.levels()) == 3 or len(dataset.levels()) == 2:
+        scoreEstimator = (cohen_kappa_score, kappa_scorer)
+        scoreEstimatorInfo = """Kappa"""
+    else:
+        print('\nDataset with more than 3 classes is not supported.\n\n')
+        exit()
+
+    types = ['t1', 't2', 't3', 't4', 't5', 't6', 't7']
+    est_names = []
+    for estimator in estimators:
+        est_names.append(estimator['name'].lower().replace(" ","_"))
+
+    scores_by_type = {}
+    scores_by_estimator = {}
+    for method in scores_df.columns:        
+        scores = []
+        for gene in scores_df.index:
+            scores.append((scores_df[method][gene],gene))
+        ranks[method] = sorted(scores, reverse=True)
+
+        # for name in est_names:
+        #     if name in method:
+        #         if name not in scores_by_estimator:            
+        #             scores_by_estimator[name] = []
+        #         for gene in scores_df.index:
+        #                 scores_by_estimator[name].append(scores_df[method][gene])
+        #         break
+
+        # for t in types:
+        #     if t in method:
+        #         if t not in scores_by_type:            
+        #             scores_by_type[name] = []
+        #         for gene in scores_df.index:
+        #                 scores_by_type[name].append(scores_df[method][gene])
+        #         break
+
+    for method in ranks:
+
+        # Leave One Out - evaluation of signatures
+        # signatures are stored in the fold_signatures set
+        max_score = evaluateRank(train_data, test_data, scores=ranks[method], rank_id=method, estimators=estimators, max_n=len(train_data.Y()), fold_signatures=fold_signatures, scorer=scoreEstimator)
+
+        print('Max score for '+method+': '+str(max_score))
+
+        for sig in fold_signatures.getSignaturesMaxScore():
+            print('Score: %f, Indep. Score: %f, Size: %d, Method: %s %s, Signature:\n%s' % (sig[0],sig[1], sig[2], sig[4], str(sig[3]), str(sig[5])))
+
+
+    # chose the best estimator ?
+
+    # for each rank_method
+        # find the best signature pairs    #! round for 2 decimals
         
-        n = cv_scores.index(max_score)
-        # n: 0 -> genes_indexes[0:1]        
-        return {'genes_indexes': genes_indexes[0:n+1], 'cv_score': max_score}
+        # create signature object and score
+
+    correlated_proteins_path = os.path.join(folder_path, 'correlated_genes.csv')
+    # read correlation matrix
+
+    
 
 
-    deltaScore = float(args['deltaRankCutoff'])
-
-    limitSigSize = args['limitSignatureSize']
-    maxNumberOfProteins = len(train_dataset.genes)
-    if limitSigSize:
-        maxNumberOfProteins = len(train_dataset.samples)
 
 
-    # FOR METHOD... IN RANKS...
-        storeSignaturesMaxSize(scores, method, signatures_data, maxNumberOfProteins)
+
+
+
+
+    # def storeSignaturesMaxSize(scores, method, signatures_data, maxNumberOfProteins):
+    #     for i in range(1,getMaxNumberOfProteins(scores, maxNumberOfProteins)+2):
+    #         genes_indexes = [item[1] for item in scores[0:i]]
+    #         sig = Signature(genes_indexes)
+    #         if sig in signatures_data:
+    #             signatures_data[sig]['methods'].add(method)
+    #         else:
+    #             sig_data = {'methods':set()}
+    #             sig_data['methods'].add(method)
+    #             signatures_data[sig] = sig_data
+    
+    # def getBestSignatureByCV(scores, estimator, maxNumberOfProteins, k, rep, n_jobs):            
+    #     signatures = []
+    #     max_score = 0.0       
+    #     cv_scores = []
+    #     genes_indexes = [item[1] for item in scores] #ordered by rank
+    #     for i in range(1, getMaxNumberOfProteins(scores, maxNumberOfProteins)+2):            
+    #         sig_indexes = genes_indexes[0:i]
+    #         # evaluate this signature for each estimator
+    #         # cross-validation
+    #         cv_score = None
+    #         #? store cv score (F1?) and estimator name in Signature
+    #         if max_score < cv_score:
+    #             max_score = cv_score
+    #         cv_scores.append(cv_scores)
+        
+    #     n = cv_scores.index(max_score)
+    #     # n: 0 -> genes_indexes[0:1]        
+    #     return {'genes_indexes': genes_indexes[0:n+1], 'cv_score': max_score}
+
+
+    # deltaScore = float(args['deltaRankCutoff'])
+
+    # limitSigSize = args['limitSignatureSize']
+    # maxNumberOfProteins = len(train_dataset.genes)
+    # if limitSigSize:
+    #     maxNumberOfProteins = len(train_dataset.samples)
+
+
+    # # FOR METHOD... IN RANKS...
+    #     storeSignaturesMaxSize(scores, method, signatures_data, maxNumberOfProteins)
 
 
 
@@ -64,7 +296,7 @@ ap.add_argument('--limitSignatureSize', help='Limit the size of signatures creat
 
 
     #!! consider adding this estimator 
-    estimators.append({'name': 'Bagging Classifier Nearest Centroid', 'model': BaggingClassifier(base_estimator=NearestCentroid(), n_estimators=n_estimators), 'lambda_name':'model__max_features', 'lambda_grid': np.array([0.5, 0.75, 1.0])}) #predict_proba(X)
+    # estimators.append({'name': 'Bagging Classifier Nearest Centroid', 'model': BaggingClassifier(base_estimator=NearestCentroid(), n_estimators=n_estimators), 'lambda_name':'model__max_features', 'lambda_grid': np.array([0.5, 0.75, 1.0])}) #predict_proba(X)
 
     # todo Compare Rank Scores using Histograms -> we can see who is more Spiked, more specific/general, Use rank Scores varying the number of samples used.
 
@@ -98,18 +330,18 @@ ap.add_argument('--limitSignatureSize', help='Limit the size of signatures creat
 
 
     # create all combinations considering args['top-n'] proteins
-    max_n = args['topN']
+    # max_n = args['topN']
 
     # if total number of proteins is <= args['n_small']
         #compute all possible combinations
 
     # if total number of proteins is > args['n_small']
         # small signatures from all proteins
-    max_sig_size = args['nSSearch']
+    # max_sig_size = args['nSSearch']
 
 
 
-    print('Number of signatures to test: %d' % len(signatures_data.keys()))
+    # print('Number of signatures to test: %d' % len(signatures_data.keys()))
     
     # for signature in signatures_data:        
     #     print('%d - %d - %s: %s' % (len(signatures_data[signature]['methods']), len(signature.genes), signature.toGeneNamesList(geneNames), str(signatures_data[signature]['methods']) ))

@@ -1,0 +1,1 @@
+python ./src/main_signatures.py --inputFolder results/romenia_run_kruskal_fdr_100p_8fold\ \(18-09-17\ 23-51-14\)
