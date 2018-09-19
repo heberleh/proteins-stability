@@ -1,5 +1,6 @@
 
 import numpy as np
+from pandas import DataFrame
 
 class Signature(object):
 
@@ -81,5 +82,37 @@ class Signatures(object):
                 pairs.append(pair)            
 
         pairs = sorted(pairs, reverse=True)
-        selected_pairs = [pair for pair in pairs if pair[0] > pairs[0][0]-0.011]
+        selected_pairs = [pair for pair in pairs if pair[0] > pairs[0][0]-0.05]
         return sorted(selected_pairs, key=lambda tup: tup[2]) #ordered by size       
+
+    def save(self, filename):
+
+        estimator_names = set()
+        for signature in self.signatures:
+            for name in signature.scores:
+                estimator_names.add(name)
+        estimator_names = sorted(list(estimator_names))
+
+        header = ['size']
+        for name in estimator_names:
+            header.append('cv_'+name)
+        header.append('proteins')
+        header.append('methods')
+
+        matrix = [header]
+        count = 1
+        for signature in self.signatures:
+            row = [signature.size()]           
+            for estimator_name in estimator_names:
+                if signature.hasScore(estimator_name):
+                    row.append(signature.getScore(estimator_name))
+                else:
+                    row.append(np.nan)
+            count+=1
+            row.append(str(signature.genes))
+            row.append(str(list(signature.methods)))
+            matrix.append(row)
+        
+        df = DataFrame(data=matrix)
+        df.sort_values([df.columns[2],0], ascending=[0,1])
+        df.to_csv(filename)

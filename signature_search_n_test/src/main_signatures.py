@@ -39,6 +39,12 @@ from scipy.special import comb
 from signature import Signature, Signatures
 from dataset import Dataset
 from utils import saveBoxplots
+from random import sample
+
+import itertools
+
+from multiprocessing import Pool, Lock, cpu_count
+import gc
 
 import warnings
 
@@ -82,15 +88,105 @@ def leaveOneOutScore(X, y, estimator, scorer):
     return scorer(y_pred, y_true)
 
 
+
+
+def cv_signature(parallel_arguments):
+    sss, dataset_train, genes, scoring, estimators, method, signature = parallel_arguments[0], parallel_arguments[1], parallel_arguments[2], parallel_arguments[3], parallel_arguments[4], parallel_arguments[5], parallel_arguments[6]
+
+    train_data = dataset_train.get_sub_dataset(genes)                      
+
+    max_score = -np.inf
+    for estimator in estimators:
+        estimator_name = estimator['name']
+        if not signature.hasScore(estimator_name=estimator_name):
+           
+            base_estimator = Pipeline([('scaler', StandardScaler()), ('model', clone(estimator['model']))])
+
+            cv_scores = cross_val_score(base_estimator, train_data.X(), train_data.Y(), scoring=scoring, cv=sss, n_jobs=1)
+
+            mean_cv_score = np.round(np.mean(cv_scores), decimals=2)
+            
+            signature.addScore(method=method, estimator_name=estimator_name, score=mean_cv_score)
+            
+            if mean_cv_score > max_score:
+                max_score = mean_cv_score
+
+    return {'max': max_score}
+
+def evaluateRankParallel(dataset_train, dataset_test, scores, rank_id, estimators, max_n, fold_signatures, scorer):
+    scores = sorted(scores, reverse=True)
+    max_score = -np.inf
+
+    sss = StratifiedShuffleSplit(n_splits=8, test_size=3, random_state=0)
+
+    n_cpu = cpu_count()
+    n_splits = n_cpu*20
+    pool = Pool(processes=n_cpu)
+    
+    parallel_input = []
+    for i in range(1, max_n+1):        
+        genes = [item[1] for item in scores[0:i]]        
+        # sss, dataset, genes, scoring, estimators, method, fold_signatures
+        parallel_input.append((sss, train_data, genes, scorer[1], estimators, rank_id, fold_signatures.get(genes)))
+    
+    result_part = pool.map(cv_signature, parallel_input)
+    max_score = -np.inf
+    for i in range(len(result_part)):            
+        score = result_part[i]['max']
+        if score > max_score:
+            max_score = score
+
+    gc.collect()
+
+    max_group_size = 4
+    for sub_list_size in range(1, max_group_size+1):
+        allgenes = [item[1] for item in scores[0:max_n]]
+
+        all_possible_signatures = itertools.combinations(allgenes, sub_list_size)
+        n_possible_groups = comb(len(allgenes), sub_list_size, exact=True)  
+        all_possible_signatures = [genes for genes in all_possible_signatures]
+
+        max_n_groups =  200*sub_list_size
+        if n_possible_groups > max_n_groups:
+            all_possible_signatures = sample(all_possible_signatures, max_n_groups)
+            n_possible_groups = max_n_groups
+    
+        print("Signature size " + str(sub_list_size) + ". There are "+ str(n_possible_groups) + " combinations to be tested.")
+        count = 0  
+        iter_all_sig = iter(all_possible_signatures)
+
+        hasnext = True
+        while(hasnext):
+            parallel_input = []        
+            for rep in range(n_splits):
+                try:
+                    genes = next(iter_all_sig)                              
+                    #dataset, outer_folds, classifier_name        
+                    parallel_input.append((sss, train_data, genes, scorer[1], estimators, 'random_small_combinations', fold_signatures.get(genes)))
+                except:
+                    hasnext = False
+                    break
+            result_part = pool.map(cv_signature, parallel_input)
+            for i in range(len(result_part)):            
+                score = result_part[i]['max']
+                if score > max_score:
+                    max_score = score
+            gc.collect()
+    gc.collect()
+    return max_score
+
 def evaluateRank(dataset_train, dataset_test, scores, rank_id, estimators, max_n, fold_signatures, scorer):
     scores = sorted(scores, reverse=True)
     max_score = -np.inf
+
+    sss = StratifiedShuffleSplit(n_splits=18, test_size=3, random_state=0)
+    
     for i in range(1, max_n+1):        
         genes = [item[1] for item in scores[0:i]]  
         train_data = dataset_train.get_sub_dataset(genes)
-        test_data = dataset_test.get_sub_dataset(genes)
-        sss = StratifiedShuffleSplit(n_splits=10, test_size=0.15, random_state=0)
-        signature = fold_signatures.get(genes)
+        test_data = dataset_test.get_sub_dataset(genes)        
+        
+
         for estimator in estimators:
             mean_cv_score = None
             estimator_name = estimator['name']
@@ -99,45 +195,80 @@ def evaluateRank(dataset_train, dataset_test, scores, rank_id, estimators, max_n
                 base_estimator = Pipeline([('scaler', StandardScaler()), ('model', clone(estimator['model']))])
                 cv_scores = cross_val_score(base_estimator, train_data.X(), train_data.Y(), scoring=scorer[1], cv=sss, n_jobs=-1)                
                 mean_cv_score = np.round(np.mean(cv_scores), decimals=2)
+
                 signature.addScore(method=rank_id, estimator_name=estimator_name, score=mean_cv_score)
+
+                # # Independent test score          
+                # scaler = StandardScaler()
+                # model = clone(estimator['model'])
+                
+                # base_estimator.fit(scaler.fit_transform(train_data.X()), train_data.Y())
+                # y_pred = base_estimator.predict(scaler.transform(test_data.X()))
+
+                # independent_score = scorer[0](test_data.Y(), y_pred)
+                # independent_score = np.round(independent_score, decimals=2)
+
+                # signature.addIndependentScore(estimator_name=estimator_name, score=independent_score, y_pred=y_pred, y_true=test_data.Y())
 
             else:
                 mean_cv_score = signature.getScore(estimator_name=estimator_name)
-            max_score = np.max([max_score, mean_cv_score])            
+            max_score = np.max([max_score, mean_cv_score])       
+
+
+    max_group_size = 6
+    for sub_list_size in range(1, max_group_size+1):
+        allgenes = [item[1] for item in scores[0:max_n]]
+
+        all_possible_signatures = itertools.combinations(allgenes, sub_list_size)
+        n_possible_groups = comb(len(allgenes), sub_list_size, exact=True)  
+        all_possible_signatures = [genes for genes in all_possible_signatures]
+
+        max_n_groups =  200*sub_list_size
+        if n_possible_groups > max_n_groups:
+            all_possible_signatures = sample(all_possible_signatures, max_n_groups)
+            n_possible_groups = max_n_groups
+    
+        print("Signature size " + str(sub_list_size) + ". There are "+ str(n_possible_groups) + " combinations to be tested.")
+        count = 0  
+        for genes in all_possible_signatures:
+
+            train_data = dataset_train.get_sub_dataset(genes)
+            test_data = dataset_test.get_sub_dataset(genes)        
+            signature = fold_signatures.get(genes)
+
+            for estimator in estimators:
+                mean_cv_score = None
+                estimator_name = estimator['name']
+                if not signature.hasScore(estimator_name=estimator_name):                
+                    # CV score
+                    base_estimator = Pipeline([('scaler', StandardScaler()), ('model', clone(estimator['model']))])
+                    cv_scores = cross_val_score(base_estimator, train_data.X(), train_data.Y(), scoring=scorer[1], cv=sss, n_jobs=-1)                
+                    mean_cv_score = np.round(np.mean(cv_scores), decimals=2)
+
+                    signature.addScore(method='small_combinations', estimator_name=estimator_name, score=mean_cv_score)
+
+                    # # Independent test score          
+                    # scaler = StandardScaler()
+                    # model = clone(estimator['model'])
+                    
+                    # base_estimator.fit(scaler.fit_transform(train_data.X()), train_data.Y())
+                    # y_pred = base_estimator.predict(scaler.transform(test_data.X()))
+
+                    # independent_score = scorer[0](test_data.Y(), y_pred)
+                    # independent_score = np.round(independent_score, decimals=2)
+
+                    # signature.addIndependentScore(estimator_name=estimator_name, score=independent_score, y_pred=y_pred, y_true=test_data.Y())
+
+                else:
+                    mean_cv_score = signature.getScore(estimator_name=estimator_name)
+                max_score = np.max([max_score, mean_cv_score])
+
+                count += 1
+                if count % 1000 == 0:
+                    print("There are " + str(n_possible_groups-count) + " to be tested.")     
+
     return max_score
 
-
-def evaluateSignature(dataset_train, dataset_test, scores, rank_id, estimators, max_n, fold_signatures, scorer):
-    scores = sorted(scores, reverse=True)
-    max_score = -np.inf
-    for i in range(1, np.min([len(scores),max_n+1])):        
-        genes = [item[1] for item in scores[0:i]]  
-        train_data = dataset_train.get_sub_dataset(genes)
-        test_data = dataset_test.get_sub_dataset(genes)
-        sss = StratifiedShuffleSplit(n_splits=10, test_size=0.15, random_state=0)
-        signature = fold_signatures.get(genes)
-        for estimator in estimators:
-            mean_cv_score = None
-            estimator_name = estimator['name']
-            if not signature.hasScore(estimator_name=estimator_name):                            
-                # CV score
-                base_estimator = Pipeline([('scaler', StandardScaler()), ('model', clone(estimator['model']))])
-                cv_scores = cross_val_score(base_estimator, train_data.X(), train_data.Y(), scoring=scorer[1], cv=sss, n_jobs=-1)                
-                mean_cv_score = np.round(np.mean(cv_scores), decimals=2)
-                signature.addScore(method=rank_id, estimator_name=estimator_name, score=mean_cv_score)
-
-                # Independent test score
-                model =  clone(estimator['model'])
-                model.fit(train_data.X(), train_data.Y())
-                y_pred = model.predict(test_data.X())
-                independent_score = scorer[0](test_data.Y(), y_pred)
-                independent_score = np.round(independent_score, decimals=2)
-                signature.addIndependentScore(estimator_name=estimator_name, score=independent_score, y_pred=y_pred, y_true=test_data.Y())
-
-            else:
-                mean_cv_score = signature.getScore(estimator_name=estimator_name)
-            max_score = np.max([max_score, mean_cv_score])            
-    return max_score
 
 input_path = args['inputFolder']
 
@@ -330,9 +461,16 @@ for folder_name in folders:
     for method in ranks:
         # Extracting signatures from Ranks
         # signatures are stored in the fold_signatures set
-        max_score = evaluateRank(train_data, test_data, scores=ranks[method], rank_id=method, estimators=[selected_classifier], max_n=np.min([len(ranks[method]),len(train_data.Y())]), fold_signatures=fold_signatures, scorer=scoreEstimator)
+        max_score = evaluateRankParallel(train_data, test_data, scores=ranks[method], rank_id=method, estimators=[selected_classifier], max_n=np.min([len(ranks[method]),len(train_data.Y())]), fold_signatures=fold_signatures, scorer=scoreEstimator)
 
+        
         print('Max score for '+method+': '+str(max_score))
+        print('Number of signatures: '+str(len(fold_signatures.signatures)))
+        filename = os.path.join(folder_path, 'all_signatures_tested_basic.png')
+        fold_signatures.save(filename)
+
+
+    
 
     best_signatures = fold_signatures.getSignaturesMaxScore()
     
@@ -349,8 +487,9 @@ for folder_name in folders:
 
         sss = StratifiedShuffleSplit(n_splits=1000, test_size=len(train_data.levels()), random_state=0)
 
+        new_train = train_data.get_sub_dataset(signature.genes)
         base_estimator = Pipeline([('scaler', StandardScaler()), ('model', classifier)])
-        cv_scores = cross_val_score(base_estimator, train_data.X(), train_data.Y(), scoring=scoreEstimator[1], cv=sss, n_jobs=-1)
+        cv_scores = cross_val_score(base_estimator, new_train.X(), new_train.Y(), scoring=scoreEstimator[1], cv=sss, n_jobs=-1)
 
         mean_score = np.mean(cv_scores)
         print("Signature bagging score: %f\n\n" % mean_score)
