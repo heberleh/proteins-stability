@@ -39,23 +39,28 @@ class Signature(object):
     def getScore(self, estimator_name):
         return self.scores[estimator_name]
 
-    def addIndependentScore(self, estimator_name, score, y_pred):       
+    def addIndependentScore(self, estimator_name, score, y_pred, y_true):       
         if estimator_name not in self.independent_scores:
             self.independent_scores[estimator_name] = {}
 
         self.independent_scores[estimator_name]['score'] = score
         self.independent_scores[estimator_name]['y_pred'] = y_pred
+        self.independent_scores[estimator_name]['y_true'] = y_true
 
     def getMaxScorePairs(self):
         max_score = -np.inf
         pairs = []
         for estimator_name in self.scores:           
             score = self.scores[estimator_name]
+            independent_score =  -5.0
+            if estimator_name in self.independent_scores:
+                independent_score = self.independent_scores[estimator_name]['score']
+
             if score > max_score:
                 max_score = score
-                pairs = [(max_score, self.independent_scores[estimator_name]['score'], self.size(), self.methods, estimator_name, self)]
+                pairs = [(max_score, independent_score, self.size(), self.methods, estimator_name, self)]
             elif score == max_score:
-                pairs.append((max_score, self.independent_scores[estimator_name]['score'], self.size(), self.methods, estimator_name, self))
+                pairs.append((max_score, independent_score, self.size(), self.methods, estimator_name, self))
         return pairs
 
 class Signatures(object):
@@ -73,8 +78,8 @@ class Signatures(object):
         pairs = []
         for sig in self.signatures.values():
             for pair in sig.getMaxScorePairs():
-                pairs.append(pair)
+                pairs.append(pair)            
 
         pairs = sorted(pairs, reverse=True)
-        selected_pairs = [pair for pair in pairs if pair[0] > pairs[0][0]-0.009]
+        selected_pairs = [pair for pair in pairs if pair[0] > pairs[0][0]-0.011]
         return sorted(selected_pairs, key=lambda tup: tup[2]) #ordered by size       

@@ -31,14 +31,21 @@ from sklearn.tree import DecisionTreeClassifier
 from sklearn.model_selection import LeaveOneOut
 from sklearn.metrics import roc_auc_score
 from sklearn.model_selection import StratifiedShuffleSplit
+from sklearn.svm import SVC
+from sklearn.naive_bayes import GaussianNB
+
+from scipy.special import comb
 
 from signature import Signature, Signatures
 from dataset import Dataset
+from utils import saveBoxplots
 
 import warnings
 
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 warnings.filterwarnings("ignore", category=UserWarning)
+warnings.filterwarnings("ignore", category=RuntimeWarning)
+warnings.filterwarnings("ignore", category=Warning)
 
 
 # construct the argument parse and parse the arguments
@@ -74,7 +81,33 @@ def leaveOneOutScore(X, y, estimator, scorer):
         y_true.append(y[test_index][0])
     return scorer(y_pred, y_true)
 
+
 def evaluateRank(dataset_train, dataset_test, scores, rank_id, estimators, max_n, fold_signatures, scorer):
+    scores = sorted(scores, reverse=True)
+    max_score = -np.inf
+    for i in range(1, max_n+1):        
+        genes = [item[1] for item in scores[0:i]]  
+        train_data = dataset_train.get_sub_dataset(genes)
+        test_data = dataset_test.get_sub_dataset(genes)
+        sss = StratifiedShuffleSplit(n_splits=10, test_size=0.15, random_state=0)
+        signature = fold_signatures.get(genes)
+        for estimator in estimators:
+            mean_cv_score = None
+            estimator_name = estimator['name']
+            if not signature.hasScore(estimator_name=estimator_name):                
+                # CV score
+                base_estimator = Pipeline([('scaler', StandardScaler()), ('model', clone(estimator['model']))])
+                cv_scores = cross_val_score(base_estimator, train_data.X(), train_data.Y(), scoring=scorer[1], cv=sss, n_jobs=-1)                
+                mean_cv_score = np.round(np.mean(cv_scores), decimals=2)
+                signature.addScore(method=rank_id, estimator_name=estimator_name, score=mean_cv_score)
+
+            else:
+                mean_cv_score = signature.getScore(estimator_name=estimator_name)
+            max_score = np.max([max_score, mean_cv_score])            
+    return max_score
+
+
+def evaluateSignature(dataset_train, dataset_test, scores, rank_id, estimators, max_n, fold_signatures, scorer):
     scores = sorted(scores, reverse=True)
     max_score = -np.inf
     for i in range(1, np.min([len(scores),max_n+1])):        
@@ -85,13 +118,13 @@ def evaluateRank(dataset_train, dataset_test, scores, rank_id, estimators, max_n
         signature = fold_signatures.get(genes)
         for estimator in estimators:
             mean_cv_score = None
-            if not signature.hasScore(estimator_name=estimator['name']):
-                model = clone(estimator['model'])
-                
+            estimator_name = estimator['name']
+            if not signature.hasScore(estimator_name=estimator_name):                            
                 # CV score
-                cv_scores = cross_val_score(model, train_data.X(), train_data.Y(), scoring=scorer[1], cv=sss, n_jobs=-1)                
+                base_estimator = Pipeline([('scaler', StandardScaler()), ('model', clone(estimator['model']))])
+                cv_scores = cross_val_score(base_estimator, train_data.X(), train_data.Y(), scoring=scorer[1], cv=sss, n_jobs=-1)                
                 mean_cv_score = np.round(np.mean(cv_scores), decimals=2)
-                signature.addScore(method=rank_id, estimator_name=estimator['name'], score=mean_cv_score)
+                signature.addScore(method=rank_id, estimator_name=estimator_name, score=mean_cv_score)
 
                 # Independent test score
                 model =  clone(estimator['model'])
@@ -99,10 +132,10 @@ def evaluateRank(dataset_train, dataset_test, scores, rank_id, estimators, max_n
                 y_pred = model.predict(test_data.X())
                 independent_score = scorer[0](test_data.Y(), y_pred)
                 independent_score = np.round(independent_score, decimals=2)
-                signature.addIndependentScore(estimator_name=estimator['name'], score=independent_score, y_pred=y_pred)
+                signature.addIndependentScore(estimator_name=estimator_name, score=independent_score, y_pred=y_pred, y_true=test_data.Y())
 
             else:
-                mean_cv_score = signature.getScore(estimator_name=estimator['name'])
+                mean_cv_score = signature.getScore(estimator_name=estimator_name)
             max_score = np.max([max_score, mean_cv_score])            
     return max_score
 
@@ -112,6 +145,7 @@ n_estimators = 50
 nJobs = 8
 LassoBestC = 0.1 #! todo run CV on train dataset to get these
 RidgeBestC = 0.1
+
 
 
 folders = [ item for item in os.listdir(input_path) if os.path.isdir(os.path.join(input_path, item))]
@@ -145,18 +179,34 @@ for folder_name in folders:
     ranks = {}
 
     fold_signatures = Signatures()
+    k_bench = min(train_data.getMinNumberOfSamplesPerClass(), 10)
 
+    # Benchmark of best parameter C for L1 and L2
+    param_grid = {'logisticregression__C': [0.001, 0.01, 0.1, 1, 10, 100]}
+    pipe = make_pipeline(StandardScaler(), LogisticRegression(penalty = 'l1'))     
+    grid = GridSearchCV(pipe, param_grid, cv = k_bench)
+    grid.fit(train_data.X(), train_data.Y())
+    LassoBestC = grid.best_params_['logisticregression__C']
+
+
+    pipe = make_pipeline(StandardScaler(), LogisticRegression(penalty = 'l2'))     
+    grid = GridSearchCV(pipe, param_grid, cv = k_bench)
+    grid.fit(train_data.X(), train_data.Y())
+    RidgeBestC = grid.best_params_['logisticregression__C']  
 
     estimators = [  #lambda_name='model__C',lambda_grid=np.logspace(-5, -1, 50)
+
+    {'name': 'Radial SVM', 'model': SVC(kernel='rbf'), 'lambda_name':'model__C', 'lambda_grid': np.arange(3, 10)},
+
     {'name': 'Linear SVM', 'model': LinearSVC(), 'lambda_name':'model__C', 'lambda_grid': np.arange(3, 10)}, # has decision_function
 
     {'name': 'Decision Tree', 'model': DecisionTreeClassifier(), 'lambda_name':'model__max_depth', 'lambda_grid': np.arange(1, 20)}, #'max_depth': np.arange(3, 10) #has predict_proba
 
-    {'name': 'Random Forest', 'model': RandomForestClassifier(n_estimators=n_estimators,n_jobs=nJobs), 'lambda_name':'model__max_features', 'lambda_grid': np.array([0.5, 0.75, 1.0])}, # predict_proba(X)
+    #{'name': 'Random Forest', 'model': RandomForestClassifier(n_estimators=n_estimators,n_jobs=nJobs), 'lambda_name':'model__max_features', 'lambda_grid': np.array([0.5, 0.75, 1.0])}, # predict_proba(X)
 
-    {'name': 'Ada Boost Decision Trees', 'model': AdaBoostClassifier(base_estimator=DecisionTreeClassifier(), n_estimators=n_estimators), 'lambda_name':'model__learning_rate', 'lambda_grid': np.array([0.01, 0.1, 0.3, 0.6, 1.0])}, # predict_proba(X)
+    #{'name': 'Ada Boost Decision Trees', 'model': AdaBoostClassifier(base_estimator=DecisionTreeClassifier(), n_estimators=n_estimators), 'lambda_name':'model__learning_rate', 'lambda_grid': np.array([0.01, 0.1, 0.3, 0.6, 1.0])}, # predict_proba(X)
 
-    {'name': 'Gradient Boosting', 'model': GradientBoostingClassifier(n_estimators=n_estimators, loss="deviance" ), 'lambda_name':'model__learning_rate', 'lambda_grid': np.array([0.01, 0.1, 0.3, 0.6, 1.0])}, #predict_proba(X)
+    #{'name': 'Gradient Boosting', 'model': GradientBoostingClassifier(n_estimators=n_estimators, loss="deviance" ), 'lambda_name':'model__learning_rate', 'lambda_grid': np.array([0.01, 0.1, 0.3, 0.6, 1.0])}, #predict_proba(X)
 
     {'name': 'Lasso', 'model': LogisticRegression(penalty='l1', C=LassoBestC), 'lambda_name':'model__C', 'lambda_grid': np.logspace(-5, 0, 10)}, #predict_proba(X)
 
@@ -165,6 +215,68 @@ for folder_name in folders:
     {'name': 'Linear Discriminant Analysis', 'model': LinearDiscriminantAnalysis(), 'lambda_name':'model__n_components', 'lambda_grid': None} #! need to be set after filtering
     # predict_proba(X)
     ]
+
+
+
+    #A Bagging classifier.
+
+    #A Bagging classifier is an ensemble meta-estimator that fits base classifiers each on random subsets of the original dataset and then aggregate their individual predictions (either by voting or by averaging) to form a final prediction. Such a meta-estimator can typically be used as a way to reduce the variance of a black-box estimator (e.g., a decision tree), by introducing randomization into its construction procedure and then making an ensemble out of it.
+
+    #This algorithm encompasses several works from the literature. When random subsets of the dataset are drawn as random subsets of the samples, then this algorithm is known as Pasting [R154]. If samples are drawn with replacement, then the method is known as Bagging [R155]. When random subsets of the dataset are drawn as random subsets of the features, then the method is known as Random Subspaces [R156]. Finally, when base estimators are built on subsets of both samples and features, then the method is known as Random Patches [R157].
+    n_estimators_bagging = 65
+    estimators_bagging = [
+        {'name': 'Linear Discriminant Analysis',
+        'model': BaggingClassifier(base_estimator=LinearDiscriminantAnalysis(), n_estimators=n_estimators_bagging, max_samples=1.0, max_features=1.0, bootstrap=True, bootstrap_features=True, oob_score=False, warm_start=False, n_jobs=1, random_state=0, verbose=0)
+        },
+        {'name': 'Ridge',
+        'model': BaggingClassifier(base_estimator=LogisticRegression(penalty='l2', C=RidgeBestC), n_estimators=n_estimators_bagging, max_samples=1.0, max_features=1.0, bootstrap=True, bootstrap_features=True, oob_score=False, warm_start=False, n_jobs=1, random_state=0, verbose=0)
+        },
+        {'name': 'Lasso',
+        'model': BaggingClassifier(base_estimator=LogisticRegression(penalty='l1', C=LassoBestC), n_estimators=n_estimators_bagging, max_samples=1.0, max_features=1.0, bootstrap=True, bootstrap_features=True, oob_score=False, warm_start=False, n_jobs=1, random_state=0, verbose=0)
+        },
+        {'name': 'Decision Tree',
+        'model': BaggingClassifier(base_estimator=DecisionTreeClassifier(), n_estimators=n_estimators_bagging, max_samples=1.0, max_features=1.0, bootstrap=True, bootstrap_features=True, oob_score=False, warm_start=False, n_jobs=1, random_state=0, verbose=0)
+        },
+        {'name': 'Linear SVM',
+        'model': BaggingClassifier(base_estimator=LinearSVC(), n_estimators=n_estimators_bagging, max_samples=1.0, max_features=1.0, bootstrap=True, bootstrap_features=True, oob_score=False, warm_start=False, n_jobs=1, random_state=0, verbose=0)
+        },
+        {'name': 'Radial SVM',
+        'model': BaggingClassifier(base_estimator=SVC(kernel='rbf'), n_estimators=n_estimators_bagging, max_samples=1.0, max_features=1.0, bootstrap=True, bootstrap_features=True, oob_score=False, warm_start=False, n_jobs=1, random_state=0, verbose=0)
+        },
+        {'name': 'Nearest Centroid',
+        'model': BaggingClassifier(base_estimator=NearestCentroid(), n_estimators=n_estimators_bagging, max_samples=1.0, max_features=1.0, bootstrap=True, bootstrap_features=True, oob_score=False, warm_start=False, n_jobs=1, random_state=0, verbose=0)
+        },
+        {'name': 'Gaussian Naive Bayes',
+        'model': BaggingClassifier(base_estimator=GaussianNB(), n_estimators=n_estimators_bagging, max_samples=1.0, max_features=1.0, bootstrap=True, bootstrap_features=True, oob_score=False, warm_start=False, n_jobs=1, random_state=0, verbose=0)
+        },
+    ]
+
+    estimators_basic = {
+        'Linear Discriminant Analysis': {'name': 'Linear Discriminant Analysis',
+        'model': LinearDiscriminantAnalysis()
+        },
+         'Ridge': {'name': 'Ridge',
+        'model': LogisticRegression(penalty='l2', C=RidgeBestC)
+        },
+        'Lasso': {'name': 'Lasso',
+        'model': LogisticRegression(penalty='l1', C=LassoBestC)
+        },
+        'Decision Tree': {'name': 'Decision Tree',
+        'model': DecisionTreeClassifier()
+        },
+        'Linear SVM': {'name': 'Linear SVM',
+        'model': LinearSVC()
+        },
+        'Radial SVM': {'name': 'Radial SVM',
+        'model': SVC(kernel='rbf')
+        },
+        'Nearest Centroid': {'name': 'Nearest Centroid',
+        'model': NearestCentroid()
+        },
+        'Gaussian Naive Bayes': {'name': 'Gaussian Naive Bayes',
+        'model': GaussianNB()
+        }
+    }    
 
     scoreEstimator = None
     matthews_scorer = make_scorer(matthews_corrcoef)
@@ -177,52 +289,75 @@ for folder_name in folders:
         scoreEstimatorInfo = """
         """
     elif len(train_data.levels()) == 3 or len(dataset.levels()) == 2:
-        scoreEstimator = (cohen_kappa_score, kappa_scorer)
+        scoreEstimator = (matthews_corrcoef, matthews_scorer)
         scoreEstimatorInfo = """Kappa"""
     else:
         print('\nDataset with more than 3 classes is not supported.\n\n')
         exit()
 
-    types = ['t1', 't2', 't3', 't4', 't5', 't6', 't7']
-    est_names = []
-    for estimator in estimators:
-        est_names.append(estimator['name'].lower().replace(" ","_"))
 
-    scores_by_type = {}
-    scores_by_estimator = {}
+    estimators_bagging_scores = {}
+    max_mean = -np.inf
+    for estimator in estimators_bagging:
+        sss = StratifiedShuffleSplit(n_splits=20, test_size=len(train_data.levels()), random_state=0)        
+        base_estimator = Pipeline([('scaler', StandardScaler()), ('model', clone(estimator['model']))])
+        cv_scores = cross_val_score(base_estimator, train_data.X(), train_data.Y(), scoring=scoreEstimator[1], cv=sss, n_jobs=-1)
+        estimators_bagging_scores[estimator['name']] = cv_scores
+        mean_scores = np.mean(cv_scores)
+        if mean_scores > max_mean:
+            selected_bagging_classifier = estimator
+            max_mean = mean_scores
+
+        print(estimator['name'] + ': ' + str(mean_scores))
+    
+    selected_classifier = estimators_basic[selected_bagging_classifier['name']]
+
+    bagging_names = [estimator['name'] for estimator in estimators_bagging]
+    box_plot_values = []
+    for estimator_name in bagging_names:
+        box_plot_values.append(estimators_bagging_scores[estimator_name])
+
+    filename = os.path.join(folder_path, 'boxplot_bagging_classifiers_scores.png')
+    saveBoxplots(box_plot_values, filename=filename, x_labels=bagging_names)
+    print("Saved: "+filename)
+
     for method in scores_df.columns:        
         scores = []
         for gene in scores_df.index:
             scores.append((scores_df[method][gene],gene))
         ranks[method] = sorted(scores, reverse=True)
 
-        # for name in est_names:
-        #     if name in method:
-        #         if name not in scores_by_estimator:            
-        #             scores_by_estimator[name] = []
-        #         for gene in scores_df.index:
-        #                 scores_by_estimator[name].append(scores_df[method][gene])
-        #         break
-
-        # for t in types:
-        #     if t in method:
-        #         if t not in scores_by_type:            
-        #             scores_by_type[name] = []
-        #         for gene in scores_df.index:
-        #                 scores_by_type[name].append(scores_df[method][gene])
-        #         break
-
     for method in ranks:
-
-        # Leave One Out - evaluation of signatures
+        # Extracting signatures from Ranks
         # signatures are stored in the fold_signatures set
-        max_score = evaluateRank(train_data, test_data, scores=ranks[method], rank_id=method, estimators=estimators, max_n=len(train_data.Y()), fold_signatures=fold_signatures, scorer=scoreEstimator)
+        max_score = evaluateRank(train_data, test_data, scores=ranks[method], rank_id=method, estimators=[selected_classifier], max_n=np.min([len(ranks[method]),len(train_data.Y())]), fold_signatures=fold_signatures, scorer=scoreEstimator)
 
         print('Max score for '+method+': '+str(max_score))
 
-        for sig in fold_signatures.getSignaturesMaxScore():
-            print('Score: %f, Indep. Score: %f, Size: %d, Method: %s %s, Signature:\n%s' % (sig[0],sig[1], sig[2], sig[4], str(sig[3]), str(sig[5])))
+    best_signatures = fold_signatures.getSignaturesMaxScore()
+    
+    #Evaluate the best_signatures again, with bagging estimators where feature-boostraping is not used, but sample-boostraping is.
+    signature_bagging_scores = {}
+    for sig in best_signatures:
+        print('Score: %f, Indep. Score: %f, Size: %d, Method: %s %s, Signature:\n%s' % (sig[0],sig[1], sig[2], sig[4], str(sig[3]), str(sig[5])))
+        signature = sig[5]
 
+        classifier = clone(selected_bagging_classifier['model'])
+        params_bagging = {"n_estimators": 256, 'max_samples':1.0, 'max_features':1.0, 'bootstrap':True, 'bootstrap_features':False}
+        classifier.set_params(**params_bagging)
+
+
+        sss = StratifiedShuffleSplit(n_splits=1000, test_size=len(train_data.levels()), random_state=0)
+
+        base_estimator = Pipeline([('scaler', StandardScaler()), ('model', classifier)])
+        cv_scores = cross_val_score(base_estimator, train_data.X(), train_data.Y(), scoring=scoreEstimator[1], cv=sss, n_jobs=-1)
+
+        mean_score = np.mean(cv_scores)
+        print("Signature bagging score: %f\n\n" % mean_score)
+
+            # for estimator_name in signature.independent_scores:
+            #     print(signature.independent_scores[estimator_name]['y_pred'])
+            #     print(signature.independent_scores[estimator_name]['y_true'])
 
     # chose the best estimator ?
 

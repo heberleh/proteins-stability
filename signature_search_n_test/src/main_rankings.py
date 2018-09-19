@@ -571,7 +571,7 @@ for train_index, test_index in datasets_indexes:
             exit()
 
 
-        type1, type2, type3, type4, type5, type6, type7 = True, True, True, True, True, True, True
+        type1, type2, type3, type4, type5, type6, type7 = True, True, True, True, True, True, False
         # True, True, True, True, True, True, True
         #type1, type2, type3, type4, type5, type6, type7 = False, False, True, False, False, False, False
         #type1, type2, type3, type4, type5, type6, type7 = False, False, False, True, False, False, False
@@ -595,7 +595,7 @@ for train_index, test_index in datasets_indexes:
 
             {'name': 'Decision Tree', 'model': DecisionTreeClassifier(), 'lambda_name':'model__max_depth', 'lambda_grid': np.arange(1, 20)}, #'max_depth': np.arange(3, 10) #has predict_proba
 
-            {'name': 'Random Forest', 'model': RandomForestClassifier(n_estimators=n_estimators,n_jobs=nJobs), 'lambda_name':'model__max_features', 'lambda_grid': np.array([0.5, 0.75, 1.0])}, # predict_proba(X)
+            {'name': 'Random Forest', 'model': RandomForestClassifier(n_estimators=n_estimators,n_jobs=1), 'lambda_name':'model__max_features', 'lambda_grid': np.array([0.5, 0.75, 1.0])}, # predict_proba(X)
 
             {'name': 'Ada Boost Decision Trees', 'model': AdaBoostClassifier(base_estimator=DecisionTreeClassifier(), n_estimators=n_estimators), 'lambda_name':'model__learning_rate', 'lambda_grid': np.array([0.01, 0.1, 0.3, 0.6, 1.0])}, # predict_proba(X)
 
@@ -918,7 +918,8 @@ for train_index, test_index in datasets_indexes:
                 scores = []
                 name = estimator['name']  
                 method = name.lower().replace(" ","_")  
-                score_normal = np.mean(cross_val_score(clone(estimator['model']), X, y, cv = k, scoring=scoreEstimator))
+                base_estimator = Pipeline([('scaler', StandardScaler()), ('model', clone(estimator['model']))])
+                score_normal = np.mean(cross_val_score(base_estimator, X, y, cv = k, scoring=scoreEstimator))
                 
                 for i in range(len(traindata.genes)):
                     X_shuffled = X.copy()
@@ -926,7 +927,8 @@ for train_index, test_index in datasets_indexes:
                     for j in range(3):
                         np.random.seed(j*3)
                         np.random.shuffle(X_shuffled[:,i])
-                        score = np.mean(cross_val_score(clone(estimator['model']), X_shuffled, y, cv = k, scoring=scoreEstimator))
+                        base_estimator = Pipeline([('scaler', StandardScaler()), ('model', clone(estimator['model']))])
+                        score = np.mean(cross_val_score(base_estimator, X_shuffled, y, cv = k, scoring=scoreEstimator))
                         scores_shuffle.append(score)               
                     gene_name = traindata.genes[i]
                     scores.append((score_normal - np.mean(scores_shuffle), train_dataset.geneIndex(gene_name), gene_name))                    
