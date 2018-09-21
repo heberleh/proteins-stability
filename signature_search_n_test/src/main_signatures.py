@@ -62,19 +62,22 @@ ap = argparse.ArgumentParser()
 
 ap.add_argument('--input-folder', help='The path for the folder where the scores files and others are.', action='store', required=True)
 
-ap.add_argument('--n-splits-best-classifier', help='The number of ShuffleSplits for the Cross-validation to select the best classifier.', action='store', default=64)
+ap.add_argument('--n-splits-best-classifier', help='The number of ShuffleSplits for the Cross-validation to select the best classifier.', action='store', type=int, default=64)
 
-ap.add_argument('--n-estimators-best-classifier', help='The number of estimators to run the BaggingClassifer and select the best regular classifier.', action='store', default=32)
+ap.add_argument('--n-estimators-best-classifier', help='The number of estimators to run the BaggingClassifer and select the best regular classifier.', action='store', type=int, default=32)
 
-ap.add_argument('--n-splits-searching-signatures', help='The number of ShuffleSplits for the Cross-validation evaluate signatures.', action='store', default=64)
+ap.add_argument('--n-splits-searching-signatures', help='The number of ShuffleSplits for the Cross-validation evaluate signatures.', action='store', type=int, default=64)
 
-ap.add_argument('--n-splits-testing-candidates-signatures', help='The number of ShuffleSplits for the Cross-validation to select the final good and best signatures.', action='store', default=256)
+ap.add_argument('--n-splits-testing-candidates-signatures', help='The number of ShuffleSplits for the Cross-validation to select the final good and best signatures.', action='store', type=int, default=256)
 
-ap.add_argument('--n-estimators-testing-candidates-signatures', help='The number of estimators to run the BaggingClassifer and select the final good and best signatures.', action='store', default=128)
+ap.add_argument('--n-estimators-testing-candidates-signatures', help='The number of estimators to run the BaggingClassifer and select the final good and best signatures.', action='store', type=int, default=128)
 
-ap.add_argument('--max-size-all-combinations', help='The maximum size to perform all the combinations of features to for signatures. For size greater than max-size-all-combinations, the algorithm can select random signatures if the parameter max-size-random-combinations is set.', action='store', default=4)
+ap.add_argument('--max-size-all-combinations', help='The maximum size to perform all the combinations of features to for signatures. For size greater than max-size-all-combinations, the algorithm can select random signatures if the parameter max-size-random-combinations is set.', action='store', type=int, default=4)
 
-ap.add_argument('--max-size-random-combinations', help='The maximum size to perform random combinations of the topest features from ranks to form signatures: max-size-all-combinations < |random signatures| <= max-size-random-combinations. If max-size-all-combinations is equal to max-size-random-combinations,random signatures are not created.', action='store', default=5)
+ap.add_argument('--max-size-random-combinations', help='The maximum size to perform random combinations of the topest features from ranks to form signatures: max-size-all-combinations < |random signatures| <= max-size-random-combinations. If max-size-all-combinations is equal to max-size-random-combinations,random signatures are not created.', action='store', type=int, default=5)
+
+ap.add_argument('--debug-fast', help='Set parameters to minimum for debugging.', action='store_true')
+
 
 args = vars(ap.parse_args())
 
@@ -211,22 +214,38 @@ def correlatedSignatures(main_signature, init, correlated_genes):
     correlated_signatures.add(main_signature) 
     return correlated_signatures
 
-
-input_path = args['input-folder']
+print(args)
+input_path = args['input_folder']
 
 nJobs = 8
 
-n_splits_select_classifier = args['n-splits-best-classifier']
-n_estimators_bagging_select_classifier = args['n-estimators-best-classifier']
 
-n_splits_searching_signature = args['n-splits-searching-signatures']
+n_splits_select_classifier = args['n_splits_best_classifier']
+n_estimators_bagging_select_classifier = args['n_estimators_best_classifier']
 
-n_splits_bagging_final = args['n-splits-testing-candidates-signatures']
-n_estimators_bagging_final = args['n-estimators-testing-candidates-signatures']
+n_splits_searching_signature = args['n_splits_searching_signatures']
 
-max_all_comb_size  = args['max-size-all-combinations']
-max_random_comb_size  = args['max-size-random-combinations']
+n_splits_bagging_final = args['n_splits_testing_candidates_signatures']
+n_estimators_bagging_final = args['n_estimators_testing_candidates_signatures']
 
+max_all_comb_size  = args['max_size_all_combinations']
+max_random_comb_size  = args['max_size_random_combinations']
+
+if args['debug_fast']:
+    n_splits_select_classifier = 10
+    n_estimators_bagging_select_classifier = 64
+
+    n_splits_searching_signature = 3
+
+    n_splits_bagging_final = 10
+    n_estimators_bagging_final = 32
+
+    max_all_comb_size  = 2
+    max_random_comb_size  = 3
+
+
+good_genes_freq_global = {}
+best_genes_freq_global = {}
 
 folders = [ item for item in os.listdir(input_path) if os.path.isdir(os.path.join(input_path, item))]
 print(folders)
@@ -256,15 +275,16 @@ for folder_name in folders:
     n_levels = len(train_data.levels())
     uni, c = np.unique(train_data.Y(), return_counts=True)  
 
-    if np.min(c)/np.max(c) < 0.05:
+    if np.min(c)/float(np.max(c)) < 0.05:
         # if balanced and small
         if len(train_data.Y()) < n_levels * 14:
             test_size = len(train_data.levels())
         else:
             test_size = 0.2
+            print(np.min(c)/np.max(c))
     else:
         # if unbalanced and small
-        if train_data.getMinNumberOfSamplesPerClass() < 12:
+        if train_data.getMinNumberOfSamplesPerClass() < 13:
             if (0.1*len(train_data.Y())) < n_levels:
                 test_size = len(train_data.levels())
             else:
@@ -400,9 +420,13 @@ for folder_name in folders:
     estimators_bagging_scores = {}
     max_mean = -np.inf
     for estimator in estimators_bagging:
-        sss = StratifiedShuffleSplit(n_splits=n_splits_select_classifier, test_size=len(train_data.levels()), random_state=0)        
+        
+        sss = StratifiedShuffleSplit(n_splits=n_splits_select_classifier, test_size=test_size, random_state=0)  
+
         base_estimator = Pipeline([('scaler', StandardScaler()), ('model', clone(estimator['model']))])
+        
         cv_scores = cross_val_score(base_estimator, train_data.X(), train_data.Y(), scoring=scoreEstimator, cv=sss, n_jobs=-1)
+
         estimators_bagging_scores[estimator['name']] = cv_scores
         mean_scores = np.mean(cv_scores)
         if mean_scores > max_mean:
@@ -438,7 +462,7 @@ for folder_name in folders:
     for method in keys:
         # Extracting signatures from Ranks
         # signatures are stored in the fold_signatures set
-        max_score = evaluateRankParallel(train_data, test_data, scores=ranks[method], rank_id=method, estimators=[selected_classifier], max_n=max_n_features, fold_signatures=fold_signatures, scorer=scoreEstimator, max_all_comb_size=max_all_comb_size, max_random_comb_size=max_random_comb_size, test_size=test_size, n_splits_searching_signature)
+        max_score = evaluateRankParallel(train_data, test_data, scores=ranks[method], rank_id=method, estimators=[selected_classifier], max_n=max_n_features, fold_signatures=fold_signatures, scorer=scoreEstimator, max_all_comb_size=max_all_comb_size, max_random_comb_size=max_random_comb_size, test_size=test_size, n_splits=n_splits_searching_signature)
         
         print('Max score for '+method+': '+str(max_score))     
         filename = os.path.join(folder_path, 'all_signatures_tested_basic.csv')
@@ -450,8 +474,32 @@ for folder_name in folders:
         time_message = 'Time: %s\n----------------------------\n' % str(datetime.now()-starting_time)
         print(time_message)
        
-
     best_signatures = fold_signatures.getSignaturesMaxScore()
+
+
+    gene_freq = {}
+    for data in best_signatures:       
+        signature = data[5]
+        for gene in signature.genes:
+            if gene in gene_freq:
+                gene_freq[gene] += 1
+            else:
+                gene_freq[gene] =  1
+    for gene in gene_freq:
+        gene_freq[gene] /= float(len(best_signatures))    
+    good_genes_freq_global[folder_name] = gene_freq
+
+    matrix = []
+    for gene in gene_freq:
+        matrix.append([gene, gene_freq[gene]])    
+    matrix = sorted(matrix, key=lambda tup: tup[1], reverse=True)
+    filename = os.path.join(folder_path, 'prot_freq_in_good_signatures.csv')
+    df = DataFrame(matrix)
+    df.to_csv(filename, header=True)
+    #np.savetxt(filename, matrix, delimiter=",", fmt='%s')
+
+
+
 
     correlated_proteins_path = os.path.join(folder_path, 'correlated_genes.csv')
     # read correlation matrix
@@ -477,7 +525,7 @@ for folder_name in folders:
             params_bagging = {"n_estimators": n_estimators_bagging_final, 'max_samples':1.0, 'max_features':1.0, 'bootstrap':True, 'bootstrap_features':False}
             classifier.set_params(**params_bagging)
 
-            sss = StratifiedShuffleSplit(n_splits=n_splits_bagging_final, test_size=len(train_data.levels()), random_state=0)
+            sss = StratifiedShuffleSplit(n_splits=n_splits_bagging_final, test_size=test_size, random_state=0)
 
             new_train = train_data.get_sub_dataset(signature.genes)
             base_estimator = Pipeline([('scaler', StandardScaler()), ('model', classifier)])
@@ -486,73 +534,152 @@ for folder_name in folders:
 
             signature_bagging_scores.append((mean_score, signature))
 
+    
+
     # set(t2).issubset(t1)
     # set(t1).issuperset(t2)
     header = ['1st_decision', '2nd_decision_(bagging)', 'size', 'frequency', "signature", "ranks"]
-    matrix = [header]
+    matrix = []
     for signature in signature_bagging_scores:
         rank_names = []
         for name in ranks:
             rank_genes = [item[1] for item in ranks[name][0:max_n_features]] #! already sorted
             if set(signature[1].genes).issubset(rank_genes):    
                 rank_names.append(name)
-        row = [signature[1].getScore(selected_classifier['name']), signature[0], signature[1].size(), len(rank_names), str(signature[1].genes), str(rank_names)]
+        row = [signature[1].getScore(selected_classifier['name']), signature[0], signature[1].size(), len(rank_names)/len(ranks), str(signature[1].genes), str(rank_names)]
         matrix.append(row)
     filename = os.path.join(folder_path, 'good_signatures.csv')
-    df = DataFrame(data=matrix)
-    df.sort_values([df.columns[1],df.columns[2],df.columns[3]], ascending=[0,1,0])
+    df = DataFrame(data=matrix, columns=header)
+    df.sort_values([df.columns[1],df.columns[0],df.columns[2]], ascending=[0,0,1])
     df.to_csv(filename, header=True)
 
     # Reduce the number of signatures again
     signature_bagging_scores = sorted(signature_bagging_scores, reverse=True)
     max_score = signature_bagging_scores[0][0]    
     best_signatures = [signature for signature in signature_bagging_scores if signature[0] > max_score-0.01]
+
+    gene_freq = {}
+    for data in best_signatures:       
+        signature = data[1]
+        for gene in signature.genes:
+            if gene in gene_freq:
+                gene_freq[gene] += 1
+            else:                
+                gene_freq[gene] =  1
+    for gene in gene_freq:
+        gene_freq[gene] /= float(len(best_signatures))    
+    best_genes_freq_global[folder_name] = gene_freq
+
+    matrix = []
+    for gene in gene_freq:
+        matrix.append([gene, gene_freq[gene]])    
+    matrix = sorted(matrix, key=lambda tup: tup[1], reverse=True)
+    filename = os.path.join(folder_path, 'prot_freq_in_best_signatures.csv')
+    df = DataFrame(matrix)
+    df.to_csv(filename, header=True)
+
     signature_bagging_max_prob = []
     for data in best_signatures:
+        mean_cv_score = data[0]
         signature = data[1]
         
         classifier = clone(selected_bagging_classifier['model'])
         params_bagging = {"n_estimators": n_estimators_bagging_final, 'max_samples':1.0, 'max_features':1.0, 'bootstrap':True, 'bootstrap_features':False}
         classifier.set_params(**params_bagging)
 
-        sss = StratifiedShuffleSplit(n_splits=n_splits_bagging_final, test_size=len(train_data.levels()), random_state=0)
+        sss = StratifiedShuffleSplit(n_splits=n_splits_bagging_final, test_size=test_size, random_state=0)
 
         new_train = train_data.get_sub_dataset(signature.genes)
         base_estimator = Pipeline([('scaler', StandardScaler()), ('model', classifier)])
         cv_probs = cross_val_score(base_estimator, new_train.X(), new_train.Y(), scoring=meanTrueProbability, cv=sss, n_jobs=-1)        
         mean_mean_max_prob = np.round(np.mean(cv_probs), decimals=2)
-        signature_bagging_max_prob.append((mean_mean_max_prob, signature))
+        signature_bagging_max_prob.append((mean_mean_max_prob, signature, mean_cv_score))
 
     signature_bagging_max_prob = sorted(signature_bagging_max_prob, reverse=True)
 
-    header = ['1st_decision', '2nd_decision_(proba)', 'size', 'frequency', "signature", "ranks"]
-    matrix = [header]
+    header = ['1st_decision', '2nd_decision', '3rd decision', 'size', 'frequency in ranks', "signature", "ranks"]
+    matrix = []
     for signature in signature_bagging_max_prob:
         rank_names = []
         for name in ranks:
             rank_genes = [item[1] for item in ranks[name][0:max_n_features]]
-            if set(signature[1].genes).issuperset(rank_genes): #! already sorted
+            if set(signature[1].genes).issubset(rank_genes): #! already sorted
                 rank_names.append(name)
-        row = [signature[1].getScore(selected_classifier['name']), signature[0], signature[1].size(), len(rank_names), str(signature[1].genes), str(rank_names)]
+        row = [signature[1].getScore(selected_classifier['name']), signature[0], signature[2], signature[1].size(), len(rank_names)/len(ranks), str(signature[1].genes), str(rank_names)]
         matrix.append(row)
     filename = os.path.join(folder_path, 'even_better_signatures.csv')
-    df = DataFrame(data=matrix)
-    df.sort_values([df.columns[1],df.columns[2],df.columns[3]], ascending=[0,1,0])
+    df = DataFrame(data=matrix, columns=header)
+    df.sort_values([df.columns[2],df.columns[1],df.columns[3]], ascending=[0,0,1])
     df.to_csv(filename, header=True)
 
     max_prob = signature_bagging_max_prob[0][0]
-    bestSignature = [item[1] for item in signature_bagging_max_prob if item[0] == max_prob]
+    bestSignature = [item for item in signature_bagging_max_prob if item[0] == max_prob]
 
     print("Best signature of this fold is: ")
-    for signature in bestSignature:
+    header = ['1st decision', '2nd decision', '3rd decision', 'size', 'frequency in ranks', 'signature', 'where can be found']
+    matrix = []
+    for data in bestSignature:
+        signature = data[1]
+        prob = data[0]
+        bagging_score = data[2]
+        internal_score = signature.getScore(selected_classifier['name'])
+        rank_names = []
+        for name in ranks:
+            rank_genes = [item[1] for item in ranks[name][0:max_n_features]] #! already sorted
+            if set(signature.genes).issubset(rank_genes):    
+                rank_names.append(name)
         print("     "+str(signature.genes))
-        
+        matrix.append([internal_score, bagging_score, prob, len(signature.genes), len(rank_names)/len(ranks), str(signature.genes), str(rank_names)])
+        filename = os.path.join(folder_path, 'final_signatures.csv')
+        df = DataFrame(matrix, columns=header)        
+        df.to_csv(filename, header=True)
     
+mean_genes_freq = {}
+for fold in good_genes_freq_global:
+    for gene in good_genes_freq_global[fold]:  
+        value = None
+        if gene in good_genes_freq_global[fold]:
+            value = good_genes_freq_global[fold][gene]
+        else:
+            value = 0.0
+        if gene in mean_genes_freq:
+            mean_genes_freq[gene] += value
+        else:
+            mean_genes_freq[gene] = value
+for gene in mean_genes_freq:
+    mean_genes_freq[gene] /= float(len(good_genes_freq_global))
 
-    
+matrix = []
+for gene in mean_genes_freq:
+    matrix.append([gene, mean_genes_freq[gene]])    
+matrix = sorted(matrix, key=lambda tup: tup[1], reverse=True)
+filename = os.path.join(folder_path, 'prot_mean_freq_in_good_signatures.csv')
+df = DataFrame(matrix)
+df.to_csv(filename, header=True)
 
 
+mean_genes_freq = {}
+for fold in best_genes_freq_global:
+    for gene in best_genes_freq_global[fold]:  
+        value = None
+        if gene in best_genes_freq_global[fold]:
+            value = best_genes_freq_global[fold][gene]
+        else:
+            value = 0.0
+        if gene in mean_genes_freq:
+            mean_genes_freq[gene] += value
+        else:
+            mean_genes_freq[gene] = value
+for gene in mean_genes_freq:
+    mean_genes_freq[gene] /= float(len(best_genes_freq_global))
 
+matrix = []
+for gene in mean_genes_freq:
+    matrix.append([gene, mean_genes_freq[gene]])    
+matrix = sorted(matrix, key=lambda tup: tup[1], reverse=True)
+filename = os.path.join(folder_path, 'prot_mean_freq_in_best_signatures.csv')
+df = DataFrame(matrix)
+df.to_csv(filename, header=True)
 
 
 

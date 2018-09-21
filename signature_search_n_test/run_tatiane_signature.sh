@@ -1,1 +1,2 @@
-python ./src/main_signatures.py --inputFolder results/romenia_run_kruskal_fdr_100p_8fold\ \(18-09-18\ 19-48-27\)
+python ./src/main_signatures.py --input-folder results/tati_run_wilcox_100p_9fold\ \(18\-09\-21\ 14\-37\-51\) --debug-fast
+# --n-splits-best-classifier 10 --n-estimators-best-classifier 64 --n-splits-searching-signatures 5 --n-splits-testing-candidates-signatures 5 --n-estimators-testing-candidates-signatures 5 --max-size-all-combinations 3 --max-size-random-combinations 3

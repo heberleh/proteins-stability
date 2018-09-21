@@ -101,7 +101,7 @@ class Signatures(object):
         header.append('proteins')
         header.append('methods (not verified in other ranks)')
 
-        matrix = [header]
+        matrix = []
         count = 1
         for signature in self.signatures:
             row = [signature.size()]           
@@ -115,6 +115,6 @@ class Signatures(object):
             row.append(str(list(signature.methods)))
             matrix.append(row)
         
-        df = DataFrame(data=matrix)
+        df = DataFrame(data=matrix, columns=header)
         df.sort_values([df.columns[1],df.columns[0]], ascending=[0,1])
         df.to_csv(filename, header=True)

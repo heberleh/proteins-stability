@@ -1110,7 +1110,7 @@ for train_index, test_index in datasets_indexes:
 
         matrix = []
         for gene in freq_prot.keys():
-            matrix.append([gene,freq_prot[gene]])
+            matrix.append([gene, freq_prot[gene]/float(len(ranks.keys()))])
 
         matrix = sorted(matrix, key=lambda tup: tup[1], reverse=True)
         filename = results_path+'top_10_prot_frequency.csv'
