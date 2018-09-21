@@ -24,13 +24,15 @@ class Signature(object):
 
     def size(self):
         return len(self.genes)
-        
-    def addScore(self, method, estimator_name, score):
-        if estimator_name in self.scores:            
-            self.methods.add(method)
-        else:
-            self.scores[estimator_name] = score
-            self.methods.add(method)       
+
+    def addMethod(self, method):
+        self.methods.add(method)
+    
+    def getMethods(self):
+        return self.methods
+
+    def setScore(self, estimator_name, score):
+        self.scores[estimator_name] = score    
 
     def hasScore(self, estimator_name):
         if estimator_name in self.scores:
@@ -97,7 +99,7 @@ class Signatures(object):
         for name in estimator_names:
             header.append('cv_'+name)
         header.append('proteins')
-        header.append('methods')
+        header.append('methods (not verified in other ranks)')
 
         matrix = [header]
         count = 1
@@ -114,5 +116,5 @@ class Signatures(object):
             matrix.append(row)
         
         df = DataFrame(data=matrix)
-        df.sort_values([df.columns[2],0], ascending=[0,1])
-        df.to_csv(filename)
+        df.sort_values([df.columns[1],df.columns[0]], ascending=[0,1])
+        df.to_csv(filename, header=True)

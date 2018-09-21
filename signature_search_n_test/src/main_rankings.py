@@ -1119,15 +1119,22 @@ for train_index, test_index in datasets_indexes:
 
         if correlation:
             filename = results_path+'correlated_genes.csv'
-            with open(filename, 'w') as csv_file:        
+            max_n_correlated_genes = 0
+            for gene in correlated_genes:
+                if len(correlated_genes[gene]) > max_n_correlated_genes:
+                    max_n_correlated_genes = len(correlated_genes[gene])                    
+
+            with open(filename, 'w') as csv_file:
                 for gene1 in correlated_genes.keys():
                     line = gene1
-                    for gene2 in correlated_genes[gene1]:
-                        line = line+','+gene2
+                    for i in range(max_n_correlated_genes):
+                        if i < len(correlated_genes):
+                            line += ','+gene2
+                        else:
+                            line += ','                                       
                     line+='\n'
                     csv_file.write(line)
                 csv_file.close()
-
 
 
     time_message = '\n\nIt took %s to complete the script.\n' % str(datetime.now()-starting_time )
