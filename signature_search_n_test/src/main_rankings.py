@@ -93,8 +93,6 @@ ap.add_argument('--correlation', help='Filter variables highly correlated.', act
 
 ap.add_argument('--corrThreshold', help='Cuttoff for correlation.', action='store', type=float, default=0.95)
 
-ap.add_argument('--positiveClass', help='The positive class name.', action='store')
-
 ap.add_argument('--smote', help='Balance the dataset with oversampling.', action='store_true')
 
 args = vars(ap.parse_args())
@@ -128,8 +126,6 @@ results_path = new_dir + '/'
 train_dataset_path = args['train']
 dataset = Dataset(train_dataset_path, scale=False, normalize=False, sep=',')
 
-dataset.saveFile(filename=results_path+'testing_save_dataset.csv')
-
 scoreEstimator = None
 
 
@@ -138,34 +134,14 @@ kappa_scorer = make_scorer(cohen_kappa_score)
 
 uni, counts = np.unique(dataset.Y(), return_counts=True)
 
-if len(dataset.levels()) == 2 and counts[0] == counts[1]:
-    scoreEstimator = 'roc_auc'
-    scoreEstimatorInfo = """
-    """
-elif len(dataset.levels()) == 3 or len(dataset.levels()) == 2:
-    scoreEstimator = kappa_scorer#'matthews_corrcoef'
-    scoreEstimatorInfo = """
-    
-    Chosen score estimator for imbalanced classes.
-
-    The Matthews correlation coefficient is used in machine learning as a measure of the quality of binary (two-class) classifications. It takes into account true and false positives and negatives and is generally regarded as a balanced measure which can be used even if the classes are of very different sizes.
-
-    A correlation of:
-            C =  1 indicates perfect agreement,
-            C =  0 is expected for a prediction no better than random, and
-            C = -1 indicates total disagreement between prediction and observation.
-    
-    """
+if len(dataset.levels()) < 4:
+    scoreEstimator = kappa_scorer
+    scoreEstimatorInfo = """Kappa"""
 else:
     print('\nDataset with more than 3 classes is not supported.\n\n')
     exit()
 
 #pos_label=positive_class_index
-
-
-
-
-
 
 #===================================
 geneNames = [gene for gene in dataset.genes]
@@ -265,20 +241,8 @@ for train_index, test_index in datasets_indexes:
 
         saveHeatMap(train_dataset.get_scaled_data(), train_dataset.samples, train_dataset.genes, results_path+'heatmap_train_dataset_euclidean_zscore', metric='euclidean')    
 
-    positive_class_name = None
-    positive_class_index = None
-    if len(dataset.levels()) == 2:
-        if args['positiveClass'] == None:
-            print("\n\nYour dataset has two classes, thus --positiveClass must be informed.\n\n")
-            exit()
-        else:
-            positive_class_name = args['positiveClass']
-            positive_class_index = train_dataset.levels().tolist().index(positive_class_name)
-            report.write("\nPositive class: %s\n: " % positive_class_name)
-            report.write("Positive class index: %d\n: " % positive_class_index)
-            report.write("Classes from train: %s:\n\n\n" % str(train_dataset.Y()))
 
-
+    
     report.write('Number of samples in the train dataset: %d\n' % len(train_dataset.samples))
     report.write('Number of samples in the independent test dataset: %d \n\n' % len(test_dataset.samples))
 
@@ -304,7 +268,7 @@ for train_index, test_index in datasets_indexes:
     complete_train = train_dataset
     complete_test = test_dataset
 
-    n_estimators = 30
+    n_estimators = 64
 
     global_results_path = results_path
     for option in filter_options:
@@ -468,8 +432,8 @@ for train_index, test_index in datasets_indexes:
 
         # =================== filter by CORRELATION ========================
         # remove/store the correlated features, letting only one of each correlated group in the dataset
-        correlation = args['correlation'] #TODO read from args
-        corr_threshold = args['corrThreshold'] #TODO read from args
+        correlation = args['correlation']
+        corr_threshold = args['corrThreshold']
         correlated_genes = []
         if correlation:       
             print('Filtering by Correlation.\n') 
@@ -521,16 +485,20 @@ for train_index, test_index in datasets_indexes:
             correlated_correlation_matrix = np.matrix(corr_matrix).astype(float)
             ixgrid = np.ix_(corr_genes_indexes, corr_genes_indexes)
             correlated_correlation_matrix= correlated_correlation_matrix[ixgrid]
-            print(correlated_correlation_matrix)
+            
             saveHeatMap(abs(correlated_correlation_matrix), corr_genes_names, corr_genes_names, xticklabels=corr_genes_names, yticklabels=corr_genes_names, filename=results_path+'heatmap_correlated_genes.png', metric='euclidean')
 
             # drop the correlated proteins
+
+            train_dataset.saveFile(results_path+'train_including_correlated_genes.csv')
+            test_dataset.saveFile(results_path+'test_including_correlated_genes.csv')
+            report.write("\nNumber of proteins before removing correlated: %d" % len(train_dataset.genes))
             genes = [gene for gene in train_dataset.genes]
             for gene in genes_to_drop:
-                genes.remove(gene)
+                genes.remove(gene)            
             train_dataset = train_dataset.get_sub_dataset(genes)
             test_dataset = test_dataset.get_sub_dataset(genes)
-
+            report.write("\nNumber of proteins after removing correlated: %d" % len(train_dataset.genes))
             # ========= end graphics ===========
 
         if args['onlyStats']:
@@ -544,8 +512,8 @@ for train_index, test_index in datasets_indexes:
         # ================== RANKING / ATTRIBUTE SCORES ========================
         # ======================================================================
 
-        test_dataset.saveFile(filename=results_path+'dataset_test_from_scrip.csv')
-        train_dataset.saveFile(filename=results_path+'dataset_train_from_scrip.csv')
+        test_dataset.saveFile(filename=results_path+'dataset_test_without_correlated_genes.csv')
+        train_dataset.saveFile(filename=results_path+'dataset_train_without_correlated_genes.csv')
         if args['smote']:
             report.write("\n\n Number of samples before SMOTE: %d" % len(train_dataset.samples))
             train_dataset = train_dataset.getSmote(invert=True)
@@ -571,7 +539,7 @@ for train_index, test_index in datasets_indexes:
             exit()
 
 
-        type1, type2, type3, type4, type5, type6, type7 = True, True, True, True, True, True, False
+        type1, type2, type3, type4, type5, type6, type7 = True, True, True, True, True, True, True
         # True, True, True, True, True, True, True
         #type1, type2, type3, type4, type5, type6, type7 = False, False, True, False, False, False, False
         #type1, type2, type3, type4, type5, type6, type7 = False, False, False, True, False, False, False
@@ -1125,11 +1093,12 @@ for train_index, test_index in datasets_indexes:
                     max_n_correlated_genes = len(correlated_genes[gene])                    
 
             with open(filename, 'w') as csv_file:
-                for gene1 in correlated_genes.keys():
-                    line = gene1
+                for gene in correlated_genes.keys():
+                    line = gene
+                    genes = list(correlated_genes[gene])
                     for i in range(max_n_correlated_genes):
-                        if i < len(correlated_genes):
-                            line += ','+gene2
+                        if i < len(genes):
+                            line += ','+genes[i]
                         else:
                             line += ','                                       
                     line+='\n'

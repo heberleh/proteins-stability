@@ -112,14 +112,14 @@ def fitClassifiers(estimators, train_data, test_data, scoring, signature, n_spli
         y_test = test.Y()
         base = Pipeline([('scaler', StandardScaler()), ('model', clone(estimator['model']))])
         base.fit(X, y)
-        y_pred = base.predict(X_test)
+        # y_pred = base.predict(X_test)
         
         independent_scores = {}
         for scoring_name in scoring:
-            independent_scores[scoring_name] = scoring[scoring_name](y_test, y_pred)
+            independent_scores[scoring_name] = scoring[scoring_name](base, X_test, y_test)
         estimator_independent_scores[estimator['name']] = independent_scores
     
-    return {'cv': estimator_scores, 'independent': estimator_independent_scores}
+    return {'cv': estimator_cv_scores, 'independent': estimator_independent_scores}
 
 
 
@@ -271,6 +271,8 @@ max_random_comb_size  = args['max_size_random_combinations']
 n_split_final_signature = args['n_splits_testing_final_signatures']
 n_estimators_final_signatures = args['n_estimators_final_signatures']
 
+
+limit_n_ranks = -1
 if args['debug_fast']:
     n_splits_select_classifier = 3
     n_estimators_bagging_select_classifier = 10
@@ -285,6 +287,8 @@ if args['debug_fast']:
     
     n_split_final_signature = 5
     n_estimators_final_signatures = 5
+
+    limit_n_ranks = 3
 
 
 good_genes_freq_global = {}
@@ -307,7 +311,7 @@ def getScoring(train_data):
     scoring['kappa'] = make_scorer(cohen_kappa_score)
     scoring['f1_weighted'] = make_scorer(f1_score, average='weighted')
     scoring['precision_weighted'] = make_scorer(precision_score, average='weighted')    
-    scoring['fbeta_weighted'] = make_scorer(fbeta_score,average='weighted')
+    scoring['fbeta_weighted'] = make_scorer(fbeta_score, average='weighted', beta=0.5)
     if len(train_data.levels()) == 2:
         scoring['average_precision_weighted'] = make_scorer(average_precision_score, average='weighted')
         scoring['matthews_corrcoef'] = make_scorer(matthews_corrcoef)
@@ -317,12 +321,13 @@ def getScoring(train_data):
             scoring['f1_'+label] = make_scorer(f1_score, pos_label=i)
             scoring['precision_'+label] = make_scorer(precision_score, pos_label=i)
             scoring['recall_'+label] = make_scorer(recall_score, pos_label=i)
-            scoring['fbeta_'+label] = make_scorer(fbeta_score, pos_label=i)
+            scoring['fbeta_'+label] = make_scorer(fbeta_score, pos_label=i, beta=0.5)
     return scoring
 
 
 
 folders = [ item for item in os.listdir(input_path) if os.path.isdir(os.path.join(input_path, item))]
+
 print(folders)
 
 for folder_name in folders:
@@ -339,8 +344,8 @@ for folder_name in folders:
         exit()
 
 
-    train_path = os.path.join(folder_path, 'dataset_train_from_scrip.csv')
-    test_path = os.path.join(folder_path, 'dataset_test_from_scrip.csv')
+    train_path = os.path.join(folder_path, 'train_including_correlated_genes.csv')
+    test_path = os.path.join(folder_path, 'test_including_correlated_genes.csv')
 
     train_data = Dataset(train_path, scale=False, normalize=False, sep=',')
     test_data = Dataset(test_path, scale=False, normalize=False, sep=',')
@@ -546,9 +551,10 @@ for folder_name in folders:
 
     starting_time = datetime.now() 
     count = 1
-    n_ranks = len(ranks)
+        
     keys = ranks.keys()
-    keys = keys[0:2]   
+    if limit_n_ranks != -1:
+        keys = keys[0:limit_n_ranks]   
 
     max_n_features=np.min([len(ranks[method]),len(train_data.Y())]) 
 
@@ -561,7 +567,7 @@ for folder_name in folders:
         filename = os.path.join(folder_path, 'all_signatures_tested_basic.csv')
         fold_signatures.save(filename)
 
-        print("Rank (%d/%d)" % (count, n_ranks))
+        print("Rank (%d/%d)" % (count, len(keys)))
         count+=1
 
         time_message = 'Time: %s\n----------------------------\n' % str(datetime.now()-starting_time)
