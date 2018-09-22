@@ -135,6 +135,7 @@ class Dataset(object):
         print self.labels
         np.random.shuffle(self.labels)
         print self.labels
+        self.sortSamplesByClassLabel()
 
     def getMatrixZscoreWithColClassAsDataFrame(self):
         levels = self.levels().tolist()

@@ -77,14 +77,14 @@ class Signatures(object):
             self.signatures[signature] = signature
         return self.signatures[signature]
 
-    def getSignaturesMaxScore(self):
+    def getSignaturesMaxScore(self, delta):
         pairs = []
         for sig in self.signatures.values():
             for pair in sig.getMaxScorePairs():
                 pairs.append(pair)            
 
         pairs = sorted(pairs, reverse=True)
-        selected_pairs = [pair for pair in pairs if pair[0] > pairs[0][0]-0.05]
+        selected_pairs = [pair for pair in pairs if pair[0] > pairs[0][0]-delta]
         return sorted(selected_pairs, key=lambda tup: tup[2]) #ordered by size       
 
     def save(self, filename):
