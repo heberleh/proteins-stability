@@ -86,31 +86,49 @@ ap.add_argument('--debug-fast', help='Set parameters to minimum for debugging.',
 args = vars(ap.parse_args())
 
 
+import platform; print(platform.platform())
+import sys; print("Python", sys.version)
+import numpy; print("NumPy", numpy.__version__)
+import scipy; print("SciPy", scipy.__version__)
+import sklearn; print("Scikit-Learn", sklearn.__version__)
 
 # ==============================================================================================
 
+from imblearn.over_sampling import SMOTE 
+from imblearn.pipeline import Pipeline as imbPipeline
+def fitClassifiers(estimators, train_data, test_data, scoring, signature, n_splits, test_size, smote=False, n_jobs=-1):
 
-def fitClassifiers(estimators, train_data, test_data, scoring, signature, n_splits, test_size):
+    print("Evaluating the best signature using many classifiers.")
 
     sss = StratifiedShuffleSplit(n_splits=n_splits, test_size=test_size, random_state=0)
     
-    train = train_data.get_sub_dataset(signature.genes)
-    test = test_data.get_sub_dataset(signature.genes) 
+    train = train_data.get_sub_dataset(signature.genes)        
+    test = test_data.get_sub_dataset(signature.genes)
 
     estimator_cv_scores = {}
     estimator_independent_scores = {}
     for estimator_name in estimators:
+        print("Classifier: "+estimator_name)
         estimator = estimators[estimator_name]
-        base = Pipeline([('scaler', StandardScaler()), ('model', clone(estimator['model']))])
+        base = None
+        if smote:            
+            base =  imbPipeline([('sampling', SMOTE()),('scaler', StandardScaler()), ('model', clone(estimator['model']))])
+        else:
+            base = Pipeline([('scaler', StandardScaler()), ('model', clone(estimator['model']))])
+              
         X = train.X()
         y = train.Y()
-        cv_scores = cross_validate(base, X, y, scoring=scoring, cv=sss, n_jobs=-1)
+        cv_scores = cross_validate(base, X, y, scoring=scoring, cv=sss, return_train_score=False, n_jobs=-1)
                 
         estimator_cv_scores[estimator['name']] = cv_scores
 
         X_test = test.X()
         y_test = test.Y()
-        base = Pipeline([('scaler', StandardScaler()), ('model', clone(estimator['model']))])
+        if smote:
+            base =  imbPipeline([('sampling', SMOTE()),('scaler', StandardScaler()), ('model', clone(estimator['model']))])
+        else:
+            base = Pipeline([('scaler', StandardScaler()), ('model', clone(estimator['model']))])
+
         base.fit(X, y)
         # y_pred = base.predict(X_test)
         
@@ -242,13 +260,17 @@ def correlatedSignatures(main_signature, init, correlated_genes):
     correlated_signatures = set()
     for i in range(init, len(main_signature.genes)):              
         if main_signature.genes[i] in correlated_genes:            
-            for gene in correlated_genes[main_signature.genes[i]]:               
+            for gene in correlated_genes[main_signature.genes[i]]:            
                 copy_genes = [item for item in main_signature.genes]                
-                copy_genes[i] = gene                              
-                for signature in correlatedSignatures(Signature(copy_genes), i, correlated_genes):
-                    correlated_signatures.add(signature)
+                copy_genes[i] = gene     
+                new_signature = Signature(copy_genes)
+                for name in main_signature.scores:
+                    new_signature.scores[name] = -5.0
 
-    correlated_signatures.add(main_signature) 
+                for signature in correlatedSignatures(new_signature, i, correlated_genes):
+                    correlated_signatures.add(signature)                    
+
+    correlated_signatures.add(main_signature)     
     return correlated_signatures
 
 print(args)
@@ -274,7 +296,7 @@ n_estimators_final_signatures = args['n_estimators_final_signatures']
 
 limit_n_ranks = -1
 if args['debug_fast']:
-    n_splits_select_classifier = 3
+    n_splits_select_classifier = 10
     n_estimators_bagging_select_classifier = 10
 
     n_splits_searching_signature = 3
@@ -301,7 +323,7 @@ sig_freq_in_all_ranks_global = {}
 best_sig_freq_global = {}
 
 best_sig_scores_global = {}
-
+best_sig_scores_smote_global = {}
 
 from sklearn.metrics import accuracy_score, average_precision_score, f1_score, precision_score, recall_score, roc_auc_score, cohen_kappa_score, fbeta_score, matthews_corrcoef
 
@@ -355,6 +377,7 @@ for folder_name in folders:
     n_levels = len(train_data.levels())
     uni, c = np.unique(train_data.Y(), return_counts=True)  
 
+    unbalanced = False
     if np.min(c)/float(np.max(c)) < 0.05:
         # if balanced and small
         if len(train_data.Y()) < n_levels * 14:
@@ -364,6 +387,7 @@ for folder_name in folders:
             print(np.min(c)/np.max(c))
     else:
         # if unbalanced and small
+        unbalanced = True #! -> will add the balanced by Smote scores aside with the unbalanced ones
         if train_data.getMinNumberOfSamplesPerClass() < 13:
             if (0.1*len(train_data.Y())) < n_levels:
                 test_size = len(train_data.levels())
@@ -628,23 +652,25 @@ for folder_name in folders:
     for gene in correlation_df.index:
         correlated_genes[gene] = set()
         for gene2 in correlation_df.loc[gene]:
-            if pd.isna(gene2) and not gene2 == '':
+            if not pd.isna(gene2) and not gene2 == '':
                 correlated_genes[gene].add(gene2)
 
     #Evaluate the best_signatures again, with bagging estimators where feature-boostraping is not used, but sample-boostraping is.
+    print("\n\nEvaluating signatures with high score using Bagging Classifier.\n")
     signature_bagging_scores = []
+
+    sss = StratifiedShuffleSplit(n_splits=n_splits_bagging_final, test_size=test_size, random_state=0)
     for data in best_signatures:
         #print('Score: %f, Indep. Score: %f, Size: %d, Method: %s %s, Signature:\n%s' % (sig[0],sig[1], sig[2], sig[4], str(sig[3]), str(sig[5])))
         main_signature = data[5]        
 
-        signatures_set = correlatedSignatures(main_signature, 0, correlated_genes)
-        
-        for signature in signatures_set:
+        signatures_set = correlatedSignatures(main_signature, 0, correlated_genes)       
+
+        for signature in signatures_set:            
+            
             classifier = clone(selected_bagging_classifier['model'])
             params_bagging = {"n_estimators": n_estimators_bagging_final, 'max_samples':1.0, 'max_features':1.0, 'bootstrap':True, 'bootstrap_features':False}
             classifier.set_params(**params_bagging)
-
-            sss = StratifiedShuffleSplit(n_splits=n_splits_bagging_final, test_size=test_size, random_state=0)
 
             new_train = train_data.get_sub_dataset(signature.genes)
             base_estimator = Pipeline([('scaler', StandardScaler()), ('model', classifier)])
@@ -697,6 +723,7 @@ for folder_name in folders:
     df = DataFrame(matrix)
     df.to_csv(filename, header=True)
 
+    print("\n\nEvaluating the best signatures. Verifying the probability related to each class.")
     signature_bagging_max_prob = []
     for data in best_signatures:
         score = data[0]
@@ -742,6 +769,7 @@ for folder_name in folders:
     matrix = []
     best_sig_data = []
     best_sig_scores = []
+    best_sig_scores_smote = []
     for data in bestSignature:
         #mean_mean_max_prob, signature, mean_cv, mean_freq, score
         signature = data[1]
@@ -784,16 +812,44 @@ for folder_name in folders:
         bootstrap_features_samples.set_params(**params_bagging)
         final_estimators[name + "_bs_features_samples"] = selected_bagging_classifier
 
-        result = fitClassifiers(final_estimators, train_data, test_data, getScoring(train_data), signature, n_splits=n_split_final_signature, test_size=test_size)
 
-        best_sig_scores.append(result)
+        from sklearn.ensemble import VotingClassifier
+        voting_estimators = []
+        for name in final_estimators:
+            voting_estimators.append((name, final_estimators[name]['model']))
+
+        eclf = VotingClassifier(estimators=voting_estimators, voting='hard')
+        final_estimators["all_classifiers_ensemble"] = {'name': 'Voting Classifier', 'model': eclf}
+        
+        base = Pipeline([('scaler', StandardScaler()), ('model', eclf)])
+        base.fit(train_data.X(), train_data.Y())
+        print(kappa_scorer(eclf, test_data.X(), test_data.Y()))
+
+
+
+        result = fitClassifiers(final_estimators, train_data, test_data, getScoring(train_data), signature, n_splits=n_split_final_signature, test_size=test_size, smote=False, n_jobs=nJobs)
+
+        if unbalanced:
+            result_smote = fitClassifiers(final_estimators, train_data, test_data, getScoring(train_data), signature, n_splits=n_split_final_signature, test_size=test_size, smote=True, n_jobs=nJobs)
+            best_sig_scores_smote.append(result_smote)
+
+        best_sig_scores.append(result)        
         print(result)
 
     best_signatures_global[folder_name] = best_sig_data
     best_sig_scores_global[folder_name] = best_sig_scores
+    best_sig_scores_smote_global[folder_name] = best_sig_scores_smote
 
 
+import json
+with open('best_signatures_global.json', 'w') as f:
+  json.dump(best_signatures_global, f, ensure_ascii=False)
 
+with open('best_sig_scores_global.json', 'w') as f:
+  json.dump(best_sig_scores_global, f, ensure_ascii=False)
+
+with open('best_signatures_global.json', 'w') as f:
+  json.dump(best_sig_scores_smote_global, f, ensure_ascii=False)
 
     
 mean_genes_freq = {}
@@ -849,21 +905,20 @@ df.to_csv(filename, header=True)
 
 
 # ====================================== COMPARE =================================
+# good_genes_freq_global = {}
+# best_genes_freq_global = {}
 
+# good_signatures_global = {}
+# best_signatures_global = {}
 
-good_genes_freq_global = {}
-best_genes_freq_global = {}
+# sig_freq_in_all_ranks_global = {}
+# best_sig_freq_global = {}
 
-good_signatures_global = {}
-best_signatures_global = {}
+# best_sig_scores_global = {}
 
-sig_freq_in_all_ranks_global = {}
-best_sig_freq_global = {}
-
-best_sig_scores_global = {}
-
-
-
+# best_signatures_global[folder_name] = best_sig_data
+# best_sig_scores_global[folder_name] = best_sig_scores
+# best_sig_scores_smote_global[folder_name] = best_sig_scores_smote
 
 
 

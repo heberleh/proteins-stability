@@ -636,24 +636,31 @@ for train_index, test_index in datasets_indexes:
 
         # ---------------------- Type 1 - Model Based Ranks -------------------------
         if type1:
-            print('\nExecuting Type 1\n')
-            # Random Forests
-            clf = RandomForestClassifier(n_jobs=nJobs, n_estimators=n_estimators)
-            scores = []
-            for i in range(len(train_dataset.genes)):
-                x_train = train_dataset.X()[:, i] # data matrix
-                y_train = train_dataset.Y()  # classes/labels of each sample from             
 
-                scores_cv = cross_val_score(clone(clf), x_train, y_train, cv=k, scoring=scoreEstimator)
-                score = np.mean(scores_cv)
-                scores.append((score, train_dataset.geneIndex(train_dataset.genes[i]), train_dataset.genes[i]))
+            def singularAttributeScore(estimator, train_data):                
+                name = estimator['name']
+                method = name.lower().replace(" ","_")
 
-            filename = 'rank_t1_uni_random_forest'
-            method_name = 't1_uni_random_forest'
-            header = '-- Type 1 - Model Based Rank - Random Forests --'
-            scores = sortSaveNormalizeAndSave(scores, results_path_rank, filename)
-            ranks[method_name] = scores     
-            reportTop10Proteins(report, scores, correlated_genes, header)                     
+                scores = []
+                for i in range(len(train_dataset.genes)):
+                    x_train = train_dataset.X()[:, i] # data matrix
+                    y_train = train_dataset.Y()  # classes/labels of each sample from 
+
+                    base_estimator = Pipeline([('scaler', StandardScaler()),
+                                                 ('model', clone(estimator['model']))])
+                    score = np.mean(cross_val_score(base_estimator, x_train, y_train, cv = k, scoring=scoreEstimator, n_jobs=nJobs))
+                    scores.append((abs(score), train_dataset.geneIndex(train_dataset.genes[i]), train_dataset.genes[i]))
+
+                filename = 'rank_t1_model_based_'+method
+                method_name = 't1_model_based_rank_'+method
+                header = '-- Type 1 - Model Based (per attribute) - '+name+' --'
+                scores = sortSaveNormalizeAndSave(scores, results_path_rank, filename)
+                ranks[method_name] = scores     
+                reportTop10Proteins(report, scores, correlated_genes, header)  
+
+        for estimator in estimators:
+            print('Model based (1 per feature): %s' % estimator['name'])
+            singularAttributeScore(estimator, train_dataset)                  
         
 
         # ---------------------- Type 2 - Rank based on attribute Weights -------------------------
@@ -887,7 +894,7 @@ for train_index, test_index in datasets_indexes:
                 name = estimator['name']  
                 method = name.lower().replace(" ","_")  
                 base_estimator = Pipeline([('scaler', StandardScaler()), ('model', clone(estimator['model']))])
-                score_normal = np.mean(cross_val_score(base_estimator, X, y, cv = k, scoring=scoreEstimator))
+                score_normal = np.mean(cross_val_score(base_estimator, X, y, cv = k, scoring=scoreEstimator, n_jobs=nJobs))
                 
                 for i in range(len(traindata.genes)):
                     X_shuffled = X.copy()
@@ -896,7 +903,7 @@ for train_index, test_index in datasets_indexes:
                         np.random.seed(j*3)
                         np.random.shuffle(X_shuffled[:,i])
                         base_estimator = Pipeline([('scaler', StandardScaler()), ('model', clone(estimator['model']))])
-                        score = np.mean(cross_val_score(base_estimator, X_shuffled, y, cv = k, scoring=scoreEstimator))
+                        score = np.mean(cross_val_score(base_estimator, X_shuffled, y, cv = k, scoring=scoreEstimator, n_jobs=nJobs))
                         scores_shuffle.append(score)               
                     gene_name = traindata.genes[i]
                     scores.append((score_normal - np.mean(scores_shuffle), train_dataset.geneIndex(gene_name), gene_name))                    
@@ -937,8 +944,11 @@ for train_index, test_index in datasets_indexes:
                 reportTop10Proteins(report, scores, correlated_genes, header)               
 
             for estimator in estimators:
-                print('RFA: '+estimator['name'])
+                
                 rfaRank(estimator, train_dataset)
+                print('RFA: '+estimator['name'])
+                # except Exception:
+                #     print("There was a problem performing RFA: "+estimator['name'] +" and it was not computed. Please try again if this rank in particular is important.")
             print("\n")
 
 
@@ -1173,6 +1183,29 @@ saveHeatMapScores(matrix, rows_labels=var_df.index , cols_labels=var_df.columns,
 filename = results_path_parent + 'std_score_headmap.png'
 matrix = np.matrix(std_df.values).astype(float)
 saveHeatMapScores(matrix, rows_labels=std_df.index , cols_labels=std_df.columns, filename=filename, metric='euclidean')
+
+
+
+
+
+freq_genes_set = set()
+for freq_prot in freq_prot_list:
+    for gene in freq_prot.keys():
+       freq_genes_set.add(gene)
+
+matrix = []
+for gene in freq_genes_set:
+    row = [gene]
+    for freq_prot in freq_prot_list:
+        if gene in freq_prot:
+            row.append(freq_prot[gene])
+        else:
+            row.append(0.0)
+header = ['Protein'] + range(len(freq_prot_list))
+df = DataFrame(matrix, columns=header)         
+filename = results_path_parent + 'top10_prot_freq_from_each_fold.csv'
+df.to_csv(filename, header=True)
+
 
 
 

@@ -187,7 +187,8 @@ class RFA(BaseEstimator, MetaEstimatorMixin, SelectorMixin):
             if self.verbose > 0:
                 print("Fitting estimator with %d features." % np.sum(support_))
 
-            estimator.fit(X[:, features], y)
+            
+            estimator.fit(X[:, features], y)           
 
             # Get coefs
             if hasattr(estimator, 'coef_'):
@@ -202,9 +203,17 @@ class RFA(BaseEstimator, MetaEstimatorMixin, SelectorMixin):
             # Get ranks
             # ! For RFA, the rank is inverted: (np.argsort(list) replaced by (np.argsort(-list)
             if coefs.ndim > 1:
-                ranks = np.argsort(-safe_sqr(coefs).sum(axis=0))
+                try:                
+                    ranks = np.argsort(-safe_sqr(coefs).sum(axis=0))
+                except ValueError:
+                    coefs = np.nan_to_num(coefs)
+                    ranks = np.argsort(-safe_sqr(coefs).sum(axis=0))
             else:
-                ranks = np.argsort(-safe_sqr(coefs))
+                try:                
+                    ranks = np.argsort(-safe_sqr(coefs))
+                except ValueError:
+                    coefs = np.nan_to_num(coefs)
+                    ranks = np.argsort(-safe_sqr(coefs))
 
             # for sparse case ranks is matrix
             ranks = np.ravel(ranks)
