@@ -9,6 +9,7 @@ class Signature(object):
         self.weight = 0 # how many times this signature was selected        
         self.id = str(sorted(self.genes))
 
+        self.mean_freq = 0.0
         self.scores = {}
         self.methods = set()
         self.independent_scores = {}

@@ -82,6 +82,7 @@ ap.add_argument('--n-estimators-final-signatures', help='The number of estimator
 
 ap.add_argument('--debug-fast', help='Set parameters to minimum for debugging.', action='store_true')
 
+ap.add_argument('--n-jobs', help='Number of parallel processing cores used when fitting models. Default: use all cores.', action='store', type=int, default=-1)
 
 args = vars(ap.parse_args())
 
@@ -96,7 +97,7 @@ import sklearn; print("Scikit-Learn", sklearn.__version__)
 
 from imblearn.over_sampling import SMOTE 
 from imblearn.pipeline import Pipeline as imbPipeline
-def fitClassifiers(estimators, train_data, test_data, scoring, signature, n_splits, test_size, smote=False, n_jobs=-1):
+def fitClassifiers(estimators, train_data, test_data, scoring, signature, n_splits, test_size, smote=False, n_jobs=-1, main_score_name='kappa'):
 
     print("Evaluating the best signature using many classifiers.")
 
@@ -107,6 +108,8 @@ def fitClassifiers(estimators, train_data, test_data, scoring, signature, n_spli
 
     estimator_cv_scores = {}
     estimator_independent_scores = {}
+    max_score = -np.inf
+    selected_classifier_name = ""
     for estimator_name in estimators:
         print("Classifier: "+estimator_name)
         estimator = estimators[estimator_name]
@@ -120,6 +123,10 @@ def fitClassifiers(estimators, train_data, test_data, scoring, signature, n_spli
         y = train.Y()
         cv_scores = cross_validate(base, X, y, scoring=scoring, cv=sss, return_train_score=False, n_jobs=-1)
                 
+        mean_score = np.mean(cv_scores['test_'+main_score_name])
+        if mean_score > max_score:
+            max_score = mean_score
+            selected_classifier_name = estimator_name
         estimator_cv_scores[estimator['name']] = cv_scores
 
         X_test = test.X()
@@ -137,7 +144,7 @@ def fitClassifiers(estimators, train_data, test_data, scoring, signature, n_spli
             independent_scores[scoring_name] = scoring[scoring_name](base, X_test, y_test)
         estimator_independent_scores[estimator['name']] = independent_scores
     
-    return {'cv': estimator_cv_scores, 'independent': estimator_independent_scores}
+    return {'cv': estimator_cv_scores, 'selected_classifier_name': selected_classifier_name, 'independent': estimator_independent_scores, 'max_main_score': max_score, 'main_score_name': main_score_name}
 
 
 
@@ -258,26 +265,35 @@ def evaluateRankParallel(dataset_train, dataset_test, scores, rank_id, estimator
 
 def correlatedSignatures(main_signature, init, correlated_genes):
     correlated_signatures = set()
+
     for i in range(init, len(main_signature.genes)):              
         if main_signature.genes[i] in correlated_genes:            
             for gene in correlated_genes[main_signature.genes[i]]:            
                 copy_genes = [item for item in main_signature.genes]                
                 copy_genes[i] = gene     
+
                 new_signature = Signature(copy_genes)
+                new_signature.mean_freq = main_signature.mean_freq
                 for name in main_signature.scores:
                     new_signature.scores[name] = -5.0
-
-                for signature in correlatedSignatures(new_signature, i, correlated_genes):
+                    
+                for signature in correlatedSignatures(new_signature, i, correlated_genes, freq_mean):
                     correlated_signatures.add(signature)                    
 
     correlated_signatures.add(main_signature)     
     return correlated_signatures
 
-print(args)
+
 input_path = args['input_folder']
 
-nJobs = 8
+filename = os.path.join(input_path, 'report_signatures.txt')
+report =  open(filename,'w')
+report.write('Input path: %s\n' % args['input_folder'])
 
+report.write("Arguments: \n")
+report.write(str(args)+'\n')
+
+nJobs = args['n_jobs']
 
 n_splits_select_classifier = args['n_splits_best_classifier']
 n_estimators_bagging_select_classifier = args['n_estimators_best_classifier']
@@ -350,9 +366,13 @@ def getScoring(train_data):
 
 folders = [ item for item in os.listdir(input_path) if os.path.isdir(os.path.join(input_path, item))]
 
-print(folders)
+report.write('\nFolders used: %s\n' % str(folders))
 
-for folder_name in folders:
+
+for folder_name in sorted(folders):
+
+    report.write('\n\n\n-------------- Fold %s ---------------\n\n' % folder_name)
+
     folder_path = os.path.join(input_path, folder_name)
 
     subfolders = [ item for item in os.listdir(folder_path) if os.path.isdir(os.path.join(folder_path, item))]
@@ -388,6 +408,7 @@ for folder_name in folders:
     else:
         # if unbalanced and small
         unbalanced = True #! -> will add the balanced by Smote scores aside with the unbalanced ones
+        report.write('The train set was considered unbalanced.\n')
         if train_data.getMinNumberOfSamplesPerClass() < 13:
             if (0.1*len(train_data.Y())) < n_levels:
                 test_size = len(train_data.levels())
@@ -396,6 +417,7 @@ for folder_name in folders:
         else:
             test_size = 0.2     
 
+    report.write("Using %f as test_size.\n" % test_size)
     print('Size of test set for cv: %f' % test_size)
 
     score_matrix_path = os.path.join(folder_path, 'all_ranks_scores.csv')
@@ -541,6 +563,8 @@ for folder_name in folders:
     estimators_bagging_scores = {}
     max_mean = -np.inf
     selected_bagging_classifier = None
+
+    report.write('\n\nSelecting classifier based on the scores:\n')
     for estimator in estimators_bagging:
         
         sss = StratifiedShuffleSplit(n_splits=n_splits_select_classifier, test_size=test_size, random_state=0)  
@@ -554,9 +578,10 @@ for folder_name in folders:
         if mean_scores > max_mean:
             selected_bagging_classifier = estimator
             max_mean = mean_scores
-        print(estimator['name'] + ': ' + str(mean_scores))
+        report.write(estimator['name'] + ': ' + str(mean_scores)+'\n')
     
     selected_classifier = estimators_basic[selected_bagging_classifier['name']]
+    report.write('The selected classifier is: %s\n\n' % selected_classifier['name'])
 
     bagging_names = [estimator['name'] for estimator in estimators_bagging]
     box_plot_values = []
@@ -587,7 +612,7 @@ for folder_name in folders:
         # signatures are stored in the fold_signatures set
         max_score = evaluateRankParallel(train_data, test_data, scores=ranks[method], rank_id=method, estimators=[selected_classifier], max_n=max_n_features, fold_signatures=fold_signatures, scorer=scoreEstimator, max_all_comb_size=max_all_comb_size, max_random_comb_size=max_random_comb_size, test_size=test_size, n_splits=n_splits_searching_signature)
         
-        print('Max score for '+method+': '+str(max_score))     
+        report.write('Max score for '+method+': '+str(max_score)+'\n')     
         filename = os.path.join(folder_path, 'all_signatures_tested_basic.csv')
         fold_signatures.save(filename)
 
@@ -640,7 +665,7 @@ for folder_name in folders:
         sum = 0.0
         for gene in signature.genes:
             if gene not in gene_freq:
-                return 10.0 #! signatures with correlated genes are not counted in gene_freq, thus, let the user specify the 'freq' of this signature by means of the original ones that can be converted to this one
+                raise Exception("The method meanFrequency only works with the main signatures. Correlated signatures need to get the mean Frequency from their 'parent'.")
             sum += gene_freq[gene]
         return sum/float(len(signature.genes))
 
@@ -663,7 +688,7 @@ for folder_name in folders:
     for data in best_signatures:
         #print('Score: %f, Indep. Score: %f, Size: %d, Method: %s %s, Signature:\n%s' % (sig[0],sig[1], sig[2], sig[4], str(sig[3]), str(sig[5])))
         main_signature = data[5]        
-
+        meanFrequency(main_signature, gene_freq)
         signatures_set = correlatedSignatures(main_signature, 0, correlated_genes)       
 
         for signature in signatures_set:            
@@ -675,9 +700,8 @@ for folder_name in folders:
             new_train = train_data.get_sub_dataset(signature.genes)
             base_estimator = Pipeline([('scaler', StandardScaler()), ('model', classifier)])
             cv_scores = cross_val_score(base_estimator, new_train.X(), new_train.Y(), scoring=  scoreEstimatorBagging, cv=sss, n_jobs=-1)        
-            mean_score = np.mean(cv_scores)
-            mean_freq = meanFrequency(signature, gene_freq)
-            signature_bagging_scores.append((mean_score*mean_freq, mean_score, mean_freq, signature))
+            mean_score = np.mean(cv_scores)             
+            signature_bagging_scores.append((mean_score*signature.mean_freq, mean_score, signature.mean_freq, signature))
 
     
 
@@ -723,6 +747,8 @@ for folder_name in folders:
     df = DataFrame(matrix)
     df.to_csv(filename, header=True)
 
+    report.flush()
+
     print("\n\nEvaluating the best signatures. Verifying the probability related to each class.")
     signature_bagging_max_prob = []
     for data in best_signatures:
@@ -764,7 +790,7 @@ for folder_name in folders:
     bestSignature = [item for item in signature_bagging_max_prob if item[0] == max_prob]
 
 
-    print("Best signature of this fold is: ")
+    report.write("\n\nBest signature of this fold is:\n")
     header = ['1st_decision (cv)', '2nd_decision (mean_freq*bag_cv)', '3rd decision (prob)',  'mean_cv', 'mean_freq (prot)', 'size', 'frequency in ranks', "signature", "ranks"]
     matrix = []
     best_sig_data = []
@@ -777,6 +803,8 @@ for folder_name in folders:
         cv_score = data[2]
         mean_freq = data[3]
         score = data[4]
+        report.write('Signature: %s\n' % str(signature.genes))
+
         internal_score = signature.getScore(selected_classifier['name'])
         rank_names = []
         for name in ranks:
@@ -800,38 +828,42 @@ for folder_name in folders:
         bootstrap_features_only = clone(selected_bagging_classifier['model'])
         params_bagging = {"n_estimators": n_estimators_final_signatures, 'max_samples':1.0, 'max_features':1.0, 'bootstrap':False, 'bootstrap_features':True}
         classifier.set_params(**params_bagging)
-        final_estimators[name + "_bs_features"] = selected_bagging_classifier
+        final_estimators[name + "_bs_features"] = bootstrap_features_only
         
         bootstrap_samples_only = clone(selected_bagging_classifier['model'])
         params_bagging = {"n_estimators": n_estimators_final_signatures, 'max_samples':1.0, 'max_features':1.0, 'bootstrap':True, 'bootstrap_features':False}
         bootstrap_samples_only.set_params(**params_bagging)
-        final_estimators[name + "_bs_samples"] = selected_bagging_classifier
+        final_estimators[name + "_bs_samples"] = bootstrap_samples_only
 
         bootstrap_features_samples = clone(selected_bagging_classifier['model'])
         params_bagging = {"n_estimators": n_estimators_final_signatures, 'max_samples':1.0, 'max_features':1.0, 'bootstrap':True, 'bootstrap_features':True}
         bootstrap_features_samples.set_params(**params_bagging)
-        final_estimators[name + "_bs_features_samples"] = selected_bagging_classifier
+        final_estimators[name + "_bs_features_samples"] = bootstrap_features_samples
 
 
         from sklearn.ensemble import VotingClassifier
-        voting_estimators = []
-        for name in final_estimators:
-            voting_estimators.append((name, final_estimators[name]['model']))
-
-        eclf = VotingClassifier(estimators=voting_estimators, voting='hard')
+        eclf = VotingClassifiersifier(estimators=[(name + "_bs_features",bootstrap_features_only),(name + "_bs_samples",bootstrap_samples_only),(name + "_bs_features_samples",bootstrap_features_samples)], voting='soft')
         final_estimators["all_classifiers_ensemble"] = {'name': 'Voting Classifier', 'model': eclf}
         
         base = Pipeline([('scaler', StandardScaler()), ('model', eclf)])
         base.fit(train_data.X(), train_data.Y())
         print(kappa_scorer(eclf, test_data.X(), test_data.Y()))
 
+        result = fitClassifiers(final_estimators, train_data, test_data, getScoring(train_data), signature, n_splits=n_split_final_signature, test_size=test_size, smote=False, n_jobs=nJobs, main_score_name='kappa')
+
+        report.write("The best classifier for this signature is: %s\n" % result['selected_classifier_name'])
+        report.write('Score name: %s\n' % result['main_score_name'])
+        report.write('Score value: %f\n\n' % result['max_main_score'])        
 
 
-        result = fitClassifiers(final_estimators, train_data, test_data, getScoring(train_data), signature, n_splits=n_split_final_signature, test_size=test_size, smote=False, n_jobs=nJobs)
 
-        if unbalanced:
-            result_smote = fitClassifiers(final_estimators, train_data, test_data, getScoring(train_data), signature, n_splits=n_split_final_signature, test_size=test_size, smote=True, n_jobs=nJobs)
+        if unbalanced:            
+            result_smote = fitClassifiers(final_estimators, train_data, test_data, getScoring(train_data), signature, n_splits=n_split_final_signature, test_size=test_size, smote=True, n_jobs=nJobs, main_score_name='kappa')
             best_sig_scores_smote.append(result_smote)
+
+            report.write("The best classifier for this signature applying SMOTE in each of sub-training-set is: %s" % result['selected_classifier_name'])
+            report.write('Score name: %s\n' % result['main_score_name'])
+            report.write('Score value: %f\n\n' % result['max_main_score'])  
 
         best_sig_scores.append(result)        
         print(result)
@@ -839,6 +871,7 @@ for folder_name in folders:
     best_signatures_global[folder_name] = best_sig_data
     best_sig_scores_global[folder_name] = best_sig_scores
     best_sig_scores_smote_global[folder_name] = best_sig_scores_smote
+    report.flush()
 
 
 import json
@@ -900,7 +933,7 @@ df = DataFrame(matrix)
 df.to_csv(filename, header=True)
 
 
-
+report.close()
 
 
 
