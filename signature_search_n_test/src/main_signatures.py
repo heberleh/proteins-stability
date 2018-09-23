@@ -277,7 +277,7 @@ def correlatedSignatures(main_signature, init, correlated_genes):
                 for name in main_signature.scores:
                     new_signature.scores[name] = -5.0
                     
-                for signature in correlatedSignatures(new_signature, i, correlated_genes, freq_mean):
+                for signature in correlatedSignatures(new_signature, i, correlated_genes):
                     correlated_signatures.add(signature)                    
 
     correlated_signatures.add(main_signature)     
