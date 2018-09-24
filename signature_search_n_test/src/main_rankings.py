@@ -268,7 +268,7 @@ for train_index, test_index in datasets_indexes:
     complete_train = train_dataset
     complete_test = test_dataset
 
-    n_estimators = 64
+    n_estimators = 83
 
     global_results_path = results_path
     for option in filter_options:
@@ -565,9 +565,9 @@ for train_index, test_index in datasets_indexes:
 
             {'name': 'Random Forest', 'model': RandomForestClassifier(n_estimators=n_estimators,n_jobs=1), 'lambda_name':'model__max_features', 'lambda_grid': np.array([0.5, 0.75, 1.0])}, # predict_proba(X)
 
-            {'name': 'Ada Boost Decision Trees', 'model': AdaBoostClassifier(base_estimator=DecisionTreeClassifier(), n_estimators=n_estimators), 'lambda_name':'model__learning_rate', 'lambda_grid': np.array([0.01, 0.1, 0.3, 0.6, 1.0])}, # predict_proba(X)
+            #{'name': 'Ada Boost Decision Trees', 'model': AdaBoostClassifier(base_estimator=DecisionTreeClassifier(), n_estimators=n_estimators), 'lambda_name':'model__learning_rate', 'lambda_grid': np.array([0.01, 0.1, 0.3, 0.6, 1.0])}, # predict_proba(X)
 
-            {'name': 'Gradient Boosting', 'model': GradientBoostingClassifier(n_estimators=n_estimators, loss="deviance" ), 'lambda_name':'model__learning_rate', 'lambda_grid': np.array([0.01, 0.1, 0.3, 0.6, 1.0])}, #predict_proba(X)
+            #{'name': 'Gradient Boosting', 'model': GradientBoostingClassifier(n_estimators=n_estimators, loss="deviance" ), 'lambda_name':'model__learning_rate', 'lambda_grid': np.array([0.01, 0.1, 0.3, 0.6, 1.0])}, #predict_proba(X)
 
             {'name': 'Lasso', 'model': LogisticRegression(penalty='l1', C=LassoBestC), 'lambda_name':'model__C', 'lambda_grid': np.logspace(-5, 0, 10)}, #predict_proba(X)
 
@@ -588,9 +588,9 @@ for train_index, test_index in datasets_indexes:
                 return pipe.feature_importances_[i]
 
 
-        # Type 1: Model Based Ranking
-        # Type 2: Attributes' Weights
-        # Type 3: Univariate Feature Selection (Statistics)
+        # Type 1: Univariate Feature Selection (Statistics)
+        # Type 2: Model Based Ranking
+        # Type 3: Attributes' Weights
         # Type 4: Recursive Feature Elimination
         # Type 5: Stability Selection
         # Type 6: Decrease of Accuracy
@@ -634,67 +634,11 @@ for train_index, test_index in datasets_indexes:
             return scores
 
 
-        # ---------------------- Type 1 - Model Based Ranks -------------------------
-        if type1:
-
-            def singularAttributeScore(estimator, train_data):                
-                name = estimator['name']
-                method = name.lower().replace(" ","_")
-
-                scores = []
-                for i in range(len(train_dataset.genes)):
-                    x_train = train_dataset.X()[:, i] # data matrix
-                    y_train = train_dataset.Y()  # classes/labels of each sample from 
-
-                    base_estimator = Pipeline([('scaler', StandardScaler()),
-                                                 ('model', clone(estimator['model']))])
-                    score = np.mean(cross_val_score(base_estimator, x_train, y_train, cv = k, scoring=scoreEstimator, n_jobs=nJobs))
-                    scores.append((abs(score), train_dataset.geneIndex(train_dataset.genes[i]), train_dataset.genes[i]))
-
-                filename = 'rank_t1_model_based_'+method
-                method_name = 't1_model_based_rank_'+method
-                header = '-- Type 1 - Model Based (per attribute) - '+name+' --'
-                scores = sortSaveNormalizeAndSave(scores, results_path_rank, filename)
-                ranks[method_name] = scores     
-                reportTop10Proteins(report, scores, correlated_genes, header)  
-
-        for estimator in estimators:
-            print('Model based (1 per feature): %s' % estimator['name'])
-            singularAttributeScore(estimator, train_dataset)                  
-        
-
-        # ---------------------- Type 2 - Rank based on attribute Weights -------------------------
-        if type2:
-            print('\nExecuting Type 2\n')
-            def regularizationRank(estimator, traindata):
-                model = clone(estimator['model'])
-                name = estimator['name']
-                method = name.lower().replace(" ","_")
-
-                pipe = Pipeline([('scaler', StandardScaler()), ('clf', model)])           
-                pipe.fit(traindata.X(), traindata.Y())
-                scores = []
-                for i in range(len(train_dataset.genes)):
-                    score = getScore(traindata, pipe.named_steps['clf'], name, i)
-                    scores.append((abs(score), train_dataset.geneIndex(train_dataset.genes[i]), train_dataset.genes[i]))       
-
-                filename = 'rank_t2_weights_'+method
-                method_name = 't2_weights_rank_'+method
-                header = '-- Type 2 - Attributes\' Weights - '+name+' --'
-                scores = sortSaveNormalizeAndSave(scores, results_path_rank, filename)
-                ranks[method_name] = scores     
-                reportTop10Proteins(report, scores, correlated_genes, header)  
-
-
-            for estimator in estimators:
-                print('Attribute Weights: %s' % estimator['name'])
-                regularizationRank(estimator, train_dataset)
-            
 
         # 
-        # ---------------------- Type 3 - Univariate Ranks -------------------------
-        if type3:
-            print('\nExecuting Type 3\n')
+        # ---------------------- Type 1 - Univariate Ranks -------------------------
+        if type1:
+            print('\nExecuting Type 1\n')
 
             # kruskal/t-test/wilcoxon
             scores = []
@@ -723,9 +667,9 @@ for train_index, test_index in datasets_indexes:
                 score = (p[i],  train_dataset.geneIndex(train_dataset.genes[i]),  train_dataset.genes[i])
                 scores.append(score)
 
-            filename = 'rank_t3_uni_'+name
-            method_name = 't3_uni_'+name
-            header = '-- Type 3 - Univariate by Statistical-test P-value - '+name+' --'
+            filename = 'rank_t1_uni_'+name
+            method_name = 't1_uni_'+name
+            header = '-- Type 1 - Univariate by Statistical-test P-value - '+name+' --'
             #! inverse must be True, so that the function will do [1-p-value] to be the score
             scores = sortSaveNormalizeAndSave(scores, results_path_rank, filename, inverse=True)
             ranks[method_name] = scores     
@@ -734,7 +678,7 @@ for train_index, test_index in datasets_indexes:
 
 
             #---------- Chi-Squared ----------
-            test = SelectKBest(score_func=chi2, k=2)
+            test = SelectKBest(score_func=chi2, k='all')
             x_train = train_dataset.get_normalized_data()
 
             y_train = factorize(train_dataset.labels)[0] 
@@ -755,7 +699,7 @@ for train_index, test_index in datasets_indexes:
 
 
             #---------- Mutual Information ----------
-            test = SelectKBest(score_func = mutual_info_classif, k=2)
+            test = SelectKBest(score_func = mutual_info_classif, k='all')
             x_train = train_dataset.matrix
             y_train = factorize(train_dataset.labels)[0] 
             test.fit(x_train, y_train)
@@ -774,7 +718,7 @@ for train_index, test_index in datasets_indexes:
 
 
             #---------- ANOVA F-value ----------
-            test = SelectKBest(score_func = mutual_info_classif, k=2)
+            test = SelectKBest(score_func = mutual_info_classif, k='all')
             x_train = train_dataset.matrix
             y_train = factorize(train_dataset.labels)[0] 
             test.fit(x_train, y_train)
@@ -790,6 +734,66 @@ for train_index, test_index in datasets_indexes:
             scores = sortSaveNormalizeAndSave(scores, results_path_rank, filename)
             ranks[method_name] = scores     
             reportTop10Proteins(report, scores, correlated_genes, header)   
+
+
+
+
+        # ---------------------- Type 2 - Model Based Ranks -------------------------
+        if type2:
+
+            def singularAttributeScore(estimator, train_data):                
+                name = estimator['name']
+                method = name.lower().replace(" ","_")
+
+                scores = []
+                for i in range(len(train_dataset.genes)):
+                    x_train = train_dataset.X()[:, i] # data matrix
+                    y_train = train_dataset.Y()  # classes/labels of each sample from 
+
+                    base_estimator = Pipeline([('scaler', StandardScaler()),
+                                                 ('model', clone(estimator['model']))])
+                    score = np.mean(cross_val_score(base_estimator, x_train, y_train, cv = k, scoring=scoreEstimator, n_jobs=nJobs))
+                    scores.append((abs(score), train_dataset.geneIndex(train_dataset.genes[i]), train_dataset.genes[i]))
+
+                filename = 'rank_t2_model_based_'+method
+                method_name = 't2_model_based_rank_'+method
+                header = '-- Type 2 - Model Based (per attribute) - '+name+' --'
+                scores = sortSaveNormalizeAndSave(scores, results_path_rank, filename)
+                ranks[method_name] = scores     
+                reportTop10Proteins(report, scores, correlated_genes, header)  
+
+        for estimator in estimators:
+            print('Model based (1 per feature): %s' % estimator['name'])
+            singularAttributeScore(estimator, train_dataset)                  
+        
+
+        # ---------------------- Type 3 - Rank based on attribute Weights -------------------------
+        if type3:
+            print('\nExecuting Type 3\n')
+            def regularizationRank(estimator, traindata):
+                model = clone(estimator['model'])
+                name = estimator['name']
+                method = name.lower().replace(" ","_")
+
+                pipe = Pipeline([('scaler', StandardScaler()), ('clf', model)])           
+                pipe.fit(traindata.X(), traindata.Y())
+                scores = []
+                for i in range(len(train_dataset.genes)):
+                    score = getScore(traindata, pipe.named_steps['clf'], name, i)
+                    scores.append((abs(score), train_dataset.geneIndex(train_dataset.genes[i]), train_dataset.genes[i]))       
+
+                filename = 'rank_t3_weights_'+method
+                method_name = 't3_weights_rank_'+method
+                header = '-- Type 3 - Attributes\' Weights - '+name+' --'
+                scores = sortSaveNormalizeAndSave(scores, results_path_rank, filename)
+                ranks[method_name] = scores     
+                reportTop10Proteins(report, scores, correlated_genes, header)  
+
+
+            for estimator in estimators:
+                print('Attribute Weights: %s' % estimator['name'])
+                regularizationRank(estimator, train_dataset)
+            
 
 
         #---------- Type 4 - Recursive Feature Elimination (RFE) ----------
