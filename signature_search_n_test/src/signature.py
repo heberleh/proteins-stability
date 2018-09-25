@@ -10,6 +10,7 @@ class Signature(object):
         self.id = str(sorted(self.genes))
 
         self.mean_freq = 0.0
+        self.mean_p_value = 1.0
         self.scores = {}
         self.methods = set()
         self.independent_scores = {}
@@ -78,15 +79,13 @@ class Signatures(object):
             self.signatures[signature] = signature
         return self.signatures[signature]
 
-    def getSignaturesMaxScore(self, delta):
+    def getSignaturesMaxScore(self, delta=0.05):
         pairs = []
         for sig in self.signatures.values():
             for pair in sig.getMaxScorePairs():
                 pairs.append(pair)            
-
-        pairs = sorted(pairs, reverse=True)
-        selected_pairs = [pair for pair in pairs if pair[0] > pairs[0][0]-delta]
-        return sorted(selected_pairs, key=lambda tup: tup[2]) #ordered by size       
+        pairs = sorted(pairs, reverse=True)        
+        return [pair for pair in pairs if pair[0] > pairs[0][0]-delta]     
 
     def save(self, filename):
 
