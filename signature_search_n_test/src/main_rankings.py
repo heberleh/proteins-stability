@@ -381,7 +381,7 @@ for train_index, test_index in datasets_indexes:
         #print('P-values after correction: %s\n\n' % str(p_values_corrected))
         filtered = [train_dataset.genes[i] for i in range(len(train_dataset.genes)) if p_values_corrected[i]<fdr_cutoff]
 
-        method = stat_test_name+'_corrected_fdr.csv'
+        method = 'corrected_fdr.csv'
         scores = []
         for i in range(len(train_dataset.genes)):
             score = p_values_corrected[i]
