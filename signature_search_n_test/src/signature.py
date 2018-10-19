@@ -79,7 +79,7 @@ class Signatures(object):
             self.signatures[signature] = signature
         return self.signatures[signature]
 
-    def getSignaturesMaxScore(self, delta=0.05):
+    def getSignaturesMaxScore(self, delta=0.01):
         pairs = []
         for sig in self.signatures.values():
             for pair in sig.getMaxScorePairs():

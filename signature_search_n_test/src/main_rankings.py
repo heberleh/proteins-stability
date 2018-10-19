@@ -111,9 +111,9 @@ print ("The current working directory is %s" % current_path)
 
 starting_time  = datetime.now()
 
-dt = datetime.now().strftime('%y-%m-%d %H-%M-%S')
+dt = datetime.now().strftime('%y_%m_%d_%H_%M_%S')
 
-new_dir = current_path+'/results/'+ str(args['projectName']) +' ('+dt+')'
+new_dir = current_path+'/results/'+ str(args['projectName']) +'_'+dt
 try:  
     os.mkdir(new_dir)
 except OSError:  
@@ -129,14 +129,27 @@ dataset = Dataset(train_dataset_path, scale=False, normalize=False, sep=',')
 scoreEstimator = None
 
 
+
+
+saveHeatMap(dataset.get_scaled_data(), dataset.samples, dataset.genes, dataset.Y(),  results_path+'heatmap_dataset_correlation_zscore', metric='correlation', classes_labels=dataset.levels())   
+
+
+saveHeatMap(dataset.get_scaled_data(), dataset.samples, dataset.genes, dataset.Y(),  results_path+'heatmap_dataset_euclidean_zscore', metric='euclidean', classes_labels=dataset.levels())   
+
+
+
+
+
+
 matthews_scorer = make_scorer(matthews_corrcoef)
 kappa_scorer = make_scorer(cohen_kappa_score)
 
 uni, counts = np.unique(dataset.Y(), return_counts=True)
 
+from sklearn.metrics import f1_score
 if len(dataset.levels()) < 4:
-    scoreEstimator = kappa_scorer
-    scoreEstimatorInfo = """Kappa"""
+    scoreEstimator = make_scorer(f1_score, average='weighted')    
+    scoreEstimatorInfo = """Weighted F1"""
 else:
     print('\nDataset with more than 3 classes is not supported.\n\n')
     exit()
@@ -205,8 +218,7 @@ for train_index, test_index in datasets_indexes:
     if double_cross_validation:
         train_dataset = dataset.get_sub_dataset_by_samples(train_index)
         test_dataset = dataset.get_sub_dataset_by_samples(test_index)
-
-    # todo Create folder for this k-fold loop
+   
     results_path = results_path_parent
     new_dir = results_path + str(folder_count)
     folder_count += 1
@@ -233,13 +245,9 @@ for train_index, test_index in datasets_indexes:
     report.flush()
 
     if saveGraphics:
-        saveHeatMap(train_dataset.matrix, train_dataset.samples, train_dataset.genes, results_path+'heatmap_train_dataset_correlation', metric='correlation')
+        saveHeatMap(train_dataset.get_scaled_data(), train_dataset.samples, train_dataset.genes, train_dataset.Y(), results_path+'heatmap_train_dataset_correlation_zscore', metric='correlation', classes_labels=train_dataset.levels())   
 
-        saveHeatMap(train_dataset.get_scaled_data(), train_dataset.samples, train_dataset.genes, results_path+'heatmap_train_dataset_correlation_zscore', metric='correlation')   
-
-        saveHeatMap(train_dataset.matrix, train_dataset.samples, train_dataset.genes, results_path+'heatmap_train_dataset_euclidean', metric='euclidean')
-
-        saveHeatMap(train_dataset.get_scaled_data(), train_dataset.samples, train_dataset.genes, results_path+'heatmap_train_dataset_euclidean_zscore', metric='euclidean')    
+        saveHeatMap(train_dataset.get_scaled_data(), train_dataset.samples, train_dataset.genes, train_dataset.Y(), results_path+'heatmap_train_dataset_euclidean_zscore', metric='euclidean', classes_labels=train_dataset.levels())    
 
 
     
@@ -356,14 +364,10 @@ for train_index, test_index in datasets_indexes:
             saveHistogram(filename=results_path+'histogram_p_values.png', values=p_values, title=stat_test_name, xlabel='p-values', ylabel='counts', bins=40, rwidth=0.9, color='#607c8e', grid=False, ygrid=True, alpha=0.75)
 
             train_dataset_temp = train_dataset.get_sub_dataset([train_dataset.genes[i] for i in range(len(train_dataset.genes)) if p_values[i]<cutoff])
-        
-            saveHeatMap(train_dataset_temp.matrix, train_dataset_temp.samples, train_dataset_temp.genes, results_path+'heatmap_train_dataset_correlation_filtered', metric='correlation', xticklabels=True)
 
-            saveHeatMap(train_dataset_temp.get_scaled_data(), train_dataset_temp.samples, train_dataset_temp.genes, results_path+'heatmap_train_dataset_correlation_filtered_zscore', metric='correlation', xticklabels=True) 
+            saveHeatMap(train_dataset_temp.get_scaled_data(), train_dataset_temp.samples, train_dataset_temp.genes, train_dataset_temp.Y(), results_path+'heatmap_train_dataset_correlation_filtered_zscore', metric='correlation', xticklabels=True, classes_labels=train_dataset_temp.levels()) 
 
-            saveHeatMap(train_dataset_temp.matrix, train_dataset_temp.samples, train_dataset_temp.genes, results_path+'heatmap_train_dataset_euclidean_filtered', metric='euclidean', xticklabels=True)
-
-            saveHeatMap(train_dataset_temp.get_scaled_data(), train_dataset_temp.samples, train_dataset_temp.genes, results_path+'heatmap_train_dataset_euclidean_filtered_zscore', metric='euclidean', xticklabels=True) 
+            saveHeatMap(train_dataset_temp.get_scaled_data(), train_dataset_temp.samples, train_dataset_temp.genes, train_dataset_temp.Y(), results_path+'heatmap_train_dataset_euclidean_filtered_zscore', metric='euclidean', xticklabels=True, classes_labels=train_dataset_temp.levels()) 
 
             #saveScatterPlots(train_dataset_temp.getMatrixZscoreWithColClassAsDataFrame(), results_path+'scatterplots_filtered_zscore')   
         # ========= end graphics ===========                
@@ -399,13 +403,9 @@ for train_index, test_index in datasets_indexes:
 
             train_dataset_temp = train_dataset.get_sub_dataset([train_dataset.genes[i] for i in range(len(train_dataset.genes)) if p_values_corrected[i]<cutoff])
 
-            saveHeatMap(train_dataset.matrix, train_dataset.samples, train_dataset.genes, results_path+'heatmap_train_dataset_correlation_filtered_fdr', metric='correlation', xticklabels=True)
+            saveHeatMap(train_dataset_temp.get_scaled_data(), train_dataset_temp.samples, train_dataset_temp.genes, train_dataset_temp.Y(), results_path+'heatmap_train_dataset_correlation_filtered_fdr_zscore', metric='correlation', xticklabels=True, classes_labels=train_dataset_temp.levels())
 
-            saveHeatMap(train_dataset.get_scaled_data(), train_dataset.samples, train_dataset.genes, results_path+'heatmap_train_dataset_correlation_filtered_fdr_zscore', metric='correlation', xticklabels=True)
-
-            saveHeatMap(train_dataset.matrix, train_dataset.samples, train_dataset.genes, results_path+'heatmap_train_dataset_euclidean_filtered_fdr', metric='euclidean', xticklabels=True)
-
-            saveHeatMap(train_dataset.get_scaled_data(), train_dataset.samples, train_dataset.genes, results_path+'heatmap_train_dataset_euclidean_filtered_fdr_zscore', metric='euclidean', xticklabels=True)
+            saveHeatMap(train_dataset_temp.get_scaled_data(), train_dataset_temp.samples, train_dataset_temp.genes, train_dataset_temp.Y(), results_path+'heatmap_train_dataset_euclidean_filtered_fdr_zscore', metric='euclidean', xticklabels=True, classes_labels=train_dataset_temp.levels())
         # ================== end p-value correction ======================
 
 
@@ -444,9 +444,9 @@ for train_index, test_index in datasets_indexes:
             correlated_genes = result['correlated_genes']
             genes_to_drop = result['genes_to_drop']
             
-            saveHeatMap(np.matrix(corr_matrix).astype(float), train_dataset.genes, train_dataset.genes, xticklabels=train_dataset.genes, yticklabels=train_dataset.genes, filename=results_path+'heatmap_abs_euclidean.png', metric='euclidean')
+            saveHeatMap(np.matrix(corr_matrix).astype(float), train_dataset.genes, train_dataset.genes, xticklabels=train_dataset.genes, yticklabels=train_dataset.genes, classes=train_dataset.Y(), filename=results_path+'heatmap_abs_euclidean.png', metric='euclidean', classes_labels=train_dataset.levels())
             
-            saveHeatMap(np.matrix(corr_matrix).astype(float), train_dataset.genes, train_dataset.genes, xticklabels=train_dataset.genes, yticklabels=train_dataset.genes, filename=results_path+'heatmap_abs_correlation.png', metric='correlation')
+            saveHeatMap(np.matrix(corr_matrix).astype(float), train_dataset.genes, train_dataset.genes, xticklabels=train_dataset.genes, yticklabels=train_dataset.genes, classes=train_dataset.Y(), filename=results_path+'heatmap_abs_correlation.png', metric='correlation', classes_labels=train_dataset.levels())
 
             new_matrix = []
             for row in corr_matrix:           
@@ -458,7 +458,7 @@ for train_index, test_index in datasets_indexes:
                         new_row.append(value)
                 new_matrix.append(new_row)
 
-            saveHeatMap(np.matrix(new_matrix).astype(float), train_dataset.genes, train_dataset.genes, results_path+'heatmap_abs_correlation_cuttoff_threshold.png', metric='euclidean', xticklabels=True)
+            saveHeatMap(np.matrix(new_matrix).astype(float), train_dataset.genes, train_dataset.genes, train_dataset.Y(), results_path+'heatmap_abs_correlation_cuttoff_threshold.png', metric='euclidean', xticklabels=True, classes_labels=train_dataset.levels())
 
             report.write('\nThe following Genes are correlated to another and will not be considered in the Machine Learning steps: %s\n\nCorrelated Genes:\n' % str(genes_to_drop))
             for gene in correlated_genes:
@@ -470,7 +470,7 @@ for train_index, test_index in datasets_indexes:
                     it, jt = train_dataset.geneIndex(gene1), train_dataset.geneIndex(gene2)
                     i = min([it,jt])
                     j = max([it,jt])
-                    report.write(gene1 + ' * ' + gene2 + '= corr: ' +str(np.round(corr_matrix[i,j], decimals=2)) +  ', pvalue: ' + str(np.round(corr_pvalues[i,j],decimals=5)) + ', fdr: '+ str(np.round(corr_pvalues_corrected[i,j], decimals=5))+'\n')
+                    report.write(gene1 + ' * ' + gene2 + '= corr: ' +str(np.round(corr_matrix[i,j], decimals=3)) +  ', pvalue: ' + str(np.round(corr_pvalues[i,j],decimals=5)) + ', fdr: '+ str(np.round(corr_pvalues_corrected[i,j], decimals=5))+'\n')
             report.write('\n\n')
             report.flush()
 
@@ -486,7 +486,7 @@ for train_index, test_index in datasets_indexes:
             ixgrid = np.ix_(corr_genes_indexes, corr_genes_indexes)
             correlated_correlation_matrix= correlated_correlation_matrix[ixgrid]
             
-            saveHeatMap(abs(correlated_correlation_matrix), corr_genes_names, corr_genes_names, xticklabels=corr_genes_names, yticklabels=corr_genes_names, filename=results_path+'heatmap_correlated_genes.png', metric='euclidean')
+            saveHeatMapScores(abs(correlated_correlation_matrix), corr_genes_names, corr_genes_names, xticklabels=corr_genes_names, yticklabels=corr_genes_names, filename=results_path+'heatmap_correlated_genes.png', metric='euclidean')
 
             # drop the correlated proteins
 
@@ -559,7 +559,7 @@ for train_index, test_index in datasets_indexes:
         RidgeBestC = grid.best_params_['logisticregression__C']  
 
         estimators = [  #lambda_name='model__C',lambda_grid=np.logspace(-5, -1, 50)
-            {'name': 'Linear SVM', 'model': LinearSVC(), 'lambda_name':'model__C', 'lambda_grid': np.arange(3, 10)}, # has decision_function
+            {'name': 'Linear SVM', 'model': LinearSVC(), 'lambda_name':'model__C', 'lambda_grid': [0.00001, 0.0001, 0.001, 0.01, 0.1, 1, 10, 100, 1000]}, # has decision_function
 
             {'name': 'Decision Tree', 'model': DecisionTreeClassifier(), 'lambda_name':'model__max_depth', 'lambda_grid': np.arange(1, 20)}, #'max_depth': np.arange(3, 10) #has predict_proba
 
@@ -569,9 +569,9 @@ for train_index, test_index in datasets_indexes:
 
             #{'name': 'Gradient Boosting', 'model': GradientBoostingClassifier(n_estimators=n_estimators, loss="deviance" ), 'lambda_name':'model__learning_rate', 'lambda_grid': np.array([0.01, 0.1, 0.3, 0.6, 1.0])}, #predict_proba(X)
 
-            {'name': 'Lasso', 'model': LogisticRegression(penalty='l1', C=LassoBestC), 'lambda_name':'model__C', 'lambda_grid': np.logspace(-5, 0, 10)}, #predict_proba(X)
+            {'name': 'Lasso', 'model': LogisticRegression(penalty='l1', C=LassoBestC), 'lambda_name':'model__C', 'lambda_grid': [0.00001, 0.0001, 0.001, 0.01, 0.1, 1, 10, 100, 1000]}, #predict_proba(X)
 
-            {'name': 'Ridge', 'model': LogisticRegression(penalty='l2', C=RidgeBestC), 'lambda_name':'model__C', 'lambda_grid': np.logspace(-5, 0, 10)}, #predict_proba(X)
+            {'name': 'Ridge', 'model': LogisticRegression(penalty='l2', C=RidgeBestC), 'lambda_name':'model__C', 'lambda_grid': [0.00001, 0.0001, 0.001, 0.01, 0.1, 1, 10, 100, 1000]}, #predict_proba(X)
 
             {'name': 'Linear Discriminant Analysis', 'model': LinearDiscriminantAnalysis(), 'lambda_name':'model__n_components', 'lambda_grid': None} #! need to be set after filtering
             # predict_proba(X)
@@ -689,9 +689,9 @@ for train_index, test_index in datasets_indexes:
                 score = test.scores_[i]
                 scores.append((score, train_dataset.geneIndex(train_dataset.genes[i]), train_dataset.genes[i]))
 
-            filename = 'rank_t3_uni_chi_squared'
-            method_name = 't3_uni_chi_squared'
-            header = '-- Type 3 - Univariate by Statistical-test - Chi-Squared --'
+            filename = 'rank_t1_uni_chi_squared'
+            method_name = 't1_uni_chi_squared'
+            header = '-- Type 1 - Univariate by Statistical-test - Chi-Squared --'
             scores = sortSaveNormalizeAndSave(scores, results_path_rank, filename)
             ranks[method_name] = scores     
             reportTop10Proteins(report, scores, correlated_genes, header)   
@@ -709,9 +709,9 @@ for train_index, test_index in datasets_indexes:
                 score = test.scores_[i]
                 scores.append((score, train_dataset.geneIndex(train_dataset.genes[i]), train_dataset.genes[i]))
 
-            filename = 'rank_t3_uni_mutual_inf'
-            method_name = 't3_uni_mutual_inf'
-            header = '-- Type 3 - Univariate by Statistical-test - Mutual Information --'
+            filename = 'rank_t1_uni_mutual_inf'
+            method_name = 't1_uni_mutual_inf'
+            header = '-- Type 1 - Univariate by Statistical-test - Mutual Information --'
             scores = sortSaveNormalizeAndSave(scores, results_path_rank, filename)
             ranks[method_name] = scores     
             reportTop10Proteins(report, scores, correlated_genes, header)    
@@ -728,9 +728,9 @@ for train_index, test_index in datasets_indexes:
                 score = test.scores_[i]
                 scores.append((score, train_dataset.geneIndex(train_dataset.genes[i]), train_dataset.genes[i]))
             
-            filename = 'rank_t3_uni_anova_fvalue'
-            method_name = 't3_uni_anova_fvalue'
-            header = '-- Type 3 - Univariate by Statistical-test - ANOVA F-value --'
+            filename = 'rank_t1_uni_anova_fvalue'
+            method_name = 't1_uni_anova_fvalue'
+            header = '-- Type 1 - Univariate by Statistical-test - ANOVA F-value --'
             scores = sortSaveNormalizeAndSave(scores, results_path_rank, filename)
             ranks[method_name] = scores     
             reportTop10Proteins(report, scores, correlated_genes, header)   
@@ -1001,6 +1001,8 @@ for train_index, test_index in datasets_indexes:
         df_matrix = saveHeatMapScores(num_matrix, rows_labels=row_lables , cols_labels=cols_labels, filename=filename, metric='euclidean')
         score_matrices.append(df_matrix)
 
+        fold_proteins_scores = df_matrix
+
         filename = results_path+'all_ranks_scores_heatmap_euclidean_cutoff_0.8.png'
         num_matrix_cutoff = num_matrix.copy()
         np.maximum(num_matrix_cutoff, 0.8, num_matrix_cutoff)
@@ -1120,6 +1122,45 @@ for train_index, test_index in datasets_indexes:
                 csv_file.close()
 
 
+
+        # --------------------- saving box plots -----------------
+        freq_list = []
+        for gene in freq_prot.keys():
+            if freq_prot[gene] > (first_m.shape[1]/3)*k_outer:   # > num_rankings * 1/3  * k_outer
+                freq_list.append((freq_prot[gene], gene))
+        freq_list = sorted(freq_list, reverse=True)
+        selected_genes = [item[1] for item in freq_list]
+
+        scores_by_gene = {}
+        labels = row_lables.tolist()
+        for gene in selected_genes:        
+            values = []                 
+            if gene in fold_proteins_scores.index.tolist():            
+                for value in fold_proteins_scores.loc[gene].values:
+                    values.append(value)
+            scores_by_gene[gene] = values
+        box_plot_values = [scores_by_gene[gene] for gene in selected_genes]
+        filename = results_path + 'box_plot_top_10_appear_in_more_than_33p_of_ranks.png'
+        saveBoxplots(box_plot_values, filename=filename, x_labels=selected_genes)
+        # Boxplot that shows the scores from genes that appear in more than 1/3 of the ranks among the top-10
+
+
+        scores_by_gene = {}
+        max_n = n_ranks/2
+        labels = row_lables.tolist()
+        for gene in selected_genes:        
+            values = []                 
+            if gene in fold_proteins_scores.index.tolist():
+                values_score = sorted(fold_proteins_scores.loc[gene].values, reverse=True)[0:max_n]
+                for value in values_score:
+                    values.append(value)
+            scores_by_gene[gene] = values
+        box_plot_values = [scores_by_gene[gene] for gene in selected_genes]
+        filename = results_path + 'box_plot_top_10_from_50p_higher_scores_in_more_than_33p_ranks.png'
+        saveBoxplots(box_plot_values, filename=filename, x_labels=selected_genes)
+
+
+
     time_message = '\n\nIt took %s to complete the script.\n' % str(datetime.now()-starting_time )
     print(time_message)
     report.write(time_message)
@@ -1205,6 +1246,7 @@ for gene in freq_genes_set:
             row.append(freq_prot[gene])
         else:
             row.append(0.0)
+    matrix.append(row)
 header = ['Protein'] + range(len(freq_prot_list))
 df = DataFrame(matrix, columns=header)         
 filename = results_path_parent + 'top10_prot_freq_from_each_fold.csv'

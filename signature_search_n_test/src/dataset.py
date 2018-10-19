@@ -54,7 +54,7 @@ class Dataset(object):
     def __load(self, filename, sep=","):
         self.complete_dataset = []
 
-        with open(filename, 'rb') as csv_file:
+        with open(filename, 'rt') as csv_file:
             reader = csv.reader(csv_file, delimiter=sep)
             for row in reader:
                 for i in range(len(row)):
@@ -132,9 +132,9 @@ class Dataset(object):
         return new_dataset
     
     def shuffle_labels(self):
-        print self.labels
+        print(self.labels)
         np.random.shuffle(self.labels)
-        print self.labels
+        print(self.labels)
         self.sortSamplesByClassLabel()
 
     def getMatrixZscoreWithColClassAsDataFrame(self):
