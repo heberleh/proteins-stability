@@ -552,9 +552,13 @@ for folder_name in sorted(folders):
         {'name': 'Radial SVM',
         'model': BaggingClassifier(base_estimator=SVC(kernel='rbf'), n_estimators=n_estimators_bagging_select_classifier, max_samples=1.0, max_features=1.0, bootstrap=False, bootstrap_features=True, oob_score=False, warm_start=False, n_jobs=1, random_state=0, verbose=0)
         },
-        {'name': 'Nearest Centroid',
-        'model': BaggingClassifier(base_estimator=NearestCentroid(), n_estimators=n_estimators_bagging_select_classifier, max_samples=1.0, max_features=1.0, bootstrap=False, bootstrap_features=True, oob_score=False, warm_start=False, n_jobs=1, random_state=0, verbose=0)
-        }#,
+        {'name': 'Nearest Centroid (Euclidean)',
+        'model': BaggingClassifier(base_estimator=NearestCentroid(metric='euclidean'), n_estimators=n_estimators_bagging_select_classifier, max_samples=1.0, max_features=1.0, bootstrap=False, bootstrap_features=True, oob_score=False, warm_start=False, n_jobs=1, random_state=0, verbose=0)
+        },
+        {'name': 'Nearest Centroid (Correlation)',
+        'model': BaggingClassifier(base_estimator=NearestCentroid(metric='correlation'), n_estimators=n_estimators_bagging_select_classifier, max_samples=1.0, max_features=1.0, bootstrap=False, bootstrap_features=True, oob_score=False, warm_start=False, n_jobs=1, random_state=0, verbose=0)
+        }
+        #,
         #{'name': 'Gaussian Naive Bayes',
         # 'model': BaggingClassifier(base_estimator=GaussianNB(), n_estimators=n_estimators_bagging_select_classifier, max_samples=1.0, max_features=1.0, bootstrap=False, bootstrap_features=True, oob_score=False, warm_start=False, n_jobs=1, random_state=0, verbose=0)
         # },
@@ -579,8 +583,11 @@ for folder_name in sorted(folders):
         'Radial SVM': {'name': 'Radial SVM',
         'model': SVC(kernel='rbf')
         },
-        'Nearest Centroid': {'name': 'Nearest Centroid',
-        'model': NearestCentroid()
+        'Nearest Centroid (Euclidean)': {'name': 'Nearest Centroid (Euclidean)',
+        'model': NearestCentroid(metric='euclidean')
+        },
+        'Nearest Centroid (Correlation)': {'name': 'Nearest Centroid (Correlation)',
+        'model': NearestCentroid(metric='correlation')
         }#,
         # 'Gaussian Naive Bayes': {'name': 'Gaussian Naive Bayes',
         # 'model': GaussianNB()
@@ -703,7 +710,7 @@ for folder_name in sorted(folders):
     filename = os.path.join(folder_path, 'all_signatures_tested_basic.csv')
     fold_signatures.save(filename)       
 
-    good_signatures = fold_signatures.getSignaturesMaxScore(delta=0.011)
+    good_signatures = fold_signatures.getSignaturesMaxScore(delta=0.10)
 
 
     good_sig_data = []
@@ -857,12 +864,12 @@ for folder_name in sorted(folders):
     #! Sort by (mean_cv - 2*std_cv)  *  ((signature.mean_freq/10)+0.9) - score - up to 10% by mean_freq score
     good_signature_scores = sorted(good_signature_scores, reverse=True)
     max_score = good_signature_scores[0][0]  
-    better_signatures = [data for data in good_signature_scores if data[0] > max_score-0.1] 
+    better_signatures = [data for data in good_signature_scores if data[0] > max_score-0.05]
     #get 10% higher
      
     #! Sort by mean_cv
     better_signatures = sorted(better_signatures, reverse=True, key=lambda tup: tup[1])
-    max_score = better_signatures[0][1]  
+    max_score = better_signatures[0][1]
     better_signatures = [data for data in better_signatures if data[1] > max_score-0.05]
 
 
@@ -911,60 +918,77 @@ for folder_name in sorted(folders):
     df.sort_values([df.columns[2],df.columns[1],df.columns[3]], ascending=[0,0,1])
     df.to_csv(filename, header=True)
 
-    #! Sort by (mean_cv - 2*std_cv)  *  ((signature.mean_freq/10)+0.9) - score - up to 10% by mean_freq score
-    good_signature_scores = sorted(good_signature_scores, reverse=True)
-    max_score = good_signature_scores[0][0]  
-    better_signatures = [data for data in good_signature_scores if data[0] > max_score-0.01] 
-
-    #! Sort by mean_cv
-    better_signatures = sorted(better_signatures, reverse=True, key=lambda tup: tup[1])
-    max_score = better_signatures[0][1]  
-    better_signatures = [data for data in better_signatures if data[1] > max_score-0.01]
+    # #! Sort by (mean_cv - 2*std_cv)  *  ((signature.mean_freq/10)+0.9) - score - up to 10% by mean_freq score
+    # good_signature_scores = sorted(good_signature_scores, reverse=True)
+    # max_score = good_signature_scores[0][0]  
+    # better_signatures = [data for data in good_signature_scores if data[0] > max_score-0.025] 
 
     #!!! Ranking by std
     better_signatures = sorted(better_signatures, key=lambda tup: tup[4])
     min_std = better_signatures[0][4]
-    better_signatures = [item for item in better_signatures if item[4] < min_std+0.01]
+    better_signatures = [item for item in better_signatures if item[4] < min_std+0.025]
+
+    #! Sort by mean_cv
+    better_signatures = sorted(better_signatures, reverse=True, key=lambda tup: tup[1])
+    max_score = better_signatures[0][1]  
+    better_signatures = [data for data in better_signatures if data[1] > max_score-0.025]
+
 
     #!!! Ranking by mean_p_value
-    better_signatures = sorted(better_signatures, key=lambda tup: tup[5])
-    min_p_value = better_signatures[0][5]
-    better_signatures = [item for item in better_signatures if np.round(item[5], decimals=3) < min_p_value+0.005]
+    if len(best_signatures) > 10:
+        better_signatures = sorted(better_signatures, key=lambda tup: tup[5])
+        min_p_value = better_signatures[0][5]
+        better_signatures = [item for item in better_signatures if np.round(item[5], decimals=3) < min_p_value+0.05]
+        report.write('\n\nThere are more than 10 best signatures, now filtering by mean_p_value < 0.05')
+        report.flush()
 
     #!!! Ranking by cv score
-    better_signatures = sorted(better_signatures, key=lambda tup: tup[1], reverse=True)
-    max_cv = better_signatures[0][1]
-    best_signatures = [item for item in better_signatures if item[1] == max_cv]
+    if len(best_signatures) > 10:
+        better_signatures = sorted(better_signatures, key=lambda tup: tup[1], reverse=True)
+        max_cv = better_signatures[0][1]
+        best_signatures = [item for item in better_signatures if item[1] > max_cv-0.01]
+        report.write('\nThere are more than 10 best signatures, now filtering by cv_score > 0.01')
+        report.flush()
 
-    if len(best_signatures) > 5:
+    if len(best_signatures) > 10:
         #!!! Ranking by std
         best_signatures = sorted(best_signatures, key=lambda tup: tup[4])
         min_std = best_signatures[0][4]
-        best_signatures = [item for item in best_signatures if item[4] == min_std]
+        best_signatures = [item for item in best_signatures if item[4] < min_std+0.01]
+        report.write('\nThere are more than 10 best signatures, now filtering by min_std < 0.01')
+        report.flush()        
 
-    if len(best_signatures) > 5:
+    if len(best_signatures) > 10:
         #!!! Ranking by mean_p_value
         best_signatures = sorted(best_signatures, key=lambda tup: tup[5])
         min_p_value = best_signatures[0][5]
-        best_signatures = [item for item in best_signatures if np.round(item[5], decimals=2) <= min_p_value]
+        best_signatures = [item for item in best_signatures if np.round(item[5], decimals=2) <= min_p_value+0.01]
+        report.write('\nThere are more than 10 best signatures, now filtering by mean_p_value < 0.01')
+        report.flush()        
 
-    if len(best_signatures) > 5:
+    if len(best_signatures) > 10:
         #!!! Ranking by mean_p_value
         best_signatures = sorted(best_signatures, key=lambda tup: tup[5])
         min_p_value = best_signatures[0][5]
-        best_signatures = [item for item in best_signatures if np.round(item[5], decimals=3) <= min_p_value]        
+        best_signatures = [item for item in best_signatures if np.round(item[5], decimals=3) <= min_p_value+0.005]      
+        report.write('\nThere are more than 10 best signatures, now filtering by mean_p_value < 0.005')
+        report.flush()          
 
-    if len(best_signatures) > 5:
+    if len(best_signatures) > 10:
         #!!! Ranking by mean_p_value
         best_signatures = sorted(best_signatures, key=lambda tup: tup[5])
         min_p_value = best_signatures[0][5]
-        best_signatures = [item for item in best_signatures if np.round(item[5], decimals=4) <= min_p_value]   
+        best_signatures = [item for item in best_signatures if np.round(item[5], decimals=4) <= min_p_value+0.0025]   
+        report.write('\nThere are more than 10 best signatures, now filtering by mean_p_value < 0.0025')
+        report.flush()        
 
-    if len(best_signatures) > 5:
+    if len(best_signatures) > 10:
         #!!! Ranking by mean_p_value
         best_signatures = sorted(best_signatures, key=lambda tup: tup[5])
         min_p_value = best_signatures[0][5]
-        best_signatures = [item for item in best_signatures if item[5] <= min_p_value]                    
+        best_signatures = [item for item in best_signatures if item[5] <= min_p_value]
+        report.write('\nThere are more than 10 best signatures, now filtering by mean_p_value < min\n\n')
+        report.flush()                         
 
     print("\n\nNumber of best signatures in this fold: %d" % len(best_signatures))
     report.write("\n\nBest signature of this fold is:\n")

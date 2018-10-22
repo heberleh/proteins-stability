@@ -29,7 +29,7 @@ from sklearn.model_selection import (GridSearchCV, StratifiedKFold,
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.neighbors.nearest_centroid import NearestCentroid
 from sklearn.pipeline import Pipeline, make_pipeline
-from sklearn.preprocessing import StandardScaler, label_binarize
+from sklearn.preprocessing import StandardScaler, label_binarize, MinMaxScaler
 from sklearn.svm import LinearSVC
 from sklearn.tree import DecisionTreeClassifier
 from statsmodels.stats.multitest import fdrcorrection
@@ -130,13 +130,92 @@ scoreEstimator = None
 
 
 
+def save_ratio(dataset, filename, normalize=False):
+    matrix = []
+    matrix_csv = []
+    x = dataset.X()
+    if normalize:
+        scaler = StandardScaler()
+        scaler.fit(x)
+        x = scaler.transform(x)
+        scaler = MinMaxScaler()
+        scaler.fit(x)
+        x = scaler.transform(x)
+    if len(dataset.levels()) == 3:
+              
+        for i in range(len(dataset.genes)):
+            row = []
+            # 0 x 1
+            inds0 = dataset.Y() == 0
+            inds1 = dataset.Y() == 1
+            x0 = np.mean(x[inds0,i])
+            x1 = np.mean(x[inds1,i])
+            if np.abs(x0) == 0:
+                x0 = 0.0000001
+            if np.abs(x1) == 0:
+                x1 = 0.0000001
+            row.append(np.log2(x0) - np.log2(x1))
+
+            # 0 x 2
+            inds0 = dataset.Y() == 0
+            inds2 = dataset.Y() == 2
+            x0 = np.mean(x[inds0,i])
+            x1 = np.mean(x[inds2,i])
+            if np.abs(x0) == 0:
+                x0 = 0.0000001
+            if np.abs(x1) == 0:
+                x1 = 0.0000001
+            row.append(np.log2(x0) - np.log2(x1))
+
+            # 1 x 2
+            inds1 = dataset.Y() == 1
+            inds2 = dataset.Y() == 2
+            x0 = np.mean(x[inds1,i])
+            x1 = np.mean(x[inds2,i])
+            if np.abs(x0) == 0:
+                x0 = 0.0000001
+            if np.abs(x1) == 0:
+                x1 = 0.0000001
+            row.append(np.log2(x0) - np.log2(x1))                      
+            matrix.append(row)            
+            
+        l = dataset.levels()
+        df = DataFrame(matrix, index=dataset.genes, columns=np.array([l[0]+"/"+l[1], l[0]+"/"+l[2], l[1]+"/"+l[2]]))
+    elif len(dataset.levels()) == 2:                
+        for i in range(len(dataset.genes)):
+            row = []
+            # 0 x 1
+            inds0 = dataset.Y() == 0
+            inds1 = dataset.Y() == 1
+            x0 = np.mean(x[inds0,i])
+            x1 = np.mean(x[inds1,i])
+            if np.abs(x0) == 0:
+                x0 = 0.0000001
+            if np.abs(x1) == 0:
+                x1 = 0.0000001
+            row.append(np.log2(x0) - np.log2(x1))
+            
+            matrix.append(row)
+
+        l = dataset.levels()
+        df = DataFrame(matrix, index=dataset.genes, columns=np.array([l[0]+"/"+l[1]]))
+    else:
+        raise Exception("Number of classes > 3 or < 2 is not supported.") 
+
+    saveHeatMapScores(matrix, dataset.genes, df.columns, filename=filename, metric='euclidean')
+    df.to_csv(filename+'.csv', header=True)
+
+    matrix = np.matrix(matrix)
+    matrix[matrix > 2] = 2
+    matrix[matrix <-2] = -2
+    saveHeatMapScores(matrix, dataset.genes, df.columns, filename=filename+"_limited_by_2", metric='euclidean')    
+
+
 
 saveHeatMap(dataset.get_scaled_data(), dataset.samples, dataset.genes, dataset.Y(),  results_path+'heatmap_dataset_correlation_zscore', metric='correlation', classes_labels=dataset.levels())   
 
 
 saveHeatMap(dataset.get_scaled_data(), dataset.samples, dataset.genes, dataset.Y(),  results_path+'heatmap_dataset_euclidean_zscore', metric='euclidean', classes_labels=dataset.levels())   
-
-
 
 
 
@@ -212,6 +291,7 @@ if double_cross_validation:
     skf = StratifiedKFold(n_splits=k_outer)
     datasets_indexes = skf.split(dataset.X(), dataset.Y())  
 
+
 results_path_parent = results_path
 for train_index, test_index in datasets_indexes:
 
@@ -219,6 +299,7 @@ for train_index, test_index in datasets_indexes:
         train_dataset = dataset.get_sub_dataset_by_samples(train_index)
         test_dataset = dataset.get_sub_dataset_by_samples(test_index)
    
+
     results_path = results_path_parent
     new_dir = results_path + str(folder_count)
     folder_count += 1
@@ -229,6 +310,8 @@ for train_index, test_index in datasets_indexes:
     else:  
         print ("Successfully created the directory %s " % new_dir)
     results_path = new_dir + '/'
+
+
 
     report =  open(results_path+'report.txt','w')
     report.write('============= REPORT =============\n\n')
@@ -401,7 +484,7 @@ for train_index, test_index in datasets_indexes:
         if saveGraphics:
             saveHistogram(filename=results_path+'histogram_p_values_corrected_fdr.png', values=p_values_corrected, title=stat_test_name+' (corrected)', xlabel='p-values', ylabel='counts', bins=40, rwidth=0.9, color='#607c8e', grid=False, ygrid=True, alpha=0.75) 
 
-            train_dataset_temp = train_dataset.get_sub_dataset([train_dataset.genes[i] for i in range(len(train_dataset.genes)) if p_values_corrected[i]<cutoff])
+            train_dataset_temp = train_dataset.get_sub_dataset([train_dataset.genes[i] for i in range(len(train_dataset.genes)) if p_values_corrected[i]<fdr_cutoff])
 
             saveHeatMap(train_dataset_temp.get_scaled_data(), train_dataset_temp.samples, train_dataset_temp.genes, train_dataset_temp.Y(), results_path+'heatmap_train_dataset_correlation_filtered_fdr_zscore', metric='correlation', xticklabels=True, classes_labels=train_dataset_temp.levels())
 
@@ -430,6 +513,13 @@ for train_index, test_index in datasets_indexes:
             test_dataset = test_dataset.get_sub_dataset([test_dataset.genes[i] for i in range(len(test_dataset.genes)) if p_values[i]<current_cutoff])
 
 
+
+        filename = results_path+'ratio_train_samples'
+        save_ratio(train_dataset, filename)
+
+        filename = results_path+'ratio_train_samples_normalized'
+        save_ratio(train_dataset, filename, normalize=True)
+
         # =================== filter by CORRELATION ========================
         # remove/store the correlated features, letting only one of each correlated group in the dataset
         correlation = args['correlation']
@@ -444,9 +534,9 @@ for train_index, test_index in datasets_indexes:
             correlated_genes = result['correlated_genes']
             genes_to_drop = result['genes_to_drop']
             
-            saveHeatMap(np.matrix(corr_matrix).astype(float), train_dataset.genes, train_dataset.genes, xticklabels=train_dataset.genes, yticklabels=train_dataset.genes, classes=train_dataset.Y(), filename=results_path+'heatmap_abs_euclidean.png', metric='euclidean', classes_labels=train_dataset.levels())
+            saveHeatMapScores(np.matrix(corr_matrix).astype(float), train_dataset.genes, train_dataset.genes, filename=results_path+'heatmap_abs_euclidean.png', metric='euclidean')
             
-            saveHeatMap(np.matrix(corr_matrix).astype(float), train_dataset.genes, train_dataset.genes, xticklabels=train_dataset.genes, yticklabels=train_dataset.genes, classes=train_dataset.Y(), filename=results_path+'heatmap_abs_correlation.png', metric='correlation', classes_labels=train_dataset.levels())
+            saveHeatMapScores(np.matrix(corr_matrix).astype(float), train_dataset.genes, train_dataset.genes, filename=results_path+'heatmap_abs_correlation.png', metric='correlation')
 
             new_matrix = []
             for row in corr_matrix:           
@@ -458,7 +548,7 @@ for train_index, test_index in datasets_indexes:
                         new_row.append(value)
                 new_matrix.append(new_row)
 
-            saveHeatMap(np.matrix(new_matrix).astype(float), train_dataset.genes, train_dataset.genes, train_dataset.Y(), results_path+'heatmap_abs_correlation_cuttoff_threshold.png', metric='euclidean', xticklabels=True, classes_labels=train_dataset.levels())
+            saveHeatMapScores(np.matrix(new_matrix).astype(float), train_dataset.genes, train_dataset.genes, results_path+'heatmap_abs_correlation_cuttoff_threshold.png', metric='euclidean')
 
             report.write('\nThe following Genes are correlated to another and will not be considered in the Machine Learning steps: %s\n\nCorrelated Genes:\n' % str(genes_to_drop))
             for gene in correlated_genes:
@@ -486,7 +576,7 @@ for train_index, test_index in datasets_indexes:
             ixgrid = np.ix_(corr_genes_indexes, corr_genes_indexes)
             correlated_correlation_matrix= correlated_correlation_matrix[ixgrid]
             
-            saveHeatMapScores(abs(correlated_correlation_matrix), corr_genes_names, corr_genes_names, xticklabels=corr_genes_names, yticklabels=corr_genes_names, filename=results_path+'heatmap_correlated_genes.png', metric='euclidean')
+            saveHeatMapScores(abs(correlated_correlation_matrix), corr_genes_names, corr_genes_names, filename=results_path+'heatmap_correlated_genes.png', metric='euclidean')
 
             # drop the correlated proteins
 
@@ -559,7 +649,7 @@ for train_index, test_index in datasets_indexes:
         RidgeBestC = grid.best_params_['logisticregression__C']  
 
         estimators = [  #lambda_name='model__C',lambda_grid=np.logspace(-5, -1, 50)
-            {'name': 'Linear SVM', 'model': LinearSVC(), 'lambda_name':'model__C', 'lambda_grid': [0.00001, 0.0001, 0.001, 0.01, 0.1, 1, 10, 100, 1000]}, # has decision_function
+            {'name': 'Linear SVM', 'model': LinearSVC(), 'lambda_name':'model__C', 'lambda_grid': np.array([0.00001, 0.0001, 0.001, 0.01, 0.1, 1, 10, 100, 1000])}, # has decision_function
 
             {'name': 'Decision Tree', 'model': DecisionTreeClassifier(), 'lambda_name':'model__max_depth', 'lambda_grid': np.arange(1, 20)}, #'max_depth': np.arange(3, 10) #has predict_proba
 
@@ -569,9 +659,9 @@ for train_index, test_index in datasets_indexes:
 
             #{'name': 'Gradient Boosting', 'model': GradientBoostingClassifier(n_estimators=n_estimators, loss="deviance" ), 'lambda_name':'model__learning_rate', 'lambda_grid': np.array([0.01, 0.1, 0.3, 0.6, 1.0])}, #predict_proba(X)
 
-            {'name': 'Lasso', 'model': LogisticRegression(penalty='l1', C=LassoBestC), 'lambda_name':'model__C', 'lambda_grid': [0.00001, 0.0001, 0.001, 0.01, 0.1, 1, 10, 100, 1000]}, #predict_proba(X)
+            {'name': 'Lasso', 'model': LogisticRegression(penalty='l1', C=LassoBestC), 'lambda_name':'model__C', 'lambda_grid': np.array([0.00001, 0.0001, 0.001, 0.01, 0.1, 1, 10, 100, 1000])}, #predict_proba(X)
 
-            {'name': 'Ridge', 'model': LogisticRegression(penalty='l2', C=RidgeBestC), 'lambda_name':'model__C', 'lambda_grid': [0.00001, 0.0001, 0.001, 0.01, 0.1, 1, 10, 100, 1000]}, #predict_proba(X)
+            {'name': 'Ridge', 'model': LogisticRegression(penalty='l2', C=RidgeBestC), 'lambda_name':'model__C', 'lambda_grid': np.array([0.00001, 0.0001, 0.001, 0.01, 0.1, 1, 10, 100, 1000])}, #predict_proba(X)
 
             {'name': 'Linear Discriminant Analysis', 'model': LinearDiscriminantAnalysis(), 'lambda_name':'model__n_components', 'lambda_grid': None} #! need to be set after filtering
             # predict_proba(X)
@@ -679,7 +769,7 @@ for train_index, test_index in datasets_indexes:
 
             #---------- Chi-Squared ----------
             test = SelectKBest(score_func=chi2, k='all')
-            x_train = train_dataset.get_normalized_data()
+            x_train = train_dataset.X()
 
             y_train = factorize(train_dataset.labels)[0] 
             test.fit(x_train, y_train)
@@ -1049,6 +1139,7 @@ for train_index, test_index in datasets_indexes:
 
 
         cmap = "Blues"
+        cmap = 'vlag_r'
 
         filename = results_path+'all_ranks_positions_heatmap_euclidean.png'
         saveHeatMapScores(num_matrix, rows_labels=row_lables , cols_labels=cols_labels, filename=filename, metric='euclidean', colors=cmap)
@@ -1126,7 +1217,7 @@ for train_index, test_index in datasets_indexes:
         # --------------------- saving box plots -----------------
         freq_list = []
         for gene in freq_prot.keys():
-            if freq_prot[gene] > (first_m.shape[1]/3)*k_outer:   # > num_rankings * 1/3  * k_outer
+            if freq_prot[gene] > len(ranks.keys())/3:   # > num_rankings * 1/3  * k_outer
                 freq_list.append((freq_prot[gene], gene))
         freq_list = sorted(freq_list, reverse=True)
         selected_genes = [item[1] for item in freq_list]
@@ -1146,7 +1237,7 @@ for train_index, test_index in datasets_indexes:
 
 
         scores_by_gene = {}
-        max_n = n_ranks/2
+        max_n = len(ranks.keys())/2
         labels = row_lables.tolist()
         for gene in selected_genes:        
             values = []                 
@@ -1319,9 +1410,7 @@ saveBoxplots(box_plot_values, filename=filename, x_labels=selected_genes)
 
 matrix = np.matrix(df.values.astype(float))
 filename = results_path_parent + 'mean_50p_higher_scores_pergene_perloop_headmap.png'
-saveHeatMapScores(matrix, rows_labels=df.index , cols_labels=df.columns, filename=filename, metric='euclidean')
-
-
+saveHeatMap(matrix, rows_labels=df.index , cols_labels=df.columns, classes=None, filename=filename, metric='euclidean')
 
 
 #  ================ END MAIN ===============
