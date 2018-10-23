@@ -134,6 +134,7 @@ def save_ratio(dataset, filename, normalize=False):
     matrix = []
     matrix_csv = []
     x = dataset.X()
+    cluster_col = True
     if normalize:
         scaler = StandardScaler()
         scaler.fit(x)
@@ -181,7 +182,7 @@ def save_ratio(dataset, filename, normalize=False):
             
         l = dataset.levels()
         df = DataFrame(matrix, index=dataset.genes, columns=np.array([l[0]+"/"+l[1], l[0]+"/"+l[2], l[1]+"/"+l[2]]))
-    elif len(dataset.levels()) == 2:                
+    elif len(dataset.levels()) == 2:                  
         for i in range(len(dataset.genes)):
             row = []
             # 0 x 1
@@ -194,11 +195,11 @@ def save_ratio(dataset, filename, normalize=False):
             if np.abs(x1) == 0:
                 x1 = 0.0000001
             row.append(np.log2(x0) - np.log2(x1))
-            
+            row.append(np.log2(x1) - np.log2(x0))
             matrix.append(row)
 
         l = dataset.levels()
-        df = DataFrame(matrix, index=dataset.genes, columns=np.array([l[0]+"/"+l[1]]))
+        df = DataFrame(matrix, index=dataset.genes, columns=np.array([l[0]+"/"+l[1], l[1]+"/"+l[0]]))
     else:
         raise Exception("Number of classes > 3 or < 2 is not supported.") 
 
@@ -514,11 +515,14 @@ for train_index, test_index in datasets_indexes:
 
 
 
-        filename = results_path+'ratio_train_samples'
-        save_ratio(train_dataset, filename)
+        try:
+            filename = results_path+'ratio_train_samples'
+            save_ratio(train_dataset, filename)
 
-        filename = results_path+'ratio_train_samples_normalized'
-        save_ratio(train_dataset, filename, normalize=True)
+            filename = results_path+'ratio_train_samples_normalized'
+            save_ratio(train_dataset, filename, normalize=True)
+        except:
+            print(train_dataset.X())
 
         # =================== filter by CORRELATION ========================
         # remove/store the correlated features, letting only one of each correlated group in the dataset
@@ -575,8 +579,9 @@ for train_index, test_index in datasets_indexes:
             correlated_correlation_matrix = np.matrix(corr_matrix).astype(float)
             ixgrid = np.ix_(corr_genes_indexes, corr_genes_indexes)
             correlated_correlation_matrix= correlated_correlation_matrix[ixgrid]
-            
-            saveHeatMapScores(abs(correlated_correlation_matrix), corr_genes_names, corr_genes_names, filename=results_path+'heatmap_correlated_genes.png', metric='euclidean')
+
+            if len(corr_genes_indexes) > 1:
+                saveHeatMapScores(abs(correlated_correlation_matrix), corr_genes_names, corr_genes_names, filename=results_path+'heatmap_correlated_genes.png', metric='euclidean')
 
             # drop the correlated proteins
 
@@ -1285,9 +1290,8 @@ for i in range(len(all_genes)):
     row = []
     for j in range(n_ranks):
         row.append([])
-    values_matrix.append(row)    
+    values_matrix.append(row)  
 
-var_df = DataFrame(np.full(m_size,-0.5), index=all_genes_list, columns=first_dataframe.columns)
 mean_df = DataFrame(np.full(m_size,-0.5), index=all_genes_list, columns=first_dataframe.columns)
 std_df = DataFrame(np.full(m_size,-0.5), index=all_genes_list, columns=first_dataframe.columns)
 
@@ -1295,32 +1299,52 @@ for gene in all_genes_list:
     for method in first_dataframe.columns:
         for score_df in score_matrices:
             if gene in score_df.index.tolist():
-                values_matrix[all_genes_list.index(gene)][methods.index(method)].append(score_df[method][gene])
-
+                values_matrix[all_genes_list.index(gene)][methods.index(method)].append(score_df[method][gene])                
 
 for gene in all_genes_list:
     for method in first_dataframe.columns:
-        values = values_matrix[all_genes_list.index(gene)][methods.index(method)]      
-        var_df[method][gene] = np.var(values)
+        values = values_matrix[all_genes_list.index(gene)][methods.index(method)]            
         mean_df[method][gene] = np.mean(values)
         std_df[method][gene] = np.std(values)
 
 row_lables = first_dataframe.index
 cols_labels = first_dataframe.columns
 
-filename = results_path_parent + 'mean_score_headmap.png'
+filename = results_path_parent + 'scores_mean_heatmap.png'
 matrix = np.matrix(mean_df.values).astype(float)
 saveHeatMapScores(matrix, rows_labels=mean_df.index , cols_labels=mean_df.columns, filename=filename, metric='euclidean')
 
-filename = results_path_parent + 'var_score_headmap.png'
-matrix = np.matrix(var_df.values).astype(float)
-saveHeatMapScores(matrix, rows_labels=var_df.index , cols_labels=var_df.columns, filename=filename, metric='euclidean')
-
-filename = results_path_parent + 'std_score_headmap.png'
+filename = results_path_parent + 'scores_std_heatmap.png'
 matrix = np.matrix(std_df.values).astype(float)
 saveHeatMapScores(matrix, rows_labels=std_df.index , cols_labels=std_df.columns, filename=filename, metric='euclidean')
 
+filename = results_path_parent + 'scores_lower_conf_level_heatmap.png'
+matrix_mean = np.matrix(mean_df.values).astype(float)
+matrix_std = np.matrix(std_df.values).astype(float)
+matrix_conf = matrix_mean - (2*matrix_std)
+matrix_conf[matrix_conf<0]=0.0
+saveHeatMapScores(matrix_conf, rows_labels=std_df.index , cols_labels=std_df.columns, filename=filename, metric='euclidean')
 
+
+high_score_df = DataFrame(np.full((len(all_genes),len(score_matrices)),-0.5), index=all_genes_list, columns=range(len(score_matrices)))
+
+highest_values_matrix = []
+for i in range(len(all_genes)):
+    row = []
+    for j in range(len(score_matrices)):
+        row.append([])
+    highest_values_matrix.append(row)  
+
+for gene in all_genes_list:    
+    for j in range(len(score_matrices)):
+        score_df = score_matrices[j]
+        highest_scores = sorted(score_df.loc[gene].values, reverse=True)
+        highest_scores = highest_scores[0:len(score_df.index.tolist())/2]
+        high_score_df[all_genes_list.index(gene)][j] = np.mean(highest_scores)
+
+filename = results_path_parent + 'scores_highest_50_mean_heatmap.png'
+matrix = np.matrix(high_score_df.values).astype(float)
+saveHeatMapScores(matrix, rows_labels=var_high_score_dfdf.index , cols_labels=high_score_df.columns, filename=filename, metric='euclidean')
 
 
 
@@ -1409,7 +1433,7 @@ filename = results_path_parent + 'box_plot_top_10_from_each_loop_50p_higher_scor
 saveBoxplots(box_plot_values, filename=filename, x_labels=selected_genes)
 
 matrix = np.matrix(df.values.astype(float))
-filename = results_path_parent + 'mean_50p_higher_scores_pergene_perloop_headmap.png'
+filename = results_path_parent + 'scores_mean_50p_higher_pergene_perloop_heatmap.png'
 saveHeatMap(matrix, rows_labels=df.index , cols_labels=df.columns, classes=None, filename=filename, metric='euclidean')
 
 

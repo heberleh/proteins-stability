@@ -1,0 +1,1 @@
+python ./src/main_signatures.py  --input-folder results/prostate_wilcox_fdr_outerk7_innerk6_18_10_22_23_06_04 --n-jobs 4
