@@ -307,7 +307,8 @@ def correlatedSignatures(main_signature, init, correlated_genes):
     correlated_signatures = set()
 
     for i in range(init, len(main_signature.genes)):              
-        if main_signature.genes[i] in correlated_genes:            
+        if main_signature.genes[i] in correlated_genes: 
+            print("##########################################################################################################################################")           
             for gene in correlated_genes[main_signature.genes[i]]:            
                 copy_genes = [item for item in main_signature.genes]                
                 copy_genes[i] = gene     
@@ -406,6 +407,7 @@ folders = [ item for item in os.listdir(input_path) if os.path.isdir(os.path.joi
 
 if limit_n_folders > 0:
     folders = sample(folders, limit_n_folders)
+    folders = ["0","1"]
 
 report.write('\nFolders used: %s\n' % str(folders))
 
@@ -450,18 +452,20 @@ for folder_name in sorted(folders):
     uni, c = np.unique(train_data.Y(), return_counts=True)  
 
     unbalanced = False
-    if np.min(c)/float(np.max(c)) < 0.05:
+    print("\nbalanced? ")
+    print(np.min(c)/np.max(c))
+
+    if np.min(c)/float(np.max(c))  < 1.05 and np.min(c)/float(np.max(c)) > 0.95:
         # if balanced and small
-        if len(train_data.Y()) < n_levels * 13:
+        if train_data.getMinNumberOfSamplesPerClass() < 11:
             test_size = len(train_data.levels())
         else:
-            test_size = 0.2
-            print(np.min(c)/np.max(c))
+            test_size = 0.2            
     else:
         # if unbalanced and small
         unbalanced = True #! -> will add the balanced by Smote scores aside with the unbalanced ones
         report.write('The train set was considered unbalanced.\n')
-        if train_data.getMinNumberOfSamplesPerClass() < 13:
+        if train_data.getMinNumberOfSamplesPerClass() < 11:
             if (0.1*len(train_data.Y())) < n_levels:
                 test_size = len(train_data.levels())
             else:
@@ -727,26 +731,6 @@ for folder_name in sorted(folders):
         good_sig_data.append(sig_data)
     good_signatures_global[folder_name] = good_sig_data
 
-
-    gene_freq = {}
-    for data in good_signatures:       
-        signature = data[5]
-        for gene in signature.genes:
-            if gene in gene_freq:
-                gene_freq[gene] += 1
-            else:
-                gene_freq[gene] =  1
-    for gene in gene_freq:
-        gene_freq[gene] /= float(len(good_signatures))    
-    good_genes_freq_global[folder_name] = gene_freq
-
-    matrix = []
-    for gene in gene_freq:
-        matrix.append([gene, gene_freq[gene]])    
-    matrix = sorted(matrix, key=lambda tup: tup[1], reverse=True)
-    filename = os.path.join(folder_path, 'prot_freq_in_good_signatures.csv')
-    df = DataFrame(matrix)
-    df.to_csv(filename, header=True)
     #np.savetxt(filename, matrix, delimiter=",", fmt='%s')
 
     def meanFrequency(signature, gene_freq):
@@ -761,14 +745,19 @@ for folder_name in sorted(folders):
     # read correlation matrix
     correlated_genes = {}
     try:
-        correlation_df = pd.read_csv(correlated_proteins_path, index_col=0, header=None)
+        correlation_df = pd.read_csv(correlated_proteins_path, header=None)
+        print("correlated matrix:")
         print(correlation_df)    
-        for gene in correlation_df.index:
-            correlated_genes[gene] = set()
-            for gene2 in correlation_df.loc[gene]:
-                if not pd.isna(gene2) and not gene2 == '':
-                    correlated_genes[gene].add(gene2)
-    except Exception:        
+        for i in correlation_df.index.tolist():
+            gene1 = correlation_df[0][i]
+            correlated_genes[gene1] = set()
+            for gene2 in correlation_df.loc[i]:
+                if not gene2 == gene1 and not pd.isna(gene2) and not gene2 == '':
+                    correlated_genes[gene1].add(gene2)
+                    print(gene1 + " is correlated to "+ gene2+"\n")
+    except Exception as e:   
+        print(e)
+        print("There is no correlated gene.")     
         pass
 
     #Evaluate the best_signatures again, with bagging estimators where feature-boostraping is not used, but sample-boostraping is.
@@ -813,27 +802,29 @@ for folder_name in sorted(folders):
        
 
     n_cpu = nJobs 
-    pool = Pool(processes=n_cpu)    
-
-    print("\nTesting correlated signatures - simple test\n")
+    pool = Pool(processes=n_cpu)
+    print("\nTesting correlated signatures - simple test:")
     count2 = 0.0
-
     sss = StratifiedShuffleSplit(n_splits=n_splits_searching_signature, test_size=test_size,  random_state=0) 
     correlated_signatures_scores = []
+    correlated_matrix_hash = []
     for data in good_signatures:
         main_signature = data[5]
         signatures_set = correlatedSignatures(main_signature, 0, correlated_genes) 
         parallel_input = []
-        sig_count = 0.0
-        for signature in signatures_set:            
-            parallel_input.append((signature, clone(selected_classifier['model']), train_data, score_estimator_best_sig, sss))
-
-        result = pool.map(parallelEvaluationSimple, parallel_input)
-
-        gc.collect()
-
-        for i in range(len(result)):
-            correlated_signatures_scores.append(result[i])
+              
+        if len(signatures_set) > 1:
+            signatures_set.remove(main_signature)            
+            hash_row = [str(main_signature.genes)]
+            for signature in signatures_set:            
+                parallel_input.append((signature, clone(selected_classifier['model']), train_data, score_estimator_best_sig, sss))
+                hash_row.append(str(signature.genes))
+            correlated_matrix_hash.append(hash_row)
+            if len(parallel_input) > 0:
+                result = pool.map(parallelEvaluationSimple, parallel_input)
+            gc.collect()
+            for i in range(len(result)):
+                correlated_signatures_scores.append(result[i])
 
         count2 += 1.0
         sys.stdout.flush()
@@ -841,12 +832,38 @@ for folder_name in sorted(folders):
         sys.stdout.flush()
     close_pool(pool)
 
-    correlated_signatures_scores = sorted(correlated_signatures_scores, reverse=True)
-    max_score = correlated_signatures_scores[0][0]  
+    correlated_matrix_hash = sorted(correlated_matrix_hash, key=lambda tup: tup[0])
+    filename = os.path.join(folder_path, 'correlated_signatures.csv')
+    df = DataFrame(correlated_matrix_hash)
+    df.to_csv(filename, header=True)
+
+    if len(correlated_signatures_scores) > 0:
+        correlated_signatures_scores = sorted(correlated_signatures_scores, reverse=True)
+        max_score = correlated_signatures_scores[0][0]  
     correlated_signatures = set([data[1] for data in correlated_signatures_scores if data[0] > max_score-0.10])
     good_signatures_set = set([data[5] for data in good_signatures])
     selected_good_signatures = correlated_signatures | good_signatures_set
-    
+
+    gene_freq = {}
+    for signature in selected_good_signatures:               
+        for gene in signature.genes:
+            if gene in gene_freq:
+                gene_freq[gene] += 1
+            else:
+                gene_freq[gene] =  1
+    for gene in gene_freq:
+        gene_freq[gene] /= float(len(good_signatures))    
+    good_genes_freq_global[folder_name] = gene_freq
+
+    matrix = []
+    for gene in gene_freq:
+        matrix.append([gene, gene_freq[gene]])    
+    matrix = sorted(matrix, key=lambda tup: tup[1], reverse=True)
+    filename = os.path.join(folder_path, 'prot_freq_in_good_signatures.csv')
+    df = DataFrame(matrix)
+    df.to_csv(filename, header=True)
+
+    print("\nRe-evaluating all good signatures, including correlated:\n")
     sss = StratifiedShuffleSplit(n_splits=n_splits_final_evaluations, test_size=test_size, random_state=0) 
     parallel_input = []
     for signature in selected_good_signatures:
