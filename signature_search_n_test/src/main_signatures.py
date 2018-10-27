@@ -716,6 +716,10 @@ for folder_name in sorted(folders):
 
     good_signatures = fold_signatures.getSignaturesMaxScore(delta=0.10)
 
+    good_signatures = sorted(good_signatures, reverse=True)
+    max_score_good_signatures = good_signatures[0][0]
+
+    print("!! Max score of good signatures: "+ str(max_score_good_signatures))
 
     good_sig_data = []
     for data in good_signatures:
@@ -838,9 +842,8 @@ for folder_name in sorted(folders):
     df.to_csv(filename, header=True)
 
     if len(correlated_signatures_scores) > 0:
-        correlated_signatures_scores = sorted(correlated_signatures_scores, reverse=True)
-        max_score = correlated_signatures_scores[0][0]  
-    correlated_signatures = set([data[1] for data in correlated_signatures_scores if data[0] > max_score-0.10])
+        correlated_signatures_scores = sorted(correlated_signatures_scores, reverse=True)         
+    correlated_signatures = set([data[1] for data in correlated_signatures_scores if data[0] > max_score_good_signatures-0.10])
     good_signatures_set = set([data[5] for data in good_signatures])
     selected_good_signatures = correlated_signatures | good_signatures_set
 
