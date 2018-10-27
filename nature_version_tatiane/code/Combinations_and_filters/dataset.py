@@ -16,12 +16,13 @@ from statsmodels.stats.multitest import fdrcorrection
 
 class Dataset(object):
 
-    def __init__(self, filename=None, scale=False, normalize=False, sep=","):
+    def __init__(self, filename=None, scale=False, normalize=False, sep=",", positive=None):
         self.genes = None
         self.samples = None
         self.matrix = None
         self.labels = None
         self.__geneIndex = {}
+        self.positive = positive
 
 
         if filename != None:
@@ -113,6 +114,7 @@ class Dataset(object):
         new_dataset.labels = self.labels
         new_dataset.samples = self.samples
         new_dataset.name = self.name+"_modified"
+        new_dataset.positive = self.positive
         return new_dataset
 
     def get_sub_dataset_by_samples(self, samples_indexes):
@@ -128,6 +130,8 @@ class Dataset(object):
         new_dataset.labels = list(np.array(self.labels)[indexes])
         new_dataset.samples = list(np.array(self.samples)[indexes])
         new_dataset.name = self.name+"_modified"
+        new_dataset.positive = self.positive
+
         new_dataset.sortSamplesByClassLabel()
         return new_dataset
     
@@ -170,6 +174,9 @@ class Dataset(object):
 
     def sortSamplesByClassLabel(self):
         indexes = np.argsort(self.labels)
+        if not self.positive is None:
+            if list(np.array(self.labels)[indexes])[0] == self.positive:
+                indexes = indexes[::-1]
         self.matrix = self.matrix[indexes, :]
         self.labels = list(np.array(self.labels)[indexes])
         self.samples = list(np.array(self.samples)[indexes])

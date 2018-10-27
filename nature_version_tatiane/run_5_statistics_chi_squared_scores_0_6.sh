@@ -1,0 +1,1 @@
+R -f ./code/statistics/chi_squared_scores_0_6.R

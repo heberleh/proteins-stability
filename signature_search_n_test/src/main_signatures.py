@@ -210,7 +210,7 @@ def evaluateRankParallel(dataset_train, dataset_test, scores, rank_id, estimator
 
     sss = StratifiedShuffleSplit(n_splits=n_splits, test_size=test_size, random_state=0)
 
-    n_cpu = cpu_count()
+    n_cpu = nJobs
     n_splits = n_cpu*20
     
 
@@ -353,18 +353,18 @@ n_estimators_final_signatures = args['n_estimators_final_signatures']
 limit_n_ranks = -1
 limit_n_folders = -1
 if args['debug_fast']:
-    n_splits_select_classifier = 32
-    n_estimators_bagging_select_classifier = 32
+    n_splits_select_classifier = 10
+    n_estimators_bagging_select_classifier = 16
 
-    n_splits_searching_signature = 32
+    n_splits_searching_signature = 10
 
-    n_splits_final_evaluations = 32    
+    n_splits_final_evaluations = 16    
 
     max_all_comb_size  = 2
     max_random_comb_size  = 3
     
-    n_split_final_signature = 32
-    n_estimators_final_signatures = 32
+    n_split_final_signature = 10
+    n_estimators_final_signatures = 16
 
     limit_n_ranks = 2
     limit_n_folders = 2
@@ -759,23 +759,23 @@ for folder_name in sorted(folders):
 
     correlated_proteins_path = os.path.join(folder_path, 'correlated_genes.csv')
     # read correlation matrix
-    correlation_df = pd.read_csv(correlated_proteins_path, index_col=0, header=None)
-    print(correlation_df)
     correlated_genes = {}
-    for gene in correlation_df.index:
-        correlated_genes[gene] = set()
-        for gene2 in correlation_df.loc[gene]:
-            if not pd.isna(gene2) and not gene2 == '':
-                correlated_genes[gene].add(gene2)
+    try:
+        correlation_df = pd.read_csv(correlated_proteins_path, index_col=0, header=None)
+        print(correlation_df)    
+        for gene in correlation_df.index:
+            correlated_genes[gene] = set()
+            for gene2 in correlation_df.loc[gene]:
+                if not pd.isna(gene2) and not gene2 == '':
+                    correlated_genes[gene].add(gene2)
+    except Exception:        
+        pass
 
     #Evaluate the best_signatures again, with bagging estimators where feature-boostraping is not used, but sample-boostraping is.
 
     print("\n\nEvaluating signatures with high score using more shuffle splits.\n")
     print("Number of main_signatures to evaluate: %d\n\n" % len(good_signatures))
     print("Correlated signatures are going to be evaluated too.\n")    
-    good_signature_scores = []
-
-    sss = StratifiedShuffleSplit(n_splits=n_splits_final_evaluations, test_size=test_size, random_state=0)    
 
     starting_time_good_sig = datetime.now()
     n_signatures = len(good_signatures)
@@ -798,33 +798,75 @@ for folder_name in sorted(folders):
 
         return (adjusted_score, mean_score, signature.mean_freq, signature, std_score, np.round(signature.mean_p_value, decimals=3))
 
-    n_cpu = cpu_count() 
+    
+    def parallelEvaluationSimple(input):
+        signature, classifier, train_data, score_estimator_best_sig, sss = input[0], input[1], input[2], input[3], input[4]
+
+        new_train = train_data.get_sub_dataset(signature.genes)
+        base_estimator = Pipeline([('scaler', StandardScaler()), ('model', classifier)])
+
+        cv_scores = cross_val_score(base_estimator, new_train.X(), new_train.Y(), scoring=  score_estimator_best_sig, cv=sss, n_jobs=1)        
+
+        mean_score = np.round(np.mean(cv_scores), decimals=3)        
+
+        return (mean_score, signature)
+       
+
+    n_cpu = nJobs 
     pool = Pool(processes=n_cpu)    
+
+    print("\nTesting correlated signatures - simple test\n")
+    count2 = 0.0
+
+    sss = StratifiedShuffleSplit(n_splits=n_splits_searching_signature, test_size=test_size,  random_state=0) 
+    correlated_signatures_scores = []
     for data in good_signatures:
-        #print('Score: %f, Indep. Score: %f, Size: %d, Method: %s %s, Signature:\n%s' % (sig[0],sig[1], sig[2], sig[4], str(sig[3]), str(sig[5])))
-        main_signature = data[5]      
-
-        meanFrequency(main_signature, gene_freq)
-        
-        signatures_set = correlatedSignatures(main_signature, 0, correlated_genes)     
-
-        sig_count = 0.0
+        main_signature = data[5]
+        signatures_set = correlatedSignatures(main_signature, 0, correlated_genes) 
         parallel_input = []
+        sig_count = 0.0
         for signature in signatures_set:            
             parallel_input.append((signature, clone(selected_classifier['model']), train_data, score_estimator_best_sig, sss))
 
-        result = pool.map(parallelEvaluation, parallel_input)
+        result = pool.map(parallelEvaluationSimple, parallel_input)
 
         gc.collect()
 
         for i in range(len(result)):
-            good_signature_scores.append(result[i])
+            correlated_signatures_scores.append(result[i])
 
+        count2 += 1.0
+        sys.stdout.flush()
+        print('Progress: %d%%   ' % int((count2/n_signatures*100)), end='\r')
+        sys.stdout.flush()
+    close_pool(pool)
+
+    correlated_signatures_scores = sorted(correlated_signatures_scores, reverse=True)
+    max_score = correlated_signatures_scores[0][0]  
+    correlated_signatures = set([data[1] for data in correlated_signatures_scores if data[0] > max_score-0.10])
+    good_signatures_set = set([data[5] for data in good_signatures])
+    selected_good_signatures = correlated_signatures | good_signatures_set
+    
+    sss = StratifiedShuffleSplit(n_splits=n_splits_final_evaluations, test_size=test_size, random_state=0) 
+    parallel_input = []
+    for signature in selected_good_signatures:
+        #print('Score: %f, Indep. Score: %f, Size: %d, Method: %s %s, Signature:\n%s' % (sig[0],sig[1], sig[2], sig[4], str(sig[3]), str(sig[5])))      
+        meanFrequency(signature, gene_freq)
+                 
+        parallel_input.append((signature, clone(selected_classifier['model']), train_data, score_estimator_best_sig, sss))
+        
         count += 1.0
         sys.stdout.flush()
         print('Progress: %d%%   ' % int((count/n_signatures*100)), end='\r')
         sys.stdout.flush()
-
+    
+    n_cpu = nJobs 
+    pool = Pool(processes=n_cpu)    
+    result = pool.map(parallelEvaluation, parallel_input)
+    gc.collect()
+    good_signature_scores = []
+    for i in range(len(result)):
+        good_signature_scores.append(result[i])
     close_pool(pool)
     print('Progress: %d%%\n' % int((count/n_signatures*100)))
 
@@ -931,22 +973,22 @@ for folder_name in sorted(folders):
     #! Sort by mean_cv
     better_signatures = sorted(better_signatures, reverse=True, key=lambda tup: tup[1])
     max_score = better_signatures[0][1]  
-    better_signatures = [data for data in better_signatures if data[1] > max_score-0.025]
+    best_signatures = [data for data in better_signatures if data[1] > max_score-0.025]
 
 
     #!!! Ranking by mean_p_value
     if len(best_signatures) > 10:
-        better_signatures = sorted(better_signatures, key=lambda tup: tup[5])
-        min_p_value = better_signatures[0][5]
-        better_signatures = [item for item in better_signatures if np.round(item[5], decimals=3) < min_p_value+0.05]
+        best_signatures = sorted(best_signatures, key=lambda tup: tup[5])
+        min_p_value = best_signatures[0][5]
+        best_signatures = [item for item in best_signatures if np.round(item[5], decimals=3) < min_p_value+0.05]
         report.write('\n\nThere are more than 10 best signatures, now filtering by mean_p_value < 0.05')
         report.flush()
 
     #!!! Ranking by cv score
     if len(best_signatures) > 10:
-        better_signatures = sorted(better_signatures, key=lambda tup: tup[1], reverse=True)
-        max_cv = better_signatures[0][1]
-        best_signatures = [item for item in better_signatures if item[1] > max_cv-0.01]
+        best_signatures = sorted(best_signatures, key=lambda tup: tup[1], reverse=True)
+        max_cv = best_signatures[0][1]
+        best_signatures = [item for item in best_signatures if item[1] > max_cv-0.01]
         report.write('\nThere are more than 10 best signatures, now filtering by cv_score > 0.01')
         report.flush()
 
@@ -1023,7 +1065,7 @@ for folder_name in sorted(folders):
     n_signatures = len(best_signatures)
     count = 0.0
 
-    report_best_signatures_correlated = 
+    #report_best_signatures_correlated = 
 
     for data in best_signatures:
 
@@ -1043,7 +1085,7 @@ for folder_name in sorted(folders):
         report.write('BEST SIGNATURE AND CORRELATED SIGNATURES')      
         report.write('Signature: %s\n' % str(signature.genes))
         report.write('Correlated signatures:\n')
-        for sig in correlatedSignatures(signature, 0, correlated_genes) 
+        for sig in correlatedSignatures(signature, 0, correlated_genes):
             report.write(str(sig.genes))
         report.write('\n\n')
         report.flush()

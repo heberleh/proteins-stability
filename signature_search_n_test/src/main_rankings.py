@@ -207,17 +207,19 @@ def save_ratio(dataset, filename, normalize=False):
     df.to_csv(filename+'.csv', header=True)
 
     matrix = np.matrix(matrix)
-    matrix[matrix > 2] = 2
-    matrix[matrix <-2] = -2
-    saveHeatMapScores(matrix, dataset.genes, df.columns, filename=filename+"_limited_by_2", metric='euclidean')    
+    matrix[matrix > 1] = 1
+    matrix[matrix <-1] = -1
+    saveHeatMapScores(matrix, dataset.genes, df.columns, filename=filename+"_limited_by_1", metric='euclidean')    
 
 
 
 saveHeatMap(dataset.get_scaled_data(), dataset.samples, dataset.genes, dataset.Y(),  results_path+'heatmap_dataset_correlation_zscore', metric='correlation', classes_labels=dataset.levels())   
 
+saveHeatMap(dataset.X(), dataset.samples, dataset.genes, dataset.Y(),  results_path+'heatmap_dataset_correlation', metric='correlation', classes_labels=dataset.levels())   
 
 saveHeatMap(dataset.get_scaled_data(), dataset.samples, dataset.genes, dataset.Y(),  results_path+'heatmap_dataset_euclidean_zscore', metric='euclidean', classes_labels=dataset.levels())   
 
+saveHeatMap(dataset.X(), dataset.samples, dataset.genes, dataset.Y(),  results_path+'heatmap_dataset_euclidean', metric='euclidean', classes_labels=dataset.levels())   
 
 
 
@@ -1327,24 +1329,19 @@ saveHeatMapScores(matrix_conf, rows_labels=std_df.index , cols_labels=std_df.col
 
 
 high_score_df = DataFrame(np.full((len(all_genes),len(score_matrices)),-0.5), index=all_genes_list, columns=range(len(score_matrices)))
-
-highest_values_matrix = []
-for i in range(len(all_genes)):
-    row = []
-    for j in range(len(score_matrices)):
-        row.append([])
-    highest_values_matrix.append(row)  
-
 for gene in all_genes_list:    
     for j in range(len(score_matrices)):
         score_df = score_matrices[j]
-        highest_scores = sorted(score_df.loc[gene].values, reverse=True)
-        highest_scores = highest_scores[0:len(score_df.index.tolist())/2]
-        high_score_df[all_genes_list.index(gene)][j] = np.mean(highest_scores)
+        if gene in score_df.index.tolist():
+            highest_scores = sorted(score_df.loc[gene].values, reverse=True)
+            highest_scores = highest_scores[0:len(score_df.index.tolist())/2]
+            high_score_df[j][gene] = np.mean(highest_scores)
+        else:
+            high_score_df[j][gene] = 0.0
 
 filename = results_path_parent + 'scores_highest_50_mean_heatmap.png'
 matrix = np.matrix(high_score_df.values).astype(float)
-saveHeatMapScores(matrix, rows_labels=var_high_score_dfdf.index , cols_labels=high_score_df.columns, filename=filename, metric='euclidean')
+saveHeatMapScores(matrix, rows_labels=high_score_df.index , cols_labels=high_score_df.columns, filename=filename, metric='euclidean')
 
 
 
@@ -1390,7 +1387,7 @@ scores_by_gene = {}
 labels = row_lables.tolist()
 for gene in selected_genes:        
     values = []
-    pen = -0.1
+    pen = -0.05
     for score_df in score_matrices:        
         if gene in score_df.index.tolist():            
             for value in score_df.loc[gene].values:
@@ -1398,7 +1395,7 @@ for gene in selected_genes:
         else:
             #for j in range(first_m.shape[1]):        
             values.append(pen)
-            pen -= 0.1
+            pen -= 0.001
     scores_by_gene[gene] = values
 
 box_plot_values = [scores_by_gene[gene] for gene in selected_genes]
@@ -1414,7 +1411,7 @@ df = DataFrame(np.full((len(all_genes_list),len(score_matrices)),-0.1), index=al
 
 for gene in all_genes:        
     values = []
-    pen = -0.1    
+    pen = -0.05   
     for j in range(len(score_matrices)):    
         score_df = score_matrices[j]    
         if gene in score_df.index.tolist():            
@@ -1425,7 +1422,7 @@ for gene in all_genes:
                 values.append(value)            
         else:           
             values.append(pen)
-            pen -= 0.1
+            pen -= 0.001
     scores_by_gene[gene] = values
 
 box_plot_values = [scores_by_gene[gene] for gene in selected_genes]
