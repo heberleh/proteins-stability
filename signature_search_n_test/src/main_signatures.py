@@ -307,8 +307,7 @@ def correlatedSignatures(main_signature, init, correlated_genes):
     correlated_signatures = set()
 
     for i in range(init, len(main_signature.genes)):              
-        if main_signature.genes[i] in correlated_genes: 
-            print("##########################################################################################################################################")           
+        if main_signature.genes[i] in correlated_genes:           
             for gene in correlated_genes[main_signature.genes[i]]:            
                 copy_genes = [item for item in main_signature.genes]                
                 copy_genes[i] = gene     
@@ -870,31 +869,31 @@ for folder_name in sorted(folders):
     sss = StratifiedShuffleSplit(n_splits=n_splits_final_evaluations, test_size=test_size, random_state=0) 
     parallel_input = []
     for signature in selected_good_signatures:
-        #print('Score: %f, Indep. Score: %f, Size: %d, Method: %s %s, Signature:\n%s' % (sig[0],sig[1], sig[2], sig[4], str(sig[3]), str(sig[5])))      
         meanFrequency(signature, gene_freq)
-                 
         parallel_input.append((signature, clone(selected_classifier['model']), train_data, score_estimator_best_sig, sss))
         
+        
+    n_cpu = nJobs 
+    pool = Pool(processes=n_cpu)
+    n = n_cpu * 20    
+    chunks = [parallel_input[i * n:(i + 1) * n] for i in range((len(parallel_input) + n - 1) // n )]
+    count = 0.0
+    n_chunks = len(chunks)
+    good_signature_scores = []
+    for input in chunks:
+        result = pool.map(parallelEvaluation, input)
+        gc.collect()        
+        for i in range(len(result)):
+            good_signature_scores.append(result[i])
         count += 1.0
         sys.stdout.flush()
-        print('Progress: %d%%   ' % int((count/n_signatures*100)), end='\r')
+        print('Progress: %d%%   ' % int((count/n_chunks*100)), end='\r')
         sys.stdout.flush()
-    
-    n_cpu = nJobs 
-    pool = Pool(processes=n_cpu)    
-    result = pool.map(parallelEvaluation, parallel_input)
-    gc.collect()
-    good_signature_scores = []
-    for i in range(len(result)):
-        good_signature_scores.append(result[i])
     close_pool(pool)
-    print('Progress: %d%%\n' % int((count/n_signatures*100)))
+    print('Progress: %d%%\n' % int((count/n_chunks*100)))
 
-    # time_message = '\nTime to re-evaluate %d signatures: %s\n' % (len(good_signatures), str(datetime.now()-starting_time_good_sig))
-    # print(time_message)
 
-    # set(t2).issubset(t1)
-    # set(t1).issuperset(t2)
+
     header = ['1st_decision (cv)', '2nd_decision (adjusted_score)', 'cv_mean', 'cv_std', 'mean_p_value', 'mean_freq (prot)', 'size', 'frequency', "signature", "methods", "ranks"]
     matrix = []
 
