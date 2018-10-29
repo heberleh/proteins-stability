@@ -5,12 +5,41 @@
 from pandas import DataFrame
 import pandas as pd
 from dataset import Dataset
-from sklearn.preprocessing import scale, normalize
+from sklearn.preprocessing import scale, normalize, robust_scale
 import numpy as np
 import os
 
 from skbio.tree import nj
 from skbio import DistanceMatrix, TreeNode
+from kruskal import KruskalRankSumTest3Classes
+from wilcoxon import WilcoxonRankSumTest
+from statsmodels.stats.multitest import fdrcorrection
+
+def filter_dataset(dataset, cutoff=0.25, fdr=True):
+    p_values = []
+    scores = []
+    if len(dataset.levels()) == 3:
+        # Kruskal
+        stat_test_name = 'Kruskal Wallis p-values histogram'
+        krus = KruskalRankSumTest3Classes(dataset)
+        krus_h, krus_p = krus.run()
+        p_values = krus_p
+    # if 2-class
+    elif len(dataset.levels()) == 2:   
+        #wilcoxon
+        stat_test_name = 'Wilcoxon p-values histogram'                   
+        wil = WilcoxonRankSumTest(dataset)
+        wil_z, wil_p = wil.run() 
+        p_values = wil_p
+
+    if fdr:
+        p_values = fdrcorrection(p_values, alpha=fdr, method='indep', is_sorted=False)[1] 
+
+    return dataset.get_sub_dataset([dataset.genes[i] for i in range(len(dataset.genes)) if p_values[i]<cutoff])
+
+
+
+
 
 # create the tree given a DataFrame[protein]
 def create_tree(df, column):
@@ -26,14 +55,19 @@ def create_tree(df, column):
     
     size = len(valid_samples)
     print(size)
-    if size > 2:
+    if size > 3:
         dist_matrix = np.zeros((size, size))
         for i in range(size):
             for j in range(i, size):
                 dist_matrix[i][j] = np.abs(values[i]-values[j])
                 dist_matrix[j][i] = dist_matrix[i][j]
-
-
+        maxv = dist_matrix.max()
+        minv = dist_matrix.min()
+        delta = maxv - minv
+        if delta == 0.0:
+            raise Exception("max-min = 0 in distance matrix")
+        
+        dist_matrix = (dist_matrix-minv)/delta
         dmat = DistanceMatrix(dist_matrix, valid_samples)    
         return nj(dmat).root_at_midpoint()
     else:        
@@ -53,20 +87,21 @@ path1 = os.path.join(current_path, 'dataset/romenia_all_samples_trees.csv')
 path3 = os.path.join(current_path, 'dataset/prostate_all_samples_trees.csv')
 
 # Read data sets
-d1 = Dataset(path1, scale=True, normalize=False, sep=',')
-#d2 = Dataset(path2, scale=True, normalize=False, sep=',')
-d3 = Dataset(path3, scale=True, normalize=False, sep=',')
+d1 = filter_dataset(Dataset(path1, scale=False, normalize=False, sep=','), 0.25, fdr=True)
+#d2 = filter_dataset(Dataset(path2, scale=False, normalize=False, sep=','), 0.10, fdr=false)
+d3 = filter_dataset(Dataset(path3, scale=False, normalize=False, sep=','), 0.25, fdr=True)
 
 # Find what is above Mean in each data set... 
 m1 = d1.matrix
-m1 = scale(m1)
-m1[m1<0.0] = 0.0
-m1 = m1 * 1
+m1 = robust_scale(m1)
+print(m1)
+m1[m1<=0.0] = np.nan
+m1 = m1+10
 
 m3 = d3.matrix
-m3 = scale(m3)
-m3[m3<0.0] = 0.0
-m3 = m3 * 3
+m3 = robust_scale(m3)
+m3[m3<=0.0] = np.nan
+m3 = m3+30
 
 # Join the data set into one matrix
 df1 = DataFrame(m1, index=d1.samples, columns=d1.genes)
@@ -83,7 +118,7 @@ result = result.fillna(0.0)
 
 # Normalize unit vector l2
 matrix = np.matrix(result).astype(float)
-matrix = normalize(matrix)
+#matrix = normalize(matrix)
 
 matrix_df = DataFrame(matrix, index=result.index, columns=result.columns)
 
@@ -103,7 +138,7 @@ for protein in matrix_df.columns.tolist():
     else:
         count+=1
 trees_file.close()
-print("\n%d/%d trees were < 3." % (count, len(matrix_df.columns.tolist())))
+print("\n%d/%d trees were < 4." % (count, len(matrix_df.columns.tolist())))
 
 
 
