@@ -5,7 +5,7 @@
 from pandas import DataFrame
 import pandas as pd
 from dataset import Dataset
-from sklearn.preprocessing import scale, normalize, robust_scale
+from sklearn.preprocessing import scale, normalize, robust_scale, minmax_scale
 import numpy as np
 import os
 
@@ -14,6 +14,7 @@ from skbio import DistanceMatrix, TreeNode
 from kruskal import KruskalRankSumTest3Classes
 from wilcoxon import WilcoxonRankSumTest
 from statsmodels.stats.multitest import fdrcorrection
+from scipy.spatial import distance
 
 def filter_dataset(dataset, cutoff=0.25, fdr=True):
     p_values = []
@@ -39,8 +40,6 @@ def filter_dataset(dataset, cutoff=0.25, fdr=True):
 
 
 
-
-
 # create the tree given a DataFrame[protein]
 def create_tree(df, column):
     samples = df.index.tolist()
@@ -49,7 +48,7 @@ def create_tree(df, column):
     values = []
     valid_samples = []
     for i in range(len(samples)):
-        if df[column][samples[i]] > 0:
+        if not np.isnan(df[column][samples[i]]):
             values.append(df[column][samples[i]])
             valid_samples.append(samples[i])
     
@@ -59,15 +58,9 @@ def create_tree(df, column):
         dist_matrix = np.zeros((size, size))
         for i in range(size):
             for j in range(i, size):
-                dist_matrix[i][j] = np.abs(values[i]-values[j])
+                dist_matrix[i][j] = distance.euclidean(values[i], values[j])                
                 dist_matrix[j][i] = dist_matrix[i][j]
-        maxv = dist_matrix.max()
-        minv = dist_matrix.min()
-        delta = maxv - minv
-        if delta == 0.0:
-            raise Exception("max-min = 0 in distance matrix")
-        
-        dist_matrix = (dist_matrix-minv)/delta
+
         dmat = DistanceMatrix(dist_matrix, valid_samples)    
         return nj(dmat).root_at_midpoint()
     else:        
@@ -94,31 +87,31 @@ d3 = filter_dataset(Dataset(path3, scale=False, normalize=False, sep=','), 0.25,
 # Find what is above Mean in each data set... 
 m1 = d1.matrix
 m1 = robust_scale(m1)
-print(m1)
-m1[m1<=0.0] = np.nan
-m1 = m1+10
+m1[m1 < -0.33] = np.nan
+m1[m1 >  0.33] = np.nan
+m1 = m1 + 10
 
 m3 = d3.matrix
 m3 = robust_scale(m3)
-m3[m3<=0.0] = np.nan
-m3 = m3+30
+i1 = m3 > -0.50
+i2 = m3 < 0.50
+r = i1 * i2
+m3[r] = np.nan
+m3 = m3 
 
 # Join the data set into one matrix
 df1 = DataFrame(m1, index=d1.samples, columns=d1.genes)
 #df2 = DataFrame(m2, index=d2.samples, columns=d2.genes)
 df3 = DataFrame(m3, index=d3.samples, columns=d3.genes)
 result = DataFrame()
-result = result.append(df1)
+#result = result.append(df1)
 #result = result.append(df2)
 result = result.append(df3)
 
-
-result = result.fillna(0.0)
 #P31146
 
-# Normalize unit vector l2
 matrix = np.matrix(result).astype(float)
-#matrix = normalize(matrix)
+#matrix = scale(matrix)
 
 matrix_df = DataFrame(matrix, index=result.index, columns=result.columns)
 
@@ -141,11 +134,21 @@ trees_file.close()
 print("\n%d/%d trees were < 4." % (count, len(matrix_df.columns.tolist())))
 
 
+matrix_df = matrix_df.fillna(0.0)
+sps = matrix_df.index.tolist()
+size = len(sps)
+dmat = np.zeros((size, size))
+for i in range(size):
+    for j in range(i, size):
+        dmat[i][j] = distance.euclidean(matrix_df.loc[sps[i]], matrix_df.loc[sps[j]])
+        dmat[j][i] = dmat[i][j]
 
 
-
-
-
+dmat = DistanceMatrix(dmat, sps)
+nw = str(nj(dmat).root_at_midpoint()).replace('root','')
+njf =  open(os.path.join(trees_path, 'nj_tree_euclidean.txt'),'w')
+njf.write(nw)
+njf.close()
 
 
 
