@@ -119,11 +119,14 @@ matrix_df.to_csv(os.path.join(trees_path, 'merged_matrix.csv'), header=True)
 
 # For each column (gene) create a distance matrix, a tree, and save it in the trees file.
 
-trees_file =  open(os.path.join(trees_path, 'trees.txt'),'w')
-protein_attributes_file = open(os.path.join(trees_path, 'proteins.txt'),'w')
+trees_file =  open(os.path.join(trees_path, 'trees_up_regulated.txt'),'w')
+protein_attributes_file = open(os.path.join(trees_path, 'proteins_up_regulated.txt'),'w')
 count = 0
+matrix_trees = np.matrix(np.copy(matrix))
+matrix_trees[matrix_trees<0.50] = np.nan
+df_for_trees = DataFrame(matrix_trees, index=result.index, columns=result.columns)
 for protein in matrix_df.columns.tolist():
-    tree = create_tree(matrix_df, protein)
+    tree = create_tree(df_for_trees, protein)
     if not tree is None:
         tree_nw = str(tree).replace('root','')
         trees_file.write(tree_nw)
@@ -132,6 +135,27 @@ for protein in matrix_df.columns.tolist():
         count+=1
 trees_file.close()
 print("\n%d/%d trees were < 4." % (count, len(matrix_df.columns.tolist())))
+
+
+
+trees_file =  open(os.path.join(trees_path, 'trees_down_regulated.txt'),'w')
+protein_attributes_file = open(os.path.join(trees_path, 'proteins_down_regulated.txt'),'w')
+count = 0
+matrix_trees = np.matrix(np.copy(matrix))
+matrix_trees[matrix_trees>-0.50] = np.nan
+df_for_trees = DataFrame(matrix_trees, index=result.index, columns=result.columns)
+for protein in matrix_df.columns.tolist():
+    tree = create_tree(df_for_trees, protein)
+    if not tree is None:
+        tree_nw = str(tree).replace('root','')
+        trees_file.write(tree_nw)
+        protein_attributes_file.write(protein+'\n')
+    else:
+        count+=1
+trees_file.close()
+print("\n%d/%d trees were < 4." % (count, len(matrix_df.columns.tolist())))
+
+
 
 
 matrix_df = matrix_df.fillna(0.0)
