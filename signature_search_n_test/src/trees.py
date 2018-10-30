@@ -125,12 +125,14 @@ count = 0
 matrix_trees = np.matrix(np.copy(matrix))
 matrix_trees[matrix_trees<0.50] = np.nan
 df_for_trees = DataFrame(matrix_trees, index=result.index, columns=result.columns)
+up_proteins = []
 for protein in matrix_df.columns.tolist():
     tree = create_tree(df_for_trees, protein)
     if not tree is None:
         tree_nw = str(tree).replace('root','')
         trees_file.write(tree_nw)
         protein_attributes_file.write(protein+'\n')
+        up_proteins.append(protein)
     else:
         count+=1
 trees_file.close()
@@ -144,12 +146,14 @@ count = 0
 matrix_trees = np.matrix(np.copy(matrix))
 matrix_trees[matrix_trees>-0.50] = np.nan
 df_for_trees = DataFrame(matrix_trees, index=result.index, columns=result.columns)
+down_proteins = []
 for protein in matrix_df.columns.tolist():
     tree = create_tree(df_for_trees, protein)
     if not tree is None:
         tree_nw = str(tree).replace('root','')
         trees_file.write(tree_nw)
         protein_attributes_file.write(protein+'\n')
+        down_proteins.append(protein)
     else:
         count+=1
 trees_file.close()
@@ -177,8 +181,9 @@ njf.close()
 
 
 all_annotations = pd.read_csv(os.path.join(current_path, 'dataset/all_prostate_cancer_annotations.csv'), index_col=0, header=0)
-print(matrix_df.columns.tolist())
 
-selected_proteins_annotations = all_annotations.loc[matrix_df.columns.tolist()]
+selected_proteins_annotations = all_annotations.loc[up_proteins]
+selected_proteins_annotations.to_csv(os.path.join(current_path, 'dataset/selected_prostate_cancer_annotations_up_regulated.csv'), header=True, index=True)
 
-selected_proteins_annotations.to_csv(os.path.join(current_path, 'dataset/selected_prostate_cancer_annotations.csv'), header=True, index=True)
+selected_proteins_annotations = all_annotations.loc[down_proteins]
+selected_proteins_annotations.to_csv(os.path.join(current_path, 'dataset/selected_prostate_cancer_annotations_down_regulated.csv'), header=True, index=True)
