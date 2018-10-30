@@ -176,3 +176,9 @@ njf.close()
 
 
 
+all_annotations = pd.read_csv(os.path.join(current_path, 'dataset/all_prostate_cancer_annotations.csv'), index_col=0, header=0)
+print(matrix_df.columns.tolist())
+
+selected_proteins_annotations = all_annotations.loc[matrix_df.columns.tolist()]
+
+selected_proteins_annotations.to_csv(os.path.join(current_path, 'dataset/selected_prostate_cancer_annotations.csv'), header=True, index=True)
