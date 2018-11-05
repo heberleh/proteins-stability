@@ -373,7 +373,7 @@ if args['debug_fast']:
 good_genes_freq_global = {}
 best_genes_freq_global = {}
 
-good_signatures_global = {}
+even_better_signatures_global = {}
 best_signatures_global = {}
 
 best_sig_scores_global = {}
@@ -720,20 +720,6 @@ for folder_name in sorted(folders):
 
     print("!! Max score of good signatures: "+ str(max_score_good_signatures))
 
-    good_sig_data = []
-    for data in good_signatures:
-        signature = data[5]
-        rank_names = []
-        for name in ranks:
-            rank_genes = [item[1] for item in ranks[name][0:max_n_features]] #! already sorted
-            if set(signature.genes).issubset(rank_genes):
-                rank_names.append(name)        
-
-        sig_data = {'signature': signature, 'selected_classifier': selected_classifier['name'], 'frequency': len(rank_names)/float(len(ranks)), 'methods': signature.methods, 'ranks': rank_names}
-
-        good_sig_data.append(sig_data)
-    good_signatures_global[folder_name] = good_sig_data
-
     #np.savetxt(filename, matrix, delimiter=",", fmt='%s')
 
     def meanFrequency(signature, gene_freq):
@@ -747,6 +733,7 @@ for folder_name in sorted(folders):
     correlated_proteins_path = os.path.join(folder_path, 'correlated_genes.csv')
     # read correlation matrix
     correlated_genes = {}
+    correlated_genes_removed_set = set()
     try:
         correlation_df = pd.read_csv(correlated_proteins_path, header=None)
         print("correlated matrix:")
@@ -757,6 +744,7 @@ for folder_name in sorted(folders):
             for gene2 in correlation_df.loc[i]:
                 if not gene2 == gene1 and not pd.isna(gene2) and not gene2 == '':
                     correlated_genes[gene1].add(gene2)
+                    correlated_genes_removed_set.add(gene2)
                     print(gene1 + " is correlated to "+ gene2+"\n")
     except Exception as e:   
         print(e)
@@ -845,7 +833,9 @@ for folder_name in sorted(folders):
     correlated_signatures = set([data[1] for data in correlated_signatures_scores if data[0] > max_score_good_signatures-0.10])
     good_signatures_set = set([data[5] for data in good_signatures])
     selected_good_signatures = correlated_signatures | good_signatures_set
-
+    
+    good_signatures_set_static = set() | selected_good_signatures
+    
     gene_freq = {}
     for signature in selected_good_signatures:               
         for gene in signature.genes:
@@ -905,10 +895,13 @@ for folder_name in sorted(folders):
         std_cv = data[4]
         
         rank_names = []
-        for name in ranks:
-            rank_genes = [item[1] for item in ranks[name][0:max_n_features]] #! already sorted
-            if set(signature.genes).issubset(rank_genes):
-                rank_names.append(name)
+        if any(x in correlated_genes_removed_set for x in signature.genes):
+            rank_names.append("correlated")
+        else:        
+            for name in ranks:
+                rank_genes = [item[1] for item in ranks[name][0:max_n_features]] #! already sorted
+                if set(signature.genes).issubset(rank_genes):
+                    rank_names.append(name)
 
         row = [signature.getScore(selected_classifier['name']), score, mean_cv, std_cv, signature.mean_p_value, mean_freq, signature.size(), len(rank_names)/float(len(ranks)), str(signature.genes), str(signature.methods), str(rank_names)]
 
@@ -933,6 +926,23 @@ for folder_name in sorted(folders):
     max_score = better_signatures[0][1]
     better_signatures = [data for data in better_signatures if data[1] > max_score-0.05]
 
+    even_better_signatures_set_static = set(better_signatures)
+
+    even_better_sig_data = []
+    for signature in better_signatures:        
+        rank_names = []
+        if any(x in correlated_genes_removed_set for x in signature.genes):
+            rank_names.append("correlated")
+        else:
+            for name in ranks:
+                rank_genes = [item[1] for item in ranks[name][0:max_n_features]] #! already sorted
+                if set(signature.genes).issubset(rank_genes):
+                    rank_names.append(name)
+
+        sig_data = {'signature': signature, 'selected_classifier': selected_classifier['name'], 'frequency': len(rank_names)/float(len(ranks)), 'methods': signature.methods, 'ranks': rank_names}
+
+        even_better_sig_data.append(sig_data)
+    even_better_signatures_global[folder_name] = even_better_sig_data    
 
     gene_freq = {}
     for data in better_signatures:       
@@ -965,11 +975,15 @@ for folder_name in sorted(folders):
         std_cv = data[4]
         mean_p_value = data[5]
 
+
         rank_names = []
-        for name in ranks:
-            rank_genes = [item[1] for item in ranks[name][0:max_n_features]]
-            if set(signature.genes).issubset(rank_genes): #! already sorted
-                rank_names.append(name)
+        if any(x in correlated_genes_removed_set for x in signature.genes):
+            rank_names.append("correlated")
+        else:        
+            for name in ranks:
+                rank_genes = [item[1] for item in ranks[name][0:max_n_features]]
+                if set(signature.genes).issubset(rank_genes): #! already sorted
+                    rank_names.append(name)
 
         row = [signature.getScore(selected_classifier['name']), score, mean_p_value, mean_cv, std_cv, mean_freq, signature.size(), len(rank_names)/float(len(ranks)), str(signature.genes), str(signature.methods), str(rank_names)]
 
@@ -1088,9 +1102,6 @@ for folder_name in sorted(folders):
 
     for data in best_signatures:
 
-
-
-
         progress = count/n_signatures*100
         print('Progress: %d%%' % int(progress), end='\r')        
 
@@ -1106,16 +1117,23 @@ for folder_name in sorted(folders):
         report.write('Correlated signatures:\n')
         for sig in correlatedSignatures(signature, 0, correlated_genes):
             report.write(str(sig.genes))
+            if sig in good_signatures_set_static:
+                report.write("This signature is in the good_signatures.\n")
+            if sig in even_better_signatures_set_static:
+                report.write("This signature is in the even_better_signatures.\n\n")
         report.write('\n\n')
         report.flush()
         
 
         internal_score = signature.getScore(selected_classifier['name'])
         rank_names = []
-        for name in ranks:
-            rank_genes = [item[1] for item in ranks[name][0:max_n_features]] #! already sorted
-            if set(signature.genes).issubset(rank_genes):    
-                rank_names.append(name)
+        if any(x in correlated_genes_removed_set for x in signature.genes):
+            rank_names.append("correlated")
+        else:        
+            for name in ranks:
+                rank_genes = [item[1] for item in ranks[name][0:max_n_features]] #! already sorted
+                if set(signature.genes).issubset(rank_genes):    
+                    rank_names.append(name)
         #print("     "+str(signature.genes))
 
 
@@ -1184,6 +1202,7 @@ for folder_name in sorted(folders):
         row.append(np.mean(row_best_sig_matrix))
         row.append(np.std(row_best_sig_matrix))    
         row.append(independent_score)
+       
 
 
         report.write("The best classifier for this signature is: %s\n" % result['selected_classifier_name'])
@@ -1213,13 +1232,12 @@ for folder_name in sorted(folders):
             row.append(main_score_name_best_signature)    
             row.append(np.mean(row_best_sig_matrix))
             row.append(np.std(row_best_sig_matrix))           
-            row.append(independent_score)
-
-            matrix_best_signatures.append(row)
+            row.append(independent_score)            
 
             best_sig_scores_smote[signature] = result_smote
             
             count +=1 # track progress
+        matrix_best_signatures.append(row)
                     
         best_sig_scores[signature] = result
 
@@ -1297,7 +1315,7 @@ matrix = []
 for gene in mean_genes_freq:
     matrix.append([gene, mean_genes_freq[gene]])    
 matrix = sorted(matrix, key=lambda tup: tup[1], reverse=True)
-filename = os.path.join(input_path, 'prot_mean_freq_in_best_signatures.csv')
+filename = os.path.join(input_path, 'prot_mean_freq_in_even_better_signatures.csv')
 df = DataFrame(matrix)
 df.to_csv(filename, header=True)
 
@@ -1333,8 +1351,8 @@ global_good_signatures = {}
 
 starting_time = datetime.now() 
 
-for fold in good_signatures_global:
-    good_signatures = good_signatures_global[fold]
+for fold in even_better_signatures_global:
+    good_signatures = even_better_signatures_global[fold]
     for data in good_signatures:
         signature = data['signature']
         if signature in global_good_signatures:
@@ -1427,6 +1445,27 @@ matrix = sorted(matrix, key=lambda tup: tup[1], reverse=True)
 filename = os.path.join(input_path, 'global_best_signatures_attr.csv')
 df = DataFrame(matrix, columns=header)
 df.to_csv(filename, header=True)
+
+
+
+best_sig_gene_freq = {}
+for signature in global_best_signatures:
+    for gene in signature.genes:          
+        if gene in best_sig_gene_freq:
+            best_sig_gene_freq[gene] += 1
+        else:
+            best_sig_gene_freq[gene] = 1
+for gene in best_sig_gene_freq:
+    best_sig_gene_freq[gene] /= float(len(global_best_signatures))
+
+matrix = []
+for gene in best_sig_gene_freq:
+    matrix.append([gene, best_sig_gene_freq[gene]])    
+matrix = sorted(matrix, key=lambda tup: tup[1], reverse=True)
+filename = os.path.join(input_path, 'prot_freq_in_final_best_signatures.csv')
+df = DataFrame(matrix)
+df.to_csv(filename, header=True)
+
 
 
 

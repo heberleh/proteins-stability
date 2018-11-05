@@ -136,10 +136,7 @@ def save_ratio(dataset, filename, normalize=False):
     x = dataset.X()
     cluster_col = True
     if normalize:
-        scaler = StandardScaler()
-        scaler.fit(x)
-        x = scaler.transform(x)
-        scaler = MinMaxScaler()
+        scaler = MinMaxScaler((0.00000001,1))
         scaler.fit(x)
         x = scaler.transform(x)
     if len(dataset.levels()) == 3:
@@ -293,6 +290,17 @@ datasets_indexes = [(None, None)]
 if double_cross_validation:
     skf = StratifiedKFold(n_splits=k_outer)
     datasets_indexes = skf.split(dataset.X(), dataset.Y())  
+
+
+try:
+    filename = results_path+'ratio_train_samples'
+    save_ratio(dataset, filename)
+
+    filename = results_path+'ratio_train_samples_normalized'
+    save_ratio(dataset, filename, normalize=True)
+except:
+    print(dataset.X())
+
 
 
 results_path_parent = results_path
@@ -1316,6 +1324,11 @@ filename = results_path_parent + 'scores_mean_heatmap.png'
 matrix = np.matrix(mean_df.values).astype(float)
 saveHeatMapScores(matrix, rows_labels=mean_df.index , cols_labels=mean_df.columns, filename=filename, metric='euclidean')
 
+df = DataFrame(matrix, index=mean_df.index, columns=mean_df.columns)
+filename = results_path_parent + 'scores_mean.csv'
+df.to_csv(filename, header=True)
+
+
 filename = results_path_parent + 'scores_std_heatmap.png'
 matrix = np.matrix(std_df.values).astype(float)
 saveHeatMapScores(matrix, rows_labels=std_df.index , cols_labels=std_df.columns, filename=filename, metric='euclidean')
@@ -1327,6 +1340,9 @@ matrix_conf = matrix_mean - (2*matrix_std)
 matrix_conf[matrix_conf<0]=0.0
 saveHeatMapScores(matrix_conf, rows_labels=std_df.index , cols_labels=std_df.columns, filename=filename, metric='euclidean')
 
+df = DataFrame(matrix_conf, index=std_df.index, columns=std_df.columns)
+filename = results_path_parent + 'scores_lower_conf_level.csv'
+df.to_csv(filename, header=True)
 
 high_score_df = DataFrame(np.full((len(all_genes),len(score_matrices)),-0.5), index=all_genes_list, columns=range(len(score_matrices)))
 for gene in all_genes_list:    
