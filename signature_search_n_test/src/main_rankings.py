@@ -255,35 +255,37 @@ if test_dataset_path != None:
         print('The path to test dataset (path:'+ test_dataset_path + ') is incorrect or the file is not defined.')
         exit()
 else:
-    print('The parameter --test was not defined. The system will separate the independent test set based on --test_size.')
-    test_size_scale = 0
-    if args['testSize'] == -1:
+    print('The parameter --test was not defined.')
+    test_size_scale = 0 
+    if k_outer != -1:
+        print("K-outer was set, so the script will run DCV.")
+        double_cross_validation = True     
+    elif args['testSize'] == -1:                  
         print('The parameter --test_size was not set. The system will use the default value ' + str(default_test_size) + '.')
         test_size_scale = default_test_size
     else:
         test_size_scale = args['testSize']
 
-    if test_size_scale == 0:
-        #copy dataset, train and test are going to be the same.
-        train_dataset = dataset.get_sub_dataset_by_samples(range(len(dataset.samples)))
-        test_dataset = dataset.get_sub_dataset_by_samples(range(len(dataset.samples))) 
-    else:
-
-        if k_outer == -1:
-            total_size = len(dataset.samples)    
-
-            x_indexes = []
-            for i in range(total_size):
-                x_indexes.append([i])    
-            X_train, X_test, y_train, y_test = train_test_split(x_indexes, dataset.Y(), test_size=test_size_scale, shuffle=True, stratify=dataset.Y())
-
-            train_indexes = [v[0] for v in X_train]
-            test_indexes = [v[0] for v in X_test]
-
-            train_dataset = dataset.get_sub_dataset_by_samples(train_indexes)
-            test_dataset = dataset.get_sub_dataset_by_samples(test_indexes)
+        if test_size_scale == 0:
+            #copy dataset, train and test are going to be the same.
+            print("Using test == train set == all samples.")
+            train_dataset = dataset.get_sub_dataset_by_samples(range(len(dataset.samples)))
+            test_dataset = dataset.get_sub_dataset_by_samples(range(len(dataset.samples))) 
         else:
-            double_cross_validation = True
+            if k_outer == -1:
+                print("Using test-size "+str(test_size_scale))
+                total_size = len(dataset.samples)    
+
+                x_indexes = []
+                for i in range(total_size):
+                    x_indexes.append([i])    
+                X_train, X_test, y_train, y_test = train_test_split(x_indexes, dataset.Y(), test_size=test_size_scale, shuffle=True, stratify=dataset.Y())
+
+                train_indexes = [v[0] for v in X_train]
+                test_indexes = [v[0] for v in X_test]
+
+                train_dataset = dataset.get_sub_dataset_by_samples(train_indexes)
+                test_dataset = dataset.get_sub_dataset_by_samples(test_indexes)           
 
 folder_count = 0
 datasets_indexes = [(None, None)]
