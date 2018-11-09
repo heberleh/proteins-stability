@@ -844,7 +844,7 @@ for folder_name in sorted(folders):
             else:
                 gene_freq[gene] =  1
     for gene in gene_freq:
-        gene_freq[gene] /= float(len(good_signatures))    
+        gene_freq[gene] /= float(len(selected_good_signatures))    
     good_genes_freq_global[folder_name] = gene_freq
 
     matrix = []
@@ -929,7 +929,8 @@ for folder_name in sorted(folders):
     even_better_signatures_set_static = set(better_signatures)
 
     even_better_sig_data = []
-    for signature in better_signatures:        
+    for data in even_better_signatures_set_static:     
+        signature = data[3]   
         rank_names = []
         if any(x in correlated_genes_removed_set for x in signature.genes):
             rank_names.append("correlated")
@@ -1112,17 +1113,21 @@ for folder_name in sorted(folders):
         signature = data[3]
         std_cv = data[4]
         mean_p_value = data[5]  
-        report.write('BEST SIGNATURE AND CORRELATED SIGNATURES')      
-        report.write('Signature: %s\n' % str(signature.genes))
-        report.write('Correlated signatures:\n')
-        for sig in correlatedSignatures(signature, 0, correlated_genes):
-            report.write(str(sig.genes))
-            if sig in good_signatures_set_static:
-                report.write("This signature is in the good_signatures.\n")
-            if sig in even_better_signatures_set_static:
-                report.write("This signature is in the even_better_signatures.\n\n")
-        report.write('\n\n')
-        report.flush()
+        
+        correlated_best_signatures = correlatedSignatures(signature, 0, correlated_genes)
+        correlated_best_signatures.remove(signature)
+        if len(correlated_best_signatures) > 0:
+            report.write('BEST SIGNATURE AND CORRELATED SIGNATURES')      
+            report.write('Signature: %s\n' % str(signature.genes))
+            report.write('Correlated signatures:\n')
+            for sig in correlated_best_signatures:
+                report.write(str(sig.genes))
+                if sig in good_signatures_set_static:
+                    report.write("This signature is in the good_signatures.\n")
+                if sig in even_better_signatures_set_static:
+                    report.write("This signature is in the even_better_signatures.\n\n")
+            report.write('\n\n')
+            report.flush()
         
 
         internal_score = signature.getScore(selected_classifier['name'])
@@ -1494,13 +1499,15 @@ for fold in best_sig_scores_global:
         print(value_regular)
         values_regular_per_fold.append(value_regular)
 
-        if unbalanced:
+        if len(best_sig_scores_smote_global[fold].keys()) > 0:            
             result_smote = best_sig_scores_smote_global[fold][signature]
             classi_name = result_smote['selected_classifier_name']
             scorer_name = result_smote['main_score_name']
             value_smote = result_smote['independent'][classi_name][scorer_name]
             print(value_smote)
             values_smote_per_fold.append(value_smote)
+        else:
+            values_smote_per_fold.append(value_regular)
     row = []
     row.append(fold)
     fold_value = np.mean(values_regular_per_fold)
