@@ -80,16 +80,16 @@ path1 = os.path.join(current_path, 'dataset/romenia_all_samples_trees.csv')
 path3 = os.path.join(current_path, 'dataset/prostate_all_samples_trees.csv')
 
 # Read data sets
-d1 = filter_dataset(Dataset(path1, scale=False, normalize=False, sep=','), 0.25, fdr=True)
+#d1 = filter_dataset(Dataset(path1, scale=False, normalize=False, sep=','), 0.25, fdr=True)
 #d2 = filter_dataset(Dataset(path2, scale=False, normalize=False, sep=','), 0.10, fdr=false)
 d3 = filter_dataset(Dataset(path3, scale=False, normalize=False, sep=','), 0.25, fdr=True)
 
 # Find what is above Mean in each data set... 
-m1 = d1.matrix
-m1 = robust_scale(m1)
-m1[m1 < -0.33] = np.nan
-m1[m1 >  0.33] = np.nan
-m1 = m1 + 10
+# m1 = d1.matrix
+# m1 = robust_scale(m1)
+# m1[m1 < -0.33] = np.nan
+# m1[m1 >  0.33] = np.nan
+# m1 = m1 + 10
 
 m3 = d3.matrix
 m3 = robust_scale(m3)
@@ -100,7 +100,7 @@ m3[r] = np.nan
 m3 = m3 
 
 # Join the data set into one matrix
-df1 = DataFrame(m1, index=d1.samples, columns=d1.genes)
+# df1 = DataFrame(m1, index=d1.samples, columns=d1.genes)
 #df2 = DataFrame(m2, index=d2.samples, columns=d2.genes)
 df3 = DataFrame(m3, index=d3.samples, columns=d3.genes)
 result = DataFrame()
