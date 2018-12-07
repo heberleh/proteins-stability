@@ -1,5 +1,0 @@
-NSC:pep8,pep9;
-NaiveBayes:pep8,pep12,pep7,pep3,pep6,pep15;
-RandomForest:pep8,pep10,pep15;
-SVM:pep8;
-Perceptron:pep3

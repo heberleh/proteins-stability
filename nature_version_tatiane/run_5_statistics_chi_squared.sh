@@ -1,1 +1,0 @@
-R -f ./code/statistics/chi_squared.R

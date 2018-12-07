@@ -1,1 +1,0 @@
-R -f ./code/Ranks/ranking_using_svm-rfe_selecting_and_validating_using_svm.R

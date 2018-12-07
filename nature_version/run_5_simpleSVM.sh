@@ -1,1 +1,0 @@
-R -f ./code/Simple_ranks/ranking_svm_rfe.R

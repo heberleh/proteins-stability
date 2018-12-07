@@ -1,1 +1,0 @@
-python ./src/main.py --projectName tati_run_wilcox_100p_9fold --train dataset/romenia_all_samples.csv --k 9  --limitSignatureSize --onlyFilter --nJobs 8 --ignoreWarnings --testSize 0 

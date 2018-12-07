@@ -1,5 +1,0 @@
-inserted_proteins
-3
-P00489_GPB
-P02769_BSA
-P00924_ENO1
