@@ -1,4 +1,4 @@
 
-Personal code for protein/gene selection using multivariate methods.
+# Evaluation of feature selection and ranking methods stability in the context of discovery proteomics data
 
-Branches refer to different projects.
+Scripts for the Double Cross Validation described in my thesis.
