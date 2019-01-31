@@ -42,7 +42,7 @@ from utils import (getMaxNumberOfProteins, normalizeScores, saveBoxplots,
                    saveHeatMap, saveHeatMapScores, saveHistogram, saveRank,
                    saveScatterPlots)
 from wilcoxon import WilcoxonRankSumTest
-
+import math
 ## agg backend is used to create plot as a .png file
 mpl.use('agg')
 
@@ -91,7 +91,9 @@ ap.add_argument('--ignoreWarnings', help='Stop printing Warnings from models.', 
 
 ap.add_argument('--correlation', help='Filter variables highly correlated.', action='store_true')
 
-ap.add_argument('--corrThreshold', help='Cuttoff for correlation.', action='store', type=float, default=0.95)
+ap.add_argument('--entireDataCorrelation', help='Filter variables highly correlated.', action='store_true')
+
+ap.add_argument('--corrThreshold', help='Cuttoff for correlation.', action='store', type=float, default=0.90)
 
 ap.add_argument('--smote', help='Balance the dataset with oversampling.', action='store_true')
 
@@ -128,7 +130,10 @@ dataset = Dataset(train_dataset_path, scale=False, normalize=False, sep=',')
 
 scoreEstimator = None
 
-
+# variance inflation factor
+def vif(corr):
+    if corr=1 return math.inf
+    return 1/(1-(corr*corr))
 
 def save_ratio(dataset, filename, normalize=False):
     matrix = []
@@ -226,6 +231,8 @@ kappa_scorer = make_scorer(cohen_kappa_score)
 uni, counts = np.unique(dataset.Y(), return_counts=True)
 
 from sklearn.metrics import f1_score
+
+print("Levels found: ", dataset.levels())
 if len(dataset.levels()) < 4:
     scoreEstimator = make_scorer(f1_score, average='weighted')    
     scoreEstimatorInfo = """Weighted F1"""
@@ -302,6 +309,59 @@ try:
     save_ratio(dataset, filename, normalize=True)
 except:
     print(dataset.X())
+
+
+
+correlation = args['entireDataCorrelation']
+corr_threshold = args['corrThreshold']
+correlated_genes = []
+if correlation:       
+    print('Filtering the full data by Correlation.\n') 
+    result = dataset.correlatedAttributes(threshold=corr_threshold)
+    corr_matrix = abs(result['corr_matrix'])
+    corr_pvalues = result['p_values_matrix']
+    corr_pvalues_corrected = result['p_values_corrected_matrix']
+    correlated_genes = result['correlated_genes']
+    genes_to_drop = result['genes_to_drop']
+    
+    new_matrix = []
+    for row in corr_matrix:           
+        new_row = []
+        for value in row:                                
+            if value < corr_threshold:
+                new_row.append(0.0)
+            else:
+                new_row.append(value)
+        new_matrix.append(new_row)
+
+    saveHeatMapScores(np.matrix(new_matrix).astype(float), dataset.genes, dataset.genes, results_path+'heatmap_abs_correlation_cuttoff_threshold_euclidean.png', metric='euclidean')    
+
+    corr_genes_indexes = set()        
+    for gene1 in correlated_genes:
+        corr_genes_indexes.add(dataset.geneIndex(gene1))
+        for gene2 in correlated_genes[gene1]:
+            corr_genes_indexes.add(dataset.geneIndex(gene2))
+
+    corr_genes_indexes = list(corr_genes_indexes)
+    corr_genes_names = np.array(dataset.genes)[corr_genes_indexes]
+    correlated_correlation_matrix = np.matrix(corr_matrix).astype(float)
+    ixgrid = np.ix_(corr_genes_indexes, corr_genes_indexes)
+    correlated_correlation_matrix= correlated_correlation_matrix[ixgrid]
+
+    if len(corr_genes_indexes) > 1:
+        saveHeatMapScores(abs(correlated_correlation_matrix), corr_genes_names, corr_genes_names, filename=results_path+'heatmap_correlated_genes_euclidean.png', metric='euclidean')
+
+    # drop the correlated proteins
+
+    dataset.saveFile(results_path+'dataset_including_correlated_genes.csv')    
+    print("\nNumber of proteins before removing correlated: %d" % len(dataset.genes))
+    genes = [gene for gene in dataset.genes]
+    for gene in genes_to_drop:
+        genes.remove(gene)            
+    dataset = dataset.get_sub_dataset(genes)
+    dataset.saveFile(results_path+'dataset_excluding_correlated_genes.csv') 
+    print("\nNumber of proteins after removing correlated: %d" % len(dataset.genes))
+    # ========= end graphics ===========
 
 
 
@@ -489,12 +549,13 @@ for train_index, test_index in datasets_indexes:
         scores = sorted(scores, reverse = False, key=lambda tup: tup[0])
         saveRank(scores, results_path+method)  
 
-        print('\nSelected proteins IF FDR correction: %s\n\n' % str(filtered))
+        print('\nSelected proteins IF FDR correction: %s, FDR? %s ->\n\n' % (str(filtered), str(args['fdr'])))
+        
 
         report.write('P-values were corrected by FDR and these are the remaining proteins with p-value < %f IF "--fdr" is set: %s\n' % (fdr_cutoff, str(filtered)))
         report.flush()
         # ========= save graphics after FDR correction ===========
-        if saveGraphics:
+        if saveGraphics and len(p_values_corrected) > 0:
             saveHistogram(filename=results_path+'histogram_p_values_corrected_fdr.png', values=p_values_corrected, title=stat_test_name+' (corrected)', xlabel='p-values', ylabel='counts', bins=40, rwidth=0.9, color='#607c8e', grid=False, ygrid=True, alpha=0.75) 
 
             train_dataset_temp = train_dataset.get_sub_dataset([train_dataset.genes[i] for i in range(len(train_dataset.genes)) if p_values_corrected[i]<fdr_cutoff])
