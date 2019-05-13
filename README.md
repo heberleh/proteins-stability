@@ -14,3 +14,4 @@ Considering a laptop with i7: the ranking may take minutes/hours and the priorit
 
 Any performance and design improvements are welcome!
 
+When my thesis is public available, I will post a link here.
