@@ -9,14 +9,26 @@ The script was designed to handle datasets with small number of samples (~50) an
 
 **Any performance and design improvements are welcome!** When my thesis is public available, I will post a link here.
 
-![General Pipeline to score the proteins and further rank them using all the information.](images/general_pipeline.png)
+# Figures
 
-![The RFA version developed for my thesis showed to be more Stable and rank better our true biomarkers than the classic RFE method.](images/dcv_rfe_vs_rfa.png)
+## Figure 1
+General Pipeline to score the proteins and further rank them using all the information.
+![](images/general_pipeline.png)
 
-![For each training data set (color), count the number of times that a Protein appeared as top-10 in the 40 ranks. The greater is the number of colors and size of bars, more stable is the protein.](images/dcv_number_of_times_in_top_10.png)
+## Figure 2
+The RFA version developed for my thesis showed to be more Stable and rank better our true biomarkers than the classic RFE method.
+![](images/dcv_rfe_vs_rfa.png)
 
-![Heatmap showing the highest 50 average scores of each protein for each Train dataset (column).](images/dcv_scores_highest_50_mean_heatmap.png)
+## Figure 3
+For each training data set (color), count the number of times that a Protein appeared as top-10 in the 40 ranks. The greater is the number of colors and size of bars, more stable is the protein.
+![](images/dcv_number_of_times_in_top_10.png)
 
-![Top-10 proteins, selected from a rank of good and stable proteins.](images/heatmap_10best_svg.png)
+## Figure 4
+Heatmap showing the highest 50 average scores of each protein for each Train dataset (column).
+![](images/dcv_scores_highest_50_mean_heatmap.png)
+
+## Figure 5
+Top-10 proteins, selected from a rank of good and stable proteins.
+![](images/heatmap_10best_svg.png)
 
 
