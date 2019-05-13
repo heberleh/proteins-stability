@@ -31,11 +31,13 @@ For each training data set (color), count the number of times that a Protein app
 ![](images/dcv_number_of_times_in_top_10.png)
 
 ## Figure 4
-Heatmap showing the highest 50 average scores of each protein for each Train dataset (column).
+Heatmap showing the highest 50% average scores of each protein for each Train dataset (column).
+Some proteins are not selected to be processed using some training sets (columns), or obtain extremely low score (blue).
+
 ![](images/dcv_scores_highest_50_mean_heatmap.png)
 
 ## Figure 5
-Top-10 proteins, selected from a rank of good and stable proteins.
+Top-10 proteins selected from a rank of good and stable proteins, such as the one in Figure 3.
 ![](images/heatmap_10best_svg.png)
 
 
