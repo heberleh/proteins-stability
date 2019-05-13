@@ -47,9 +47,10 @@ Top-10 proteins selected from a rank of good and stable proteins, such as the on
 
 # Citation
 
-[1] H. Heberle, “Computational methods in Biology: cancer biomarkers, protein networks and lateral gene transfer,” University of São Paulo, 2019.
+Heberle, Henry Computational methods in Biology: cancer biomarkers, protein networks and lateral gene transfer. (University of São Paulo, 2019).
 
-1. Heberle, H. Computational methods in Biology: cancer biomarkers, protein networks and lateral gene transfer. (University of São Paulo, 2019).
+Heberle, H. Computational methods in Biology: cancer biomarkers, protein networks and lateral gene transfer. (University of São Paulo, 2019).
+
 
 ```bibtex
 @phdthesis{Heberle2019,
