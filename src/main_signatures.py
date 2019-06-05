@@ -205,7 +205,7 @@ def registerResult(result, method, fold_signatures):
 
 
 def evaluateRankParallel(dataset_train, dataset_test, scores, rank_id, estimators, max_n, fold_signatures, scorer, max_all_comb_size, max_random_comb_size, test_size, n_splits):
-    scores = sorted(scores, reverse=True)
+    scores = sorted(scores,  key=lambda t: t[0], reverse=True)
     max_score = -np.inf
 
     sss = StratifiedShuffleSplit(n_splits=n_splits, test_size=test_size, random_state=0)
@@ -243,7 +243,7 @@ def evaluateRankParallel(dataset_train, dataset_test, scores, rank_id, estimator
 
     for sub_list_size in range(1, max_random_comb_size+1):
 
-        allgenes = [item[1] for item in scores[0:max_n]]
+        allgenes = [item[1] for item in scores[0:int(max_n)]]
 
         all_possible_signatures = itertools.combinations(allgenes, sub_list_size)
         n_possible_groups = comb(len(allgenes), sub_list_size, exact=True)  
@@ -430,17 +430,19 @@ for folder_name in sorted(folders):
 
     subfolders = [ item for item in os.listdir(folder_path) if os.path.isdir(os.path.join(folder_path, item))]
 
+    train_path = None
+    test_path = None
     if 'filter' in subfolders:
         folder_path = os.path.join(folder_path, 'filter')
-    elif 'nonFilter' in subfolders:
+        train_path = os.path.join(folder_path, 'train_including_correlated_genes.csv')
+        test_path = os.path.join(folder_path, 'test_including_correlated_genes.csv')
+    elif 'noFilter' in subfolders:
         folder_path = os.path.join(folder_path, 'noFilter')
+        train_path = os.path.join(folder_path, 'dataset_train_without_correlated_genes.csv')
+        test_path = os.path.join(folder_path, 'dataset_test_without_correlated_genes.csv')        
     else:
         print("The filter/noFilter folder could not be found.")
         exit()
-
-
-    train_path = os.path.join(folder_path, 'train_including_correlated_genes.csv')
-    test_path = os.path.join(folder_path, 'test_including_correlated_genes.csv')
 
     train_data = Dataset(train_path, scale=False, normalize=False, sep=',')
     test_data = Dataset(test_path, scale=False, normalize=False, sep=',')
@@ -677,14 +679,14 @@ for folder_name in sorted(folders):
         scores = []
         for gene in scores_df.index:
             scores.append((scores_df[method][gene],gene))
-        ranks[method] = sorted(scores, reverse=True)
+        ranks[method] = sorted(scores,  key=lambda t: t[0], reverse=True)
 
     
     count = 1
         
-    keys = ranks.keys()
+    keys = list(ranks.keys())
     if limit_n_ranks != -1:
-        keys = keys[0:limit_n_ranks]   
+        keys = keys[0:int(limit_n_ranks)]   
 
     max_n_features=np.min([len(ranks[method]),len(train_data.Y()),args['max_n_features']]) 
 
@@ -715,7 +717,7 @@ for folder_name in sorted(folders):
 
     good_signatures = fold_signatures.getSignaturesMaxScore(delta=0.10)
 
-    good_signatures = sorted(good_signatures, reverse=True)
+    good_signatures = sorted(good_signatures, key=lambda t: t[0], reverse=True)
     max_score_good_signatures = good_signatures[0][0]
 
     print("!! Max score of good signatures: "+ str(max_score_good_signatures))
@@ -829,7 +831,7 @@ for folder_name in sorted(folders):
     df.to_csv(filename, header=True)
 
     if len(correlated_signatures_scores) > 0:
-        correlated_signatures_scores = sorted(correlated_signatures_scores, reverse=True)         
+        correlated_signatures_scores = sorted(correlated_signatures_scores,  key=lambda t: t[0], reverse=True)         
     correlated_signatures = set([data[1] for data in correlated_signatures_scores if data[0] > max_score_good_signatures-0.10])
     good_signatures_set = set([data[5] for data in good_signatures])
     selected_good_signatures = correlated_signatures | good_signatures_set
@@ -899,7 +901,7 @@ for folder_name in sorted(folders):
             rank_names.append("correlated")
         else:        
             for name in ranks:
-                rank_genes = [item[1] for item in ranks[name][0:max_n_features]] #! already sorted
+                rank_genes = [item[1] for item in ranks[name][0:int(max_n_features)]] #! already sorted
                 if set(signature.genes).issubset(rank_genes):
                     rank_names.append(name)
 
@@ -916,7 +918,7 @@ for folder_name in sorted(folders):
     # Reduce the number of signatures again
 
     #! Sort by (mean_cv - 2*std_cv)  *  ((signature.mean_freq/10)+0.9) - score - up to 10% by mean_freq score
-    good_signature_scores = sorted(good_signature_scores, reverse=True)
+    good_signature_scores = sorted(good_signature_scores,  key=lambda t: t[0], reverse=True)
     max_score = good_signature_scores[0][0]  
     better_signatures = [data for data in good_signature_scores if data[0] > max_score-0.05]
     #get 10% higher
@@ -936,7 +938,7 @@ for folder_name in sorted(folders):
             rank_names.append("correlated")
         else:
             for name in ranks:
-                rank_genes = [item[1] for item in ranks[name][0:max_n_features]] #! already sorted
+                rank_genes = [item[1] for item in ranks[name][0:int(max_n_features)]] #! already sorted
                 if set(signature.genes).issubset(rank_genes):
                     rank_names.append(name)
 
@@ -982,7 +984,7 @@ for folder_name in sorted(folders):
             rank_names.append("correlated")
         else:        
             for name in ranks:
-                rank_genes = [item[1] for item in ranks[name][0:max_n_features]]
+                rank_genes = [item[1] for item in ranks[name][0:int(max_n_features)]]
                 if set(signature.genes).issubset(rank_genes): #! already sorted
                     rank_names.append(name)
 
@@ -1136,7 +1138,7 @@ for folder_name in sorted(folders):
             rank_names.append("correlated")
         else:        
             for name in ranks:
-                rank_genes = [item[1] for item in ranks[name][0:max_n_features]] #! already sorted
+                rank_genes = [item[1] for item in ranks[name][0:int(max_n_features)]] #! already sorted
                 if set(signature.genes).issubset(rank_genes):    
                     rank_names.append(name)
         #print("     "+str(signature.genes))

@@ -1,1 +1,1 @@
-python ./src/main_signatures.py  --input-folder results/romenia_run_kruskal_fdr25_outerk9_innerk7_18_11_09_13_49_30 --n-jobs 7
+python ./src/main_signatures.py  --input-folder results/romenia_run_kruskal_fdr25_outerk8_innerk7_19_06_04_23_17_12 --n-jobs 4 --max-size-all-combinations 17

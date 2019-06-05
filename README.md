@@ -7,6 +7,21 @@ The script was designed to handle datasets with small number of samples (~50) an
 
 **Please cite** my work, go to section **[Citation](#citation)**
 
+## Dependencies
+
+```python
+# Tested with Python 3.6.8
+# go to stability_selection and install pacakges
+cd lib/stability_selection
+pip install -r requirements.txt
+python setup.py install
+
+# go back to the proteins-stability folder and install packages
+cd ../..
+pip install -r requirements.txt
+```
+
+
 ## Would you like to contribute?
 
 **Any performance and design improvements are welcome!** When my thesis is public available, I will post a link here.

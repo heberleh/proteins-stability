@@ -20,7 +20,7 @@ class Signature(object):
 
     def __hash__(self):
         return hash(self.id)
-        
+
     def __str__(self):
         return self.id
 
@@ -83,8 +83,9 @@ class Signatures(object):
         pairs = []
         for sig in self.signatures.values():
             for pair in sig.getMaxScorePairs():
-                pairs.append(pair)            
-        pairs = sorted(pairs, reverse=True)        
+                pairs.append(pair)
+                               
+        pairs = sorted(pairs, key=lambda t: t[0], reverse=True)        
         return [pair for pair in pairs if pair[0] > pairs[0][0]-delta]     
 
     def save(self, filename):

@@ -10,6 +10,7 @@ from random import shuffle
 from time import gmtime, strftime
 
 import matplotlib as mpl
+
 import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
@@ -45,6 +46,7 @@ from wilcoxon import WilcoxonRankSumTest
 import math
 ## agg backend is used to create plot as a .png file
 mpl.use('agg')
+plt.switch_backend('agg')
 
 
 warnings.filterwarnings("ignore", category=DeprecationWarning)
@@ -132,7 +134,8 @@ scoreEstimator = None
 
 # variance inflation factor
 def vif(corr):
-    if corr=1 return math.inf
+    if corr==1:
+        return math.inf
     return 1/(1-(corr*corr))
 
 def save_ratio(dataset, filename, normalize=False):
@@ -995,7 +998,7 @@ for train_index, test_index in datasets_indexes:
         #---------- Type 5 - Stability Selection ----------
         if type5:
             print('\nExecuting Type 5\n')
-            from stability_selection import StabilitySelection  
+            from stability_selection import StabilitySelection  #https://github.com/scikit-learn-contrib/stability-selection
             from sklearn.model_selection import StratifiedShuffleSplit      
 
             def stratified_subsampling(y, n_subsamples, random_state=7):
@@ -1315,7 +1318,7 @@ for train_index, test_index in datasets_indexes:
 
 
         scores_by_gene = {}
-        max_n = len(ranks.keys())/2
+        max_n = int(len(ranks.keys())/2)
         labels = row_lables.tolist()
         for gene in selected_genes:        
             values = []                 
@@ -1413,7 +1416,7 @@ for gene in all_genes_list:
         score_df = score_matrices[j]
         if gene in score_df.index.tolist():
             highest_scores = sorted(score_df.loc[gene].values, reverse=True)
-            highest_scores = highest_scores[0:len(score_df.index.tolist())/2]
+            highest_scores = highest_scores[0:int(len(score_df.index.tolist())/2)]
             high_score_df[j][gene] = np.mean(highest_scores)
         else:
             high_score_df[j][gene] = 0.0
@@ -1438,7 +1441,7 @@ for gene in freq_genes_set:
         else:
             row.append(0.0)
     matrix.append(row)
-header = ['Protein'] + range(len(freq_prot_list))
+header = ['Protein'] + list(range(len(freq_prot_list)))
 df = DataFrame(matrix, columns=header)         
 filename = results_path_parent + 'top10_prot_freq_from_each_fold.csv'
 df.to_csv(filename, header=True)
@@ -1485,7 +1488,8 @@ saveBoxplots(box_plot_values, filename=filename, x_labels=selected_genes)
 
 scores_by_gene = {}
 labels = row_lables.tolist()
-max_n = n_ranks/2
+
+max_n = int(n_ranks/2)
 df = DataFrame(np.full((len(all_genes_list),len(score_matrices)),-0.1), index=all_genes_list, columns=range(k_outer))
 
 for gene in all_genes:        
